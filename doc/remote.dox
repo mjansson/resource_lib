@@ -1,0 +1,15 @@
+
+/*!
+
+\file local.h
+\brief Local resource cache
+\details Local resource cache control and compilation of resources
+
+
+\fn int resource_set_local_cache( const char* path )
+\brief Set local resource cache path
+\details Set local resource cache path. Will create the path and initialize storage if the path does not exist.
+\param path Local resource cache path
+\return 0 if success, <0 if error
+
+*/

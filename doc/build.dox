@@ -1,0 +1,16 @@
+
+/*!
+
+\file build.h
+\brief Build definitions and setup
+\details Build definitions and setup
+
+\def RESOURCE_ENABLE_LOCAL_CACHE
+\brief Enable local source cache
+\details Setting this flag to 1 will enable resource sources to be cached and compiled locally. Enabled by default except in deploy builds and on console/mobile platforms.
+
+\def RESOURCE_ENABLE_REMOTE_CACHE
+\brief Enable remote resource servers
+\details Setting this flag to 1 will enable resource loading from remote resource servers. Enabled by default except in deploy builds.
+
+*/
