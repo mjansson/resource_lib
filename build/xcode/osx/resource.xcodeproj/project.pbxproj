@@ -17,6 +17,12 @@
 		45670B3219ED797800BE1677 /* event.h in Headers */ = {isa = PBXBuildFile; fileRef = 45670B3119ED797800BE1677 /* event.h */; };
 		45670B3419ED7A7F00BE1677 /* event.c in Sources */ = {isa = PBXBuildFile; fileRef = 45670B3319ED7A7F00BE1677 /* event.c */; };
 		45670B3619ED941E00BE1677 /* stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 45670B3519ED941E00BE1677 /* stream.c */; };
+		4572E4F51A44CA6F001F198E /* bundle.c in Sources */ = {isa = PBXBuildFile; fileRef = 4572E4F41A44CA6F001F198E /* bundle.c */; };
+		4572E4FB1A44CA84001F198E /* bundle.h in Headers */ = {isa = PBXBuildFile; fileRef = 4572E4F61A44CA84001F198E /* bundle.h */; };
+		4572E4FC1A44CA84001F198E /* local.c in Sources */ = {isa = PBXBuildFile; fileRef = 4572E4F71A44CA84001F198E /* local.c */; };
+		4572E4FD1A44CA84001F198E /* local.h in Headers */ = {isa = PBXBuildFile; fileRef = 4572E4F81A44CA84001F198E /* local.h */; };
+		4572E4FE1A44CA84001F198E /* remote.c in Sources */ = {isa = PBXBuildFile; fileRef = 4572E4F91A44CA84001F198E /* remote.c */; };
+		4572E4FF1A44CA84001F198E /* remote.h in Headers */ = {isa = PBXBuildFile; fileRef = 4572E4FA1A44CA84001F198E /* remote.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +38,12 @@
 		45670B3119ED797800BE1677 /* event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = event.h; path = ../../../resource/event.h; sourceTree = "<group>"; };
 		45670B3319ED7A7F00BE1677 /* event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = event.c; path = ../../../resource/event.c; sourceTree = "<group>"; };
 		45670B3519ED941E00BE1677 /* stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stream.c; path = ../../../resource/stream.c; sourceTree = "<group>"; };
+		4572E4F41A44CA6F001F198E /* bundle.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bundle.c; path = ../../../resource/bundle.c; sourceTree = "<group>"; };
+		4572E4F61A44CA84001F198E /* bundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bundle.h; path = ../../../resource/bundle.h; sourceTree = "<group>"; };
+		4572E4F71A44CA84001F198E /* local.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = local.c; path = ../../../resource/local.c; sourceTree = "<group>"; };
+		4572E4F81A44CA84001F198E /* local.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = local.h; path = ../../../resource/local.h; sourceTree = "<group>"; };
+		4572E4F91A44CA84001F198E /* remote.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = remote.c; path = ../../../resource/remote.c; sourceTree = "<group>"; };
+		4572E4FA1A44CA84001F198E /* remote.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = remote.h; path = ../../../resource/remote.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,11 +78,17 @@
 			isa = PBXGroup;
 			children = (
 				45670B1E19DA810400BE1677 /* build.h */,
+				4572E4F41A44CA6F001F198E /* bundle.c */,
+				4572E4F61A44CA84001F198E /* bundle.h */,
 				45670B1F19DA810400BE1677 /* hashstrings.h */,
 				45670B2019DA810400BE1677 /* hashstrings.txt */,
 				45670B3319ED7A7F00BE1677 /* event.c */,
 				45670B3119ED797800BE1677 /* event.h */,
 				45670B2119DA810400BE1677 /* internal.h */,
+				4572E4F71A44CA84001F198E /* local.c */,
+				4572E4F81A44CA84001F198E /* local.h */,
+				4572E4F91A44CA84001F198E /* remote.c */,
+				4572E4FA1A44CA84001F198E /* remote.h */,
 				45670B2219DA810400BE1677 /* resource.c */,
 				45670B2319DA810400BE1677 /* resource.h */,
 				45670B3519ED941E00BE1677 /* stream.c */,
@@ -87,8 +105,11 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4572E4FD1A44CA84001F198E /* local.h in Headers */,
+				4572E4FB1A44CA84001F198E /* bundle.h in Headers */,
 				45670B3019ED762500BE1677 /* stream.h in Headers */,
 				45670B2919DA810400BE1677 /* resource.h in Headers */,
+				4572E4FF1A44CA84001F198E /* remote.h in Headers */,
 				45670B2719DA810400BE1677 /* internal.h in Headers */,
 				45670B3219ED797800BE1677 /* event.h in Headers */,
 				45670B2519DA810400BE1677 /* build.h in Headers */,
@@ -156,6 +177,9 @@
 				45670B3419ED7A7F00BE1677 /* event.c in Sources */,
 				45670B2819DA810400BE1677 /* resource.c in Sources */,
 				45670B3619ED941E00BE1677 /* stream.c in Sources */,
+				4572E4FC1A44CA84001F198E /* local.c in Sources */,
+				4572E4F51A44CA6F001F198E /* bundle.c in Sources */,
+				4572E4FE1A44CA84001F198E /* remote.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -17,7 +17,7 @@ writer = generator.writer
 toolchain = generator.toolchain
 
 resource_lib = generator.lib( module = 'resource', sources = [
-  'bundle.c', 'event.c', 'local.c', 'remote.c', 'resource.c', 'stream.c' ] )
+  'bundle.c', 'compile.c', 'event.c', 'local.c', 'remote.c', 'resource.c', 'stream.c' ] )
 
 #if not target.is_ios() and not target.is_android():
 #  configs = [ config for config in toolchain.configs if config not in [ 'profile', 'deploy' ] ]

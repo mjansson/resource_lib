@@ -24,8 +24,12 @@
 #include <resource/hashstrings.h>
 
 #include <resource/stream.h>
+#include <resource/bundle.h>
+#include <resource/compile.h>
+#include <resource/local.h>
+#include <resource/remote.h>
 
 
-RESOURCE_API int     resource_initialize( void );
-RESOURCE_API void    resource_shutdown( void );
-RESOURCE_API bool    resource_is_initialized( void );
+RESOURCE_API int           resource_initialize( void );
+RESOURCE_API void          resource_shutdown( void );
+RESOURCE_API bool          resource_is_initialized( void );

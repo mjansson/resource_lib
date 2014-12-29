@@ -21,10 +21,49 @@
 #include <foundation/foundation.h>
 
 
+#if RESOURCE_ENABLE_LOCAL_SOURCE
+
+
+int resource_local_set_source( const char* path )
+{
+	return 0;
+}
+
+
+#endif
+
+
 #if RESOURCE_ENABLE_LOCAL_CACHE
 
 
-int resource_set_local_cache( const char* path )
+const char* const* resource_local_paths( void )
+{
+	return 0;
+}
+
+
+void resource_local_set_paths( const char* const* paths )
+{
+}
+
+
+void resource_local_add_path( const char* path )
+{
+}
+
+
+void resource_local_remove_path( const char* path )
+{
+}
+
+
+stream_t* resource_local_open_static( const char* path, const uuid_t uuid )
+{
+	return 0;
+}
+
+
+stream_t* resource_local_open_dynamic( const char* path, const uuid_t uuid )
 {
 	return 0;
 }

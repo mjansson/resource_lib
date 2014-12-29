@@ -1,4 +1,4 @@
-/* remote.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* compile.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -21,18 +21,30 @@
 #include <foundation/foundation.h>
 
 
-#if RESOURCE_ENABLE_REMOTE_SOURCE
+#if RESOURCE_ENABLE_LOCAL_SOURCE
 
 
-int resource_remote_set_source( const char* url )
+bool resource_compile_need_update_static( const uuid_t uuid )
+{
+	return false;
+}
+
+
+bool resource_compile_need_update_dynamic( const uuid_t uuid )
+{
+	return false;
+}
+
+
+bool resource_compile_update_static( const uuid_t uuid )
 {
 	return 0;
 }
 
 
-bool resource_remote_need_update_static( const uuid_t uuid )
+bool resource_compile_update_dynamic( const uuid_t uuid )
 {
-	return false;
+	return 0;
 }
 
 

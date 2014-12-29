@@ -23,6 +23,14 @@
 
 int resource_bundle_load( uuid_t bundle )
 {
+#if RESOURCE_ENABLE_REMOTE_SOURCE
+	
+#endif
+	
+#if RESOURCE_ENABLE_LOCAL_SOURCE
+	
+#endif
+	
 	return 0;
 }
 

@@ -1,2 +1,5 @@
 
 HASH_RESOURCE                              resource
+HASH_REMOTE_URL                            remote_url
+HASH_LOCAL_SOURCE                          local_source
+HASH_LOCAL_CACHE                           local_cache
