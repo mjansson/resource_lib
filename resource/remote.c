@@ -24,8 +24,20 @@
 #if RESOURCE_ENABLE_REMOTE_SOURCE
 
 
-int resource_remote_set_source( const char* url )
+static char* _remote_url = 0;
+
+
+const char* resource_remote_url( void )
 {
+	return _remote_url;
+}
+
+
+int resource_remote_set_url( const char* url )
+{
+	string_deallocate( _remote_url );
+	_remote_url = string_clone( url );
+
 	return 0;
 }
 
@@ -33,6 +45,24 @@ int resource_remote_set_source( const char* url )
 bool resource_remote_need_update_static( const uuid_t uuid )
 {
 	return false;
+}
+
+
+bool resource_remote_need_update_dynamic( const uuid_t uuid )
+{
+	return false;
+}
+
+
+stream_t* resource_remote_update_static( const uuid_t uuid )
+{
+	return 0;
+}
+
+
+stream_t* resource_remote_update_dynamic( const uuid_t uuid )
+{
+	return 0;
 }
 
 

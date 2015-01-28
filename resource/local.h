@@ -41,8 +41,8 @@ RESOURCE_API void                resource_local_set_paths( const char* const* pa
 RESOURCE_API void                resource_local_add_path( const char* path );
 RESOURCE_API void                resource_local_remove_path( const char* path );
 
-RESOURCE_API stream_t*           resource_local_open_static( const char* path, const uuid_t uuid );
-RESOURCE_API stream_t*           resource_local_open_dynamic( const char* path, const uuid_t uuid );
+RESOURCE_API stream_t*           resource_local_open_static( const uuid_t uuid );
+RESOURCE_API stream_t*           resource_local_open_dynamic( const uuid_t uuid );
 
 #else
 
@@ -51,7 +51,7 @@ RESOURCE_API stream_t*           resource_local_open_dynamic( const char* path, 
 #define resource_local_set_paths( paths ) ((void)sizeof( paths ))
 #define resource_local_add_path( path ) ((void)sizeof( path ))
 #define resource_local_remove_path( path ) ((void)sizeof( path ))
-#define resource_local_open_static( path, uuid ) ((void)sizeof( path )), ((void)sizeof( uuid )), 0
-#define resource_local_open_dynamic( path, uuid ) ((void)sizeof( path )), ((void)sizeof( uuid )), 0
+#define resource_local_open_static( uuid ) ((void)sizeof( uuid )), 0
+#define resource_local_open_dynamic( uuid ) ((void)sizeof( uuid )), 0
 
 #endif

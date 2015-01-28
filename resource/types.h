@@ -31,22 +31,26 @@ typedef enum resource_event_id
 } resource_event_id;
 
 
+typedef struct resource_event_t                 resource_event_t;
+typedef ALIGNED_STRUCT( resource_base_t, 8 )    resource_base_t;
+
+
 #define RESOURCE_DECLARE_EVENT   \
 	FOUNDATION_DECLARE_EVENT;    \
 	uuid_t      uuid
 
-typedef struct resource_event_t
+struct resource_event_t
 {
 	RESOURCE_DECLARE_EVENT;
-} resource_event_t;
+};
 
 
 #define RESOURCE_DECLARE_OBJECT   \
 	FOUNDATION_DECLARE_OBJECT;    \
 	uuid_t    uuid
 
-typedef ALIGNED_STRUCT( resource_base_t, 8 )
+ALIGNED_STRUCT( resource_base_t, 8 )
 {
     RESOURCE_DECLARE_OBJECT;
-} resource_base_t;
+};
 
