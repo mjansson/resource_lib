@@ -38,7 +38,7 @@ RESOURCE_API stream_t*    resource_remote_update_dynamic( const uuid_t uuid );
 #define resource_remote_set_url( url ) ((void)sizeof( url )), 0
 #define resource_remote_need_update_static( uuid ) ((void)sizeof( uuid )), false
 #define resource_remote_need_update_dynamic( uuid ) ((void)sizeof( uuid )), false
-#define resource_remote_update_static( uuid ) ((void)sizeof( uuid )), 0
-#define resource_remote_update_dynamic( uuid ) ((void)sizeof( uuid )), 0
+#define resource_remote_update_static( uuid ) ((void)sizeof( uuid )), (void*)0
+#define resource_remote_update_dynamic( uuid ) ((void)sizeof( uuid )), (void*)0
 
 #endif
