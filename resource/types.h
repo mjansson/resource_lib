@@ -13,7 +13,7 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #pragma once
@@ -32,7 +32,7 @@ typedef enum resource_event_id
 
 
 typedef struct resource_event_t                 resource_event_t;
-typedef ALIGNED_STRUCT( resource_base_t, 8 )    resource_base_t;
+typedef FOUNDATION_ALIGNED_STRUCT( resource_base_t, 8 )    resource_base_t;
 
 
 #define RESOURCE_DECLARE_EVENT   \
@@ -49,7 +49,7 @@ struct resource_event_t
 	FOUNDATION_DECLARE_OBJECT;    \
 	uuid_t    uuid
 
-ALIGNED_STRUCT( resource_base_t, 8 )
+FOUNDATION_ALIGNED_STRUCT( resource_base_t, 8 )
 {
     RESOURCE_DECLARE_OBJECT;
 };
