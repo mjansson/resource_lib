@@ -20,18 +20,18 @@
 
 #include <foundation/foundation.h>
 
-
-int resource_bundle_load( uuid_t bundle )
+int 
+resource_bundle_load( uuid_t bundle )
 {
 #if RESOURCE_ENABLE_REMOTE_SOURCE
-	
+	if (_resource_config.enable_remote_source) {
+	}
 #endif
 	
 #if RESOURCE_ENABLE_LOCAL_SOURCE
-	
+	if (_resource_config.enable_local_source) {
+	}
 #endif
 	
 	return 0;
 }
-
-

@@ -13,7 +13,7 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #pragma once
@@ -25,6 +25,5 @@
 #include <resource/types.h>
 #include <resource/hashstrings.h>
 
-
-RESOURCE_EXTERN event_stream_t*   _resource_event_stream;
-
+RESOURCE_EXTERN event_stream_t* _resource_event_stream;
+RESOURCE_EXTERN resource_config_t _resource_config;

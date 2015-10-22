@@ -13,7 +13,7 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #pragma once
@@ -22,5 +22,5 @@
 
 #include <resource/types.h>
 
-
-RESOURCE_API int  resource_bundle_load( uuid_t bundle );
+RESOURCE_API int
+resource_bundle_load(uuid_t bundle);

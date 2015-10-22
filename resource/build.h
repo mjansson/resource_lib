@@ -38,3 +38,25 @@
 #  endif
 #endif
 
+#if !FOUNDATION_PLATFORM_FAMILY_CONSOLE && !BUILD_DEPLOY
+#  define RESOURCE_ENABLE_LOCAL_SOURCE 1
+#else
+#  define RESOURCE_ENABLE_LOCAL_SOURCE 0
+#endif
+
+#if FOUNDATION_PLATFORM_FAMILY_CONSOLE || BUILD_DEPLOY || RESOURCE_ENABLE_LOCAL_SOURCE
+#  define RESOURCE_ENABLE_LOCAL_CACHE 1
+#else
+#  define RESOURCE_ENABLE_LOCAL_CACHE 0
+#endif
+
+#if !BUILD_DEPLOY || !RESOURCE_ENABLE_LOCAL_CACHE
+#  define RESOURCE_ENABLE_REMOTE_SOURCE 1
+#else
+#  define RESOURCE_ENABLE_REMOTE_SOURCE 0
+#endif
+
+//Make sure we have at least one way of loading resources
+#if !RESOURCE_ENABLE_REMOTE_SOURCE && !RESOURCE_ENABLE_LOCAL_CACHE
+#  error Invalid build configuration, no way of loading resources
+#endif
