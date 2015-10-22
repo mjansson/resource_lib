@@ -13,7 +13,7 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #pragma once
@@ -29,7 +29,14 @@
 #include <resource/local.h>
 #include <resource/remote.h>
 
+RESOURCE_API int
+resource_module_initialize(resource_config_t config);
 
-RESOURCE_API int           resource_initialize( void );
-RESOURCE_API void          resource_shutdown( void );
-RESOURCE_API bool          resource_is_initialized( void );
+RESOURCE_API void
+resource_module_finalize(void);
+
+RESOURCE_API bool
+resource_module_is_initialized(void);
+
+RESOURCE_API version_t
+resource_module_version(void);

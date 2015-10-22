@@ -12,7 +12,7 @@ import toolchain
 import syntax
 
 class Generator(object):
-  def __init__( self, project, includepaths = [], dependlibs = [], variables = None ):
+  def __init__( self, project, includepaths = [], dependlibs = [], libpaths = [], variables = None ):
     parser = argparse.ArgumentParser( description = 'Ninja build generator' )
     parser.add_argument( '-t', '--target',
                          help = 'Target platform',
@@ -34,6 +34,12 @@ class Generator(object):
     parser.add_argument( '-i', '--includepath', action = 'append',
                          help = 'Add include path',
                          default = [] )
+    parser.add_argument( '--monolithic', action='store_true',
+                         help = 'Build monolithic test suite',
+                         default = False )
+    parser.add_argument( '--coverage', action='store_true',
+                         help = 'Build with code coverage',
+                         default = False )
     options = parser.parse_args()
 
     self.project = project
@@ -68,7 +74,23 @@ class Generator(object):
       config_str = ' '.join( [ key + '=' + pipes.quote( configure_env[key] ) for key in configure_env ] )
       writer.variable('configure_env', config_str + '$ ')
 
-    self.toolchain = toolchain.Toolchain( project, options.toolchain, self.host, self.target, archs, configs, includepaths, dependlibs, variables,
+    if options.monolithic:
+      if variables is None:
+        variables = {}
+      if isinstance( variables, dict ):
+        variables['monolithic'] = True
+      else:
+        variables += [ ( 'monolithic', True ) ]
+    if options.coverage:
+      if variables is None:
+        variables = {}
+      if isinstance( variables, dict ):
+        variables['coverage'] = True
+      else:
+        variables += [ ( 'coverage', True ) ]
+
+    self.toolchain = toolchain.Toolchain( project, options.toolchain, self.host, self.target,
+                                          archs, configs, includepaths, dependlibs, libpaths, variables,
                                           configure_env.get( 'CC' ),
                                           configure_env.get( 'AR' ),
                                           configure_env.get( 'LINK' ),
@@ -111,3 +133,5 @@ class Generator(object):
       return [ 'test' ]
     return [ 'test', os.path.join( '..', 'foundation_lib', 'test' ) ]
 
+  def test_monolithic( self ):
+    return self.toolchain.is_monolithic()
