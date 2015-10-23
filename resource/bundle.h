@@ -22,5 +22,5 @@
 
 #include <resource/types.h>
 
-RESOURCE_API int
-resource_bundle_load(uuid_t bundle);
+RESOURCE_API bool
+resource_bundle_load(const uuid_t bundle);

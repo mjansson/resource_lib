@@ -30,17 +30,17 @@ resource_compile_need_update_static(const uuid_t uuid);
 RESOURCE_API bool
 resource_compile_need_update_dynamic(const uuid_t uuid);
 
-RESOURCE_API int
+RESOURCE_API bool
 resource_compile_update_static(const uuid_t uuid);
 
-RESOURCE_API int
+RESOURCE_API bool
 resource_compile_update_dynamic(const uuid_t uuid);
 
 #else
 
-#define resource_compile_need_update_static(uuid) ((void)sizeof( uuid )), false
-#define resource_compile_need_update_dynamic(uuid) ((void)sizeof( uuid )), false
-#define resource_compile_update_static(uuid) ((void)sizeof( uuid )), 0
-#define resource_compile_update_dynamic(uuid) ((void)sizeof( uuid )), 0
+#define resource_compile_need_update_static(uuid) ((void)sizeof(uuid)), false
+#define resource_compile_need_update_dynamic(uuid) ((void)sizeof(uuid)), false
+#define resource_compile_update_static(uuid) ((void)sizeof(uuid)), 0
+#define resource_compile_update_dynamic(uuid) ((void)sizeof(uuid)), 0
 
 #endif

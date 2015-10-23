@@ -13,119 +13,121 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #include <resource/local.h>
+#include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
-
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
+string_t _resource_local_source;
 
-int resource_local_set_source( const char* path )
-{
-	return 0;
+bool
+resource_local_set_source(const char* path, size_t length) {
+	if (!_resource_config.enable_local_source)
+		return false;
+
+	string_deallocate(_resource_local_source.str);
+	_resource_local_source = string_clone(path, length);
+
+	return true;
 }
-
 
 #endif
 
-
 #if RESOURCE_ENABLE_LOCAL_CACHE
 
+static string_t* _resource_local_paths = 0;
 
-FOUNDATION_DECLARE_THREAD_LOCAL_ARRAY( char, path_buffer, FOUNDATION_MAX_PATHLEN )
-
-static char** _local_paths = 0;
-
-
-const char* const* resource_local_paths( void )
-{
-	return (const char* const*)_local_paths;
+const string_const_t*
+resource_local_paths(void) {
+	return (string_const_t*)_resource_local_paths;
 }
 
+void
+resource_local_set_paths(const string_const_t* paths, size_t num) {
+	size_t ipath, pathsize;
 
-void resource_local_set_paths( const char* const* paths )
-{
-	int ipath, pathsize;
+	string_array_deallocate(_resource_local_paths);
 
-	string_array_deallocate( _local_paths );
-
-	for( ipath = 0, pathsize = array_size( paths ); ipath < pathsize; ++ipath )
-		array_push( _local_paths, path_clean( string_clone( paths[ipath] ), path_is_absolute( paths[ipath] ) ) );
+	for (ipath = 0, pathsize = num; ipath < pathsize; ++ipath)
+		resource_local_add_path(STRING_ARGS(paths[ipath]));
 }
 
-
-void resource_local_add_path( const char* path )
-{
-	array_push( _local_paths, path_clean( string_clone( path ), path_is_absolute( path ) ) );
+void
+resource_local_add_path(const char* path, size_t length) {
+	size_t capacity = length + 2;
+	string_t copy = string_copy(string_allocate(length, capacity).str, capacity,
+	                            path, length);
+	array_push(_resource_local_paths, path_clean(STRING_ARGS(copy), capacity));
 }
 
+void resource_local_remove_path(const char* path, size_t length) {
+	size_t ipath, pathsize;
 
-void resource_local_remove_path( const char* path )
-{
-	int ipath, pathsize;
-	char* cleanpath = path_clean( string_clone( path ), path_is_absolute( path ) );
-
-	for( ipath = 0, pathsize = array_size( _local_paths ); ipath < pathsize; ++ipath )
-	{
-		char* arrpath = _local_paths[ipath];
-		if( string_equal( arrpath, cleanpath ) )
-		{
-			array_erase( _local_paths, ipath );
-			string_deallocate( arrpath );
+	for (ipath = 0, pathsize = array_size(_resource_local_paths); ipath < pathsize; ++ipath) {
+		const string_t local_path = _resource_local_paths[ipath];
+		if (string_equal(STRING_ARGS(local_path), path, length)) {
+			array_erase(_resource_local_paths, ipath);
+			string_deallocate(local_path.str);
 			break;
 		}
 	}
-
-	string_deallocate( cleanpath );
 }
 
-
-stream_t* resource_local_open_static( const uuid_t uuid )
-{
+stream_t*
+resource_local_open_static(const uuid_t uuid) {
 	stream_t* stream = 0;
-	const char* const* paths;
-	unsigned int ipath, pathsize;
-	
-	const char* uuidstr = string_from_uuid_static( uuid );
-	char* thread_buffer = get_thread_path_buffer();
+	size_t ipath, pathsize;
 
-	paths = resource_local_paths();
-	for( ipath = 0, pathsize = array_size( paths ); ipath < pathsize; ++ipath )
-	{
-		char* curpath = string_format_buffer( thread_buffer, FOUNDATION_MAX_PATHLEN, "%s/%2s/%2s/%s", paths[ipath], uuidstr, uuidstr + 2, uuidstr );
-		stream = stream_open( curpath, STREAM_IN );
-		if( stream )
+	string_const_t uuidstr;
+	char buffer[BUILD_MAX_PATHLEN];
+
+	if (!_resource_config.enable_local_cache)
+		return 0;
+
+	uuidstr = string_from_uuid_static(uuid);
+
+	for (ipath = 0, pathsize = array_size(_resource_local_paths); ipath < pathsize; ++ipath) {
+		const string_t local_path = _resource_local_paths[ipath];
+		string_t curpath = string_format(buffer, sizeof(buffer), "%.*s/%2s/%2s/%.*s",
+		                                 STRING_FORMAT(local_path), uuidstr.str, uuidstr.str + 2,
+		                                 STRING_FORMAT(uuidstr));
+		stream = stream_open(STRING_ARGS(curpath), STREAM_IN);
+		if (stream)
 			break;
 	}
 
 	return stream;
 }
 
-
-stream_t* resource_local_open_dynamic( const uuid_t uuid )
-{
+stream_t*
+resource_local_open_dynamic(const uuid_t uuid) {
 	stream_t* stream = 0;
-	const char* const* paths;
-	unsigned int ipath, pathsize;
-	
-	const char* uuidstr = string_from_uuid_static( uuid );
-	char* thread_buffer = get_thread_path_buffer();
+	size_t ipath, pathsize;
 
-	paths = resource_local_paths();
-	for( ipath = 0, pathsize = array_size( paths ); ipath < pathsize; ++ipath )
-	{
-		char* curpath = string_format_buffer( thread_buffer, FOUNDATION_MAX_PATHLEN, "%s/%2s/%2s/%s.blob", paths[ipath], uuidstr, uuidstr + 2, uuidstr );
-		stream = stream_open( curpath, STREAM_IN );
-		if( stream )
+	string_const_t uuidstr;
+	char buffer[BUILD_MAX_PATHLEN];
+
+	if (!_resource_config.enable_local_cache)
+		return 0;
+
+	uuidstr = string_from_uuid_static(uuid);
+
+	for (ipath = 0, pathsize = array_size(_resource_local_paths); ipath < pathsize; ++ipath) {
+		const string_t local_path = _resource_local_paths[ipath];
+		string_t curpath = string_format(buffer, sizeof(buffer), "%.*s/%2s/%2s/%.*s.blob",
+		                                 STRING_FORMAT(local_path), uuidstr.str, uuidstr.str + 2,
+		                                 STRING_FORMAT(uuidstr));
+		stream = stream_open(STRING_ARGS(curpath), STREAM_IN);
+		if (stream)
 			break;
 	}
 
 	return stream;
 }
-
 
 #endif

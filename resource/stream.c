@@ -13,49 +13,53 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #include <resource/resource.h>
 
 #include <foundation/foundation.h>
 
-
-stream_t* resource_stream_open_static( uuid_t res )
-{
+stream_t*
+resource_stream_open_static(const uuid_t res) {
 	stream_t* stream;
 
-	if( resource_remote_need_update_static( res ) )
-		return resource_remote_update_static( res );
-	
-	if( resource_compile_need_update_static( res ) )
-		resource_compile_update_static( res );
+	if (resource_remote_need_update_static(res))
+		return resource_remote_update_static(res);
 
-	stream = resource_local_open_static( res );
-	if( stream )
+	if (resource_compile_need_update_static(res))
+		resource_compile_update_static(res);
+
+	stream = resource_local_open_static(res);
+	if (stream)
 		return stream;
 
-	log_warnf( HASH_RESOURCE, WARNING_RESOURCE, "Unable to open static stream for resource: %s", string_from_uuid_static( res ) );
+	string_const_t uuidstr = string_from_uuid_static(res);
+	log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+	          STRING_CONST("Unable to open static stream for resource: %.*s"),
+	          STRING_FORMAT(uuidstr));
 
 	return 0;
 }
 
-
-stream_t* resource_stream_open_dynamic( uuid_t res )
-{
+stream_t*
+resource_stream_open_dynamic(uuid_t res) {
 	stream_t* stream;
 
-	if( resource_remote_need_update_dynamic( res ) )
-		return resource_remote_update_dynamic( res );
+	if (resource_remote_need_update_dynamic(res))
+		return resource_remote_update_dynamic(res);
 
-	if( resource_compile_need_update_dynamic( res ) )
-		resource_compile_update_dynamic( res );
+	if (resource_compile_need_update_dynamic(res))
+		resource_compile_update_dynamic(res);
 
-	stream = resource_local_open_dynamic( res );
-	if( stream )
+	stream = resource_local_open_dynamic(res);
+	if (stream)
 		return stream;
 
-	log_warnf( HASH_RESOURCE, WARNING_RESOURCE, "Unable to open dynamic stream for resource: %s", string_from_uuid_static( res ) );
+	string_const_t uuidstr = string_from_uuid_static(res);
+	log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+	          STRING_CONST("Unable to open dynamic stream for resource: %.*s"),
+	          STRING_FORMAT(uuidstr));
 
 	return 0;
 }

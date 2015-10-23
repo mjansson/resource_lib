@@ -13,7 +13,7 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #pragma once
@@ -22,9 +22,12 @@
 
 #include <resource/types.h>
 
+RESOURCE_API uuid_t
+resource_event_uuid(const event_t* event);
 
-RESOURCE_API uuid_t            resource_event_uuid( const event_t* event );
+RESOURCE_API void
+resource_event_post(resource_event_id id, uuid_t uuid);
 
-RESOURCE_API void              resource_event_post( resource_event_id id, uuid_t uuid );
-RESOURCE_API event_stream_t*   resource_event_stream( void );
+RESOURCE_API event_stream_t*
+resource_event_stream(void);
 

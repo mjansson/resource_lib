@@ -13,55 +13,45 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #include <resource/remote.h>
 
 #include <foundation/foundation.h>
 
-
 #if RESOURCE_ENABLE_REMOTE_SOURCE
 
+static string_t _remote_url = 0;
 
-static char* _remote_url = 0;
-
-
-const char* resource_remote_url( void )
-{
-	return _remote_url;
+string_const_t
+resource_remote_url(void) {
+	return string_const(STRING_ARGS(_remote_url));
 }
 
-
-int resource_remote_set_url( const char* url )
-{
-	string_deallocate( _remote_url );
-	_remote_url = string_clone( url );
-
-	return 0;
+void
+resource_remote_set_url(const char* url, size_t length) {
+	string_deallocate(_remote_url.str);
+	_remote_url = string_clone(url, length);
 }
 
-
-bool resource_remote_need_update_static( const uuid_t uuid )
-{
+bool
+resource_remote_need_update_static(const uuid_t uuid) {
 	return false;
 }
 
-
-bool resource_remote_need_update_dynamic( const uuid_t uuid )
-{
+bool
+resource_remote_need_update_dynamic(const uuid_t uuid) {
 	return false;
 }
 
-
-stream_t* resource_remote_update_static( const uuid_t uuid )
-{
+stream_t*
+resource_remote_update_static(const uuid_t uuid) {
 	return 0;
 }
 
-
-stream_t* resource_remote_update_dynamic( const uuid_t uuid )
-{
+stream_t*
+resource_remote_update_dynamic(const uuid_t uuid) {
 	return 0;
 }
 

@@ -13,25 +13,30 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #include <resource/bundle.h>
+#include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
-int 
-resource_bundle_load( uuid_t bundle )
-{
+bool
+resource_bundle_load(const uuid_t bundle) {
 #if RESOURCE_ENABLE_REMOTE_SOURCE
 	if (_resource_config.enable_remote_source) {
 	}
 #endif
-	
+
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 	if (_resource_config.enable_local_source) {
 	}
 #endif
-	
-	return 0;
+
+#if RESOURCE_ENABLE_LOCAL_CACHE
+	if (_resource_config.enable_local_cache) {
+	}
+#endif
+
+	return false;
 }

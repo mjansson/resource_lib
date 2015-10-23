@@ -13,39 +13,46 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #include <resource/remote.h>
+#include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
-
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
+bool
+resource_compile_need_update_static(const uuid_t uuid) {
+	if (!_resource_config.enable_local_source)
+		return false;
 
-bool resource_compile_need_update_static( const uuid_t uuid )
-{
 	return false;
 }
 
+bool
+resource_compile_need_update_dynamic(const uuid_t uuid) {
+	if (!_resource_config.enable_local_source)
+		return false;
 
-bool resource_compile_need_update_dynamic( const uuid_t uuid )
-{
 	return false;
 }
 
+bool
+resource_compile_update_static(const uuid_t uuid) {
+	if (!_resource_config.enable_local_source)
+		return false;
 
-bool resource_compile_update_static( const uuid_t uuid )
-{
-	return 0;
+	return false;
 }
 
+bool
+resource_compile_update_dynamic(const uuid_t uuid) {
+	if (!_resource_config.enable_local_source)
+		return false;
 
-bool resource_compile_update_dynamic( const uuid_t uuid )
-{
-	return 0;
+	return false;
 }
-
 
 #endif

@@ -13,7 +13,7 @@
  * https://github.com/rampantpixels/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
- * 
+ *
  */
 
 #pragma once
@@ -22,6 +22,8 @@
 
 #include <resource/types.h>
 
+RESOURCE_API stream_t*
+resource_stream_open_static(const uuid_t res);
 
-RESOURCE_API stream_t*  resource_stream_open_static( uuid_t res, int version );
-RESOURCE_API stream_t*  resource_stream_open_dynamic( uuid_t res, int version );
+RESOURCE_API stream_t*
+resource_stream_open_dynamic(const uuid_t res);
