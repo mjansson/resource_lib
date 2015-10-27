@@ -98,7 +98,7 @@ resource_source_read(resource_source_t* source, stream_t* stream) {
 	while (!stream_eos(stream)) {
 		tick_t timestamp = stream_read_uint64(stream);
 		tick_t key = stream_read_uint64(stream);
-		string_t value = stream_read_line(stream, '\n');
+		string_t value = binary ? stream_read_string(stream) : stream_read_line(stream, '\n');
 		resource_source_set(source, timestamp, key, STRING_ARGS(value));
 		string_deallocate(value.str);
 	}
