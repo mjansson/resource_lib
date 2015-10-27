@@ -45,6 +45,10 @@ main_initialize(void) {
 	memset(&foundation_config, 0, sizeof(foundation_config));
 	memset(&resource_config, 0, sizeof(resource_config));
 
+	resource_config.enable_local_source = true;
+	resource_config.enable_local_cache = true;
+	resource_config.enable_remote_source = true;
+
 	memset(&application, 0, sizeof(application));
 	application.name = string_const(STRING_CONST("resource"));
 	application.short_name = string_const(STRING_CONST("resource"));

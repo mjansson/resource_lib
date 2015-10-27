@@ -80,9 +80,9 @@ resource_module_initialize(resource_config_t config) {
 	}*/
 
 	//Make sure we have at least one way of loading resources
-	if (_resource_config.enable_local_cache ||
-		_resource_config.enable_local_source ||
-		_resource_config.enable_remote_source) {
+	if (!_resource_config.enable_local_cache &&
+		!_resource_config.enable_local_source &&
+		!_resource_config.enable_remote_source) {
 		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("Invalid config, no way of loading resources"));
 		return -1;
 	}

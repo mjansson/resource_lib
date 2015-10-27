@@ -170,6 +170,7 @@ main_initialize(void) {
 
 #if BUILD_MONOLITHIC
 typedef int (*test_run_fn)(void);
+extern int test_source_run(void);
 
 static void*
 test_runner(object_t obj, void* arg) {
@@ -247,7 +248,7 @@ main_run(void* main_arg) {
 #if BUILD_MONOLITHIC
 
 	test_run_fn tests[] = {
-		//test_resource_run,
+		test_source_run,
 		0
 	};
 

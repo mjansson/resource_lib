@@ -1,4 +1,4 @@
-package com.rampantpixels.window.test;
+package com.rampantpixels.resource.test;
 
 import android.os.Bundle;
 import android.app.NativeActivity;

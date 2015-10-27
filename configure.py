@@ -27,6 +27,7 @@ if not target.is_ios() and not target.is_android() and not target.is_tizen():
 includepaths = generator.test_includepaths()
 
 test_cases = [
+  'source'
 ]
 if toolchain.is_monolithic() or target.is_ios() or target.is_android() or target.is_tizen() or target.is_pnacl():
   #Build one fat binary with all test cases

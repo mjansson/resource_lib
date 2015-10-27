@@ -37,8 +37,8 @@ RESOURCE_API void
 resource_source_finalize(resource_source_t* source);
 
 RESOURCE_API void
-resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, const char* value,
-                    size_t length);
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key,
+                    const char* value, size_t length);
 
 RESOURCE_API bool
 resource_source_read(resource_source_t* source, stream_t* stream);
@@ -55,6 +55,9 @@ resource_source_map(resource_source_t* source);
 #define resource_source_deallocate(source) memory_deallocate(source)
 #define resource_source_initialize(source) ((void)sizeof(source))
 #define resource_source_finalize(source) ((void)sizeof(source))
-#define resource_source_read(source, path, length) ((void)sizeof(source)), ((void)sizeof(path)), ((void)sizeof(length)), false
+#define resource_source_set(source, timestamp, key, value, length) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(value)), ((void)sizeof(length))
+#define resource_source_read(source, stream) ((void)sizeof(source)), ((void)sizeof(stream)), false
+#define resource_source_write(source, stream) ((void)sizeof(source)), ((void)sizeof(stream)), false
+#define resource_source_map(source) nullptr
 
 #endif
