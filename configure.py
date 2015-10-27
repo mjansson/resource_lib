@@ -17,7 +17,12 @@ writer = generator.writer
 toolchain = generator.toolchain
 
 resource_lib = generator.lib( module = 'resource', sources = [
-  'bundle.c', 'compile.c', 'event.c', 'local.c', 'remote.m', 'resource.c', 'stream.m', 'version.c' ] )
+  'bundle.c', 'change.c', 'compile.c', 'event.c', 'local.c', 'remote.c', 'resource.c', 'source.c', 'stream.c', 'version.c' ] )
+
+if not target.is_ios() and not target.is_android() and not target.is_tizen():
+  configs = [ config for config in toolchain.configs if config not in [ 'profile', 'deploy' ] ]
+  if not configs == []:
+    generator.bin( 'resource', [ 'main.c' ], 'resource', basepath = 'tools', implicit_deps = [ resource_lib ], libs = [ 'resource', 'foundation' ], configs = configs )
 
 includepaths = generator.test_includepaths()
 

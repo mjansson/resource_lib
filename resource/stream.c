@@ -43,7 +43,7 @@ resource_stream_open_static(const uuid_t res) {
 }
 
 stream_t*
-resource_stream_open_dynamic(uuid_t res) {
+resource_stream_open_dynamic(const uuid_t res) {
 	stream_t* stream;
 
 	if (resource_remote_need_update_dynamic(res))

@@ -56,6 +56,18 @@
 #  define RESOURCE_ENABLE_REMOTE_SOURCE 0
 #endif
 
+/*! Number of changes in a change block */
+#define RESOURCE_CHANGE_BLOCK_SIZE 32
+
+/*! Initial size of change block string data */
+#define RESOURCE_CHANGE_BLOCK_DATA_SIZE 1024
+
+/*! Number of buckets in a change map */
+#define RESOURCE_CHANGE_MAP_BUCKETS 13
+
+/*! Number of initial entries in a change map bucket */
+#define RESOURCE_CHANGE_MAP_BUCKET_SIZE 8
+
 //Make sure we have at least one way of loading resources
 #if !RESOURCE_ENABLE_REMOTE_SOURCE && !RESOURCE_ENABLE_LOCAL_CACHE
 #  error Invalid build configuration, no way of loading resources

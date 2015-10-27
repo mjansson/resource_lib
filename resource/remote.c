@@ -22,7 +22,7 @@
 
 #if RESOURCE_ENABLE_REMOTE_SOURCE
 
-static string_t _remote_url = 0;
+static string_t _remote_url;
 
 string_const_t
 resource_remote_url(void) {

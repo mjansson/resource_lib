@@ -93,7 +93,7 @@ resource_module_initialize(resource_config_t config) {
 }
 
 void
-resource_module_shutdown(void) {
+resource_module_finalize(void) {
 	if (!_resource_module_initialized)
 		return;
 

@@ -402,6 +402,10 @@ main_finalize(void) {
 	thread_detach_jvm();
 #endif
 
+#if BUILD_MONOLITHIC
+	resource_module_finalize();
+#endif
+
 	foundation_finalize();
 }
 
