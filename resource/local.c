@@ -17,6 +17,7 @@
  */
 
 #include <resource/local.h>
+#include <resource/stream.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -82,20 +83,14 @@ stream_t*
 resource_local_open_static(const uuid_t uuid) {
 	stream_t* stream = 0;
 	size_t ipath, pathsize;
-
-	string_const_t uuidstr;
 	char buffer[BUILD_MAX_PATHLEN];
 
 	if (!_resource_config.enable_local_cache)
 		return 0;
 
-	uuidstr = string_from_uuid_static(uuid);
-
 	for (ipath = 0, pathsize = array_size(_resource_local_paths); ipath < pathsize; ++ipath) {
-		const string_t local_path = _resource_local_paths[ipath];
-		string_t curpath = string_format(buffer, sizeof(buffer), "%.*s/%2s/%2s/%.*s",
-		                                 STRING_FORMAT(local_path), uuidstr.str, uuidstr.str + 2,
-		                                 STRING_FORMAT(uuidstr));
+		string_t curpath = resource_stream_make_path(buffer, sizeof(buffer),
+		                                             STRING_ARGS(_resource_local_paths[ipath]), uuid);
 		stream = stream_open(STRING_ARGS(curpath), STREAM_IN);
 		if (stream)
 			break;
@@ -108,20 +103,15 @@ stream_t*
 resource_local_open_dynamic(const uuid_t uuid) {
 	stream_t* stream = 0;
 	size_t ipath, pathsize;
-
-	string_const_t uuidstr;
 	char buffer[BUILD_MAX_PATHLEN];
 
 	if (!_resource_config.enable_local_cache)
 		return 0;
 
-	uuidstr = string_from_uuid_static(uuid);
-
 	for (ipath = 0, pathsize = array_size(_resource_local_paths); ipath < pathsize; ++ipath) {
-		const string_t local_path = _resource_local_paths[ipath];
-		string_t curpath = string_format(buffer, sizeof(buffer), "%.*s/%2s/%2s/%.*s.blob",
-		                                 STRING_FORMAT(local_path), uuidstr.str, uuidstr.str + 2,
-		                                 STRING_FORMAT(uuidstr));
+		string_t curpath = resource_stream_make_path(buffer, sizeof(buffer),
+		                                             STRING_ARGS(_resource_local_paths[ipath]), uuid);
+		curpath = string_append(STRING_ARGS(curpath), sizeof(buffer), STRING_CONST(".blob"));
 		stream = stream_open(STRING_ARGS(curpath), STREAM_IN);
 		if (stream)
 			break;

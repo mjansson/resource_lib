@@ -61,7 +61,53 @@ DECLARE_TEST(source, set) {
 
 	tick_t timestamp = time_system();
 	resource_source_set(&source, timestamp, HASH_TEST, STRING_CONST("test"));
-	EXPECT_NE(hashmap_lookup(map, HASH_TEST), nullptr);
+
+	resource_change_t* change = hashmap_lookup(map, HASH_TEST);
+	EXPECT_NE(change, nullptr);
+	EXPECT_EQ(change->timestamp, timestamp);
+	EXPECT_EQ(change->hash, HASH_TEST);
+	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("test")));
+
+	thread_sleep(100);
+
+	resource_source_set(&source, time_system(), HASH_TEST, STRING_CONST("foobar"));
+
+	change = hashmap_lookup(map, HASH_TEST);
+	EXPECT_NE(change, nullptr);
+	EXPECT_GT(change->timestamp, timestamp);
+	EXPECT_EQ(change->hash, HASH_TEST);
+	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("foobar")));
+
+	size_t iloop, lsize;
+	char buffer[1024];
+	for (iloop = 0, lsize = 8192; iloop < lsize; ++iloop) {
+		hash_t hash = random64();
+		timestamp = time_system();
+		string_const_t rndstr = string_const(buffer, random32_range(0, sizeof(buffer)));
+		resource_source_set(&source, timestamp, hash, STRING_ARGS(rndstr));
+
+		change = hashmap_lookup(map, hash);
+		EXPECT_NE(change, nullptr);
+		EXPECT_EQ(change->timestamp, timestamp);
+		EXPECT_EQ(change->hash, hash);
+	}
+
+	size_t allocated = 0;
+	size_t used = 0;
+	resource_change_block_t* block = &source.first;
+	while (block) {
+		resource_change_data_t* data = block->current_data;
+		while (data) {
+			allocated += data->size;
+			used += data->used;
+			data = data->next;
+		}
+		block = block->next;
+	}
+
+	//log_infof(HASH_TEST, STRING_CONST("Used %" PRIsize "/%" PRIsize " (%.0" PRIREAL "%%)"),
+	//          used, allocated, REAL_C(100.0) * ((real)used / (real)allocated));
+	EXPECT_GT((real)used / (real)allocated, REAL_C(0.75));
 
 #endif
 

@@ -26,7 +26,7 @@
 resource_change_data_t*
 resource_change_data_allocate(size_t size) {
 	resource_change_data_t* data = memory_allocate(HASH_RESOURCE,
-	                                               size + sizeof(resource_change_data_t*), 0,
+	                                               size + sizeof(resource_change_data_t), 0,
 	                                               MEMORY_PERSISTENT);
 	resource_change_data_initialize(data, pointer_offset(data, sizeof(resource_change_data_t)), size);
 	return data;

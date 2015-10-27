@@ -24,7 +24,8 @@
 typedef struct {
 	bool              display_help;
 	int               binary;
-	string_const_t    path;
+	string_const_t    source_path;
+	uuid_t            uuid;
 	string_const_t    key;
 	string_const_t    value;
 } resource_input_t;
@@ -72,6 +73,8 @@ main_run(void* main_arg) {
 	resource_source_t source;
 	stream_t* stream;
 	bool binary = false;
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t file_path;
 	resource_input_t input = resource_parse_command_line(environment_command_line());
 
 	FOUNDATION_UNUSED(main_arg);
@@ -83,10 +86,10 @@ main_run(void* main_arg) {
 		goto exit;
 	}
 
-	log_infof(HASH_RESOURCE, STRING_CONST("Set '%.*s' to '%.*s' in '%.*s'"),
-	          STRING_FORMAT(input.key), STRING_FORMAT(input.value), STRING_FORMAT(input.path));
+	file_path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(input.source_path),
+	                                      input.uuid);
 
-	stream = stream_open(STRING_ARGS(input.path), STREAM_IN);
+	stream = stream_open(STRING_ARGS(file_path), STREAM_IN);
 	if (stream) {
 		stream_determine_binary_mode(stream, 16);
 		binary = stream_is_binary(stream);
@@ -98,7 +101,7 @@ main_run(void* main_arg) {
 
 	resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), STRING_ARGS(input.value));
 
-	stream = stream_open(STRING_ARGS(input.path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+	stream = stream_open(STRING_ARGS(file_path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (stream) {
 		if (input.binary)
 			binary = (input.binary > 0);
@@ -106,6 +109,11 @@ main_run(void* main_arg) {
 		stream_set_binary(stream, binary);
 		resource_source_write(&source, stream);
 		stream_deallocate(stream);
+	}
+	else {
+		log_warnf(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to open output file: %.*s"),
+		          STRING_FORMAT(file_path));
+		result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
 	}
 
 exit:
@@ -132,9 +140,15 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	for (arg = 1, asize = array_size(cmdline); arg < asize; ++arg) {
 		if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--help")))
 			input.display_help = true;
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--file"))) {
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--source"))) {
 			if (arg < asize - 1)
-				input.path = cmdline[++arg];
+				input.source_path = cmdline[++arg];
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--uuid"))) {
+			if (arg < asize - 1) {
+				++arg;
+				input.uuid = string_to_uuid(STRING_ARGS(cmdline[arg]));
+			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--set"))) {
 			if (arg < asize - 2) {
@@ -160,7 +174,7 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	}
 	error_context_pop();
 
-	if (!input.path.length || !input.key.length)
+	if (!input.source_path.length || uuid_is_null(input.uuid))
 		input.display_help = true;
 
 	return input;
@@ -172,11 +186,12 @@ resource_print_usage(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_info(0, STRING_CONST(
 	             "resource usage:\n"
-	             "  resource --file <path> --set <key> <value> [--debug] [--help] [--]\n"
+	             "  resource --source <path> --uuid <uuid> [--set <key> <value>] [--debug] [--help] [--]\n"
 	             "    Arguments:\n"
-	             "      --file <path>                Operate on resource file given by <path>\n"
-	             "      --set <key> <value>          Set <key> to <value> in resource\n"
+	             "      --source <path>              Operate on resource file given by <path>\n"
+	             "      --uuid <uuid>                Resource UUID\n"
 	             "    Optional arguments:\n"
+	             "      --set <key> <value>          Set <key> to <value> in resource\n"
 	             "      --binary                     Write binary file\n"
 	             "      --ascii                      Write ASCII file (default)\n"
 	             "      --debug                      Enable debug output\n"
