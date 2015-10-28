@@ -20,6 +20,7 @@
 
 #include <foundation/platform.h>
 
+#include <resource/build.h>
 #include <resource/types.h>
 #include <resource/hashstrings.h>
 

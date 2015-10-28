@@ -22,7 +22,7 @@
 
 #include <resource/types.h>
 
-#if BUILD_ENABLE_LOCAL_SOURCE
+#if RESOURCE_ENABLE_LOCAL_SOURCE
 
 RESOURCE_API bool
 resource_import(const char* path, size_t length);
@@ -36,7 +36,7 @@ resource_import_unregister(resource_import_fn importer);
 #else
 
 #define resource_import(path, length) ((void)sizeof(path)), ((void)sizeof(length))
-#define resource_import_register(importer) ((void)sizeof(importer))
+#define resource_import_register(importer) do { /* */ } while(0)
 #define resource_import_unregister(importer) ((void)sizeof(importer))
 
 #endif

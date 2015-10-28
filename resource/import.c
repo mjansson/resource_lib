@@ -21,7 +21,7 @@
 
 #include <foundation/foundation.h>
 
-#if BUILD_ENABLE_LOCAL_SOURCE
+#if RESOURCE_ENABLE_LOCAL_SOURCE
 
 static resource_import_fn* _resource_importers;
 
@@ -30,6 +30,11 @@ resource_import(const char* path, size_t length) {
 	size_t iimp, isize;
 	bool was_imported = false;
 	stream_t* stream = stream_open(path, length, STREAM_IN);
+	if (!stream) {
+		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+		          STRING_CONST("Unable to open input stream for importing: %.*s"), (int)length, path);
+		return false;
+	}
 	for (iimp = 0, isize = array_size(_resource_importers); iimp != isize; ++iimp) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
 		was_imported |= (_resource_importers[iimp](stream) == 0);

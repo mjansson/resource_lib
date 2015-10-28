@@ -154,11 +154,12 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	}
 	error_context_pop();
 
-	if (!input.source_path.length) {
+	bool already_help = input.display_help;
+	if (!already_help && !input.source_path.length) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input.display_help = true;
 	}
-	if (uuid_is_null(input.uuid)) {
+	if (!already_help && uuid_is_null(input.uuid)) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
 		input.display_help = true;
 	}
@@ -172,7 +173,7 @@ resource_print_usage(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_info(0, STRING_CONST(
 	             "resource usage:\n"
-	             "  resource --source <path> --uuid <uuid> [--set <key> <value>] [--debug] [--help] [--]\n"
+	             "  resource --source <path> --uuid <uuid> [--set <key> <value>] [--binary] [--ascii] [--debug] [--help] [--]\n"
 	             "    Arguments:\n"
 	             "      --source <path>              Operate on resource file given by <path>\n"
 	             "      --uuid <uuid>                Resource UUID\n"
