@@ -1,4 +1,4 @@
-/* internal.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* import.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -19,12 +19,24 @@
 #pragma once
 
 #include <foundation/platform.h>
-#include <foundation/types.h>
-#include <foundation/internal.h>
 
 #include <resource/types.h>
-#include <resource/hashstrings.h>
 
-RESOURCE_EXTERN event_stream_t* _resource_event_stream;
-RESOURCE_EXTERN resource_config_t _resource_config;
-RESOURCE_EXTERN string_t _resource_source_path;
+#if BUILD_ENABLE_LOCAL_SOURCE
+
+RESOURCE_API bool
+resource_import(const char* path, size_t length);
+
+RESOURCE_API void
+resource_import_register(resource_import_fn importer);
+
+RESOURCE_API void
+resource_import_unregister(resource_import_fn importer);
+
+#else
+
+#define resource_import(path, length) ((void)sizeof(path)), ((void)sizeof(length))
+#define resource_import_register(importer) ((void)sizeof(importer))
+#define resource_import_unregister(importer) ((void)sizeof(importer))
+
+#endif

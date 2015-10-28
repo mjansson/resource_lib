@@ -57,12 +57,14 @@ main_initialize(void) {
 	application.flags = APPLICATION_UTILITY;
 
 	log_enable_prefix(false);
-	log_set_suppress(0, ERRORLEVEL_ERROR);
+	log_set_suppress(0, ERRORLEVEL_WARNING);
 
 	if ((ret = foundation_initialize(memory_system_malloc(), application, foundation_config)) < 0)
 		return ret;
 	if ((ret = resource_module_initialize(resource_config)) < 0)
 		return ret;
+
+	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_INFO);
 
 	return 0;
 }
@@ -71,10 +73,6 @@ int
 main_run(void* main_arg) {
 	int result = RESOURCE_RESULT_OK;
 	resource_source_t source;
-	stream_t* stream;
-	bool binary = false;
-	char buffer[BUILD_MAX_PATHLEN];
-	string_t file_path;
 	resource_input_t input = resource_parse_command_line(environment_command_line());
 
 	FOUNDATION_UNUSED(main_arg);
@@ -86,33 +84,12 @@ main_run(void* main_arg) {
 		goto exit;
 	}
 
-	file_path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(input.source_path),
-	                                      input.uuid);
+	resource_source_set_path(STRING_ARGS(input.source_path));
 
-	stream = stream_open(STRING_ARGS(file_path), STREAM_IN);
-	if (stream) {
-		stream_determine_binary_mode(stream, 16);
-		binary = stream_is_binary(stream);
-		log_infof(HASH_RESOURCE, STRING_CONST("Input file is %s"), binary ? "binary" : "ascii");
-		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
-		resource_source_read(&source, stream);
-		stream_deallocate(stream);
-	}
-
+	resource_source_read(&source, input.uuid);
 	resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), STRING_ARGS(input.value));
-
-	stream = stream_open(STRING_ARGS(file_path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
-	if (stream) {
-		if (input.binary)
-			binary = (input.binary > 0);
-		log_infof(HASH_RESOURCE, STRING_CONST("Output file is %s"), binary ? "binary" : "ascii");
-		stream_set_binary(stream, binary);
-		resource_source_write(&source, stream);
-		stream_deallocate(stream);
-	}
-	else {
-		log_warnf(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to open output file: %.*s"),
-		          STRING_FORMAT(file_path));
+	if (!resource_source_write(&source, input.uuid, input.binary)) {
+		log_warn(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to write output file"));
 		result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
 	}
 
@@ -136,7 +113,6 @@ resource_parse_command_line(const string_const_t* cmdline) {
 
 	memset(&input, 0, sizeof(input));
 
-	error_context_push(STRING_CONST("parsing command line"), STRING_CONST(""));
 	for (arg = 1, asize = array_size(cmdline); arg < asize; ++arg) {
 		if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--help")))
 			input.display_help = true;
@@ -148,6 +124,9 @@ resource_parse_command_line(const string_const_t* cmdline) {
 			if (arg < asize - 1) {
 				++arg;
 				input.uuid = string_to_uuid(STRING_ARGS(cmdline[arg]));
+				if (uuid_is_null(input.uuid))
+					log_warnf(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Invalid UUID: %.*s"),
+					          STRING_FORMAT(cmdline[arg]));
 			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--set"))) {
@@ -160,10 +139,11 @@ resource_parse_command_line(const string_const_t* cmdline) {
 			input.binary = 1;
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--ascii"))) {
-			input.binary = -1;
+			input.binary = 0;
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
+			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_NONE);
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
 			break; //Stop parsing cmdline options
@@ -174,8 +154,14 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	}
 	error_context_pop();
 
-	if (!input.source_path.length || uuid_is_null(input.uuid))
+	if (!input.source_path.length) {
+		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input.display_help = true;
+	}
+	if (uuid_is_null(input.uuid)) {
+		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
+		input.display_help = true;
+	}
 
 	return input;
 }

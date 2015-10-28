@@ -22,23 +22,6 @@
 
 #include <foundation/foundation.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
-string_t _resource_local_source;
-
-bool
-resource_local_set_source(const char* path, size_t length) {
-	if (!_resource_config.enable_local_source)
-		return false;
-
-	string_deallocate(_resource_local_source.str);
-	_resource_local_source = string_clone(path, length);
-
-	return true;
-}
-
-#endif
-
 #if RESOURCE_ENABLE_LOCAL_CACHE
 
 static string_t* _resource_local_paths = 0;

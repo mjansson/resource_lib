@@ -28,6 +28,8 @@ typedef enum resource_event_id {
 	RESOURCEEVENT_UPDATE_DYNAMIC
 } resource_event_id;
 
+typedef int (* resource_import_fn)(stream_t*);
+
 typedef struct resource_base_t              resource_base_t;
 typedef struct resource_config_t            resource_config_t;
 typedef struct resource_event_t             resource_event_t;

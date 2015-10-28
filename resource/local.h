@@ -22,17 +22,6 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
-RESOURCE_API bool
-resource_local_set_source(const char* path, size_t length);
-
-#else
-
-#define resource_local_set_source(path) ((void)sizeof(path)), 0
-
-#endif
-
 #if RESOURCE_ENABLE_LOCAL_CACHE
 
 RESOURCE_API const string_const_t*
@@ -54,7 +43,6 @@ RESOURCE_API stream_t*
 resource_local_open_dynamic(const uuid_t uuid);
 
 #else
-
 
 #define resource_local_paths() ((const string_const_t*)0)
 #define resource_local_set_paths(paths, num) ((void)sizeof(paths)), ((void)sizeof(num))

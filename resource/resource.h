@@ -30,6 +30,7 @@
 #include <resource/remote.h>
 #include <resource/change.h>
 #include <resource/source.h>
+#include <resource/import.h>
 
 RESOURCE_API int
 resource_module_initialize(resource_config_t config);

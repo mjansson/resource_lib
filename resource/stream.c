@@ -68,7 +68,7 @@ string_t
 resource_stream_make_path(char* buffer, size_t capacity, const char* base, size_t base_length,
                           const uuid_t res) {
 	string_const_t uuidstr = string_from_uuid_static(res);
-	return string_format(buffer, capacity, STRING_CONST("%.*s/%2s/%2s/%.*s"),
+	return string_format(buffer, capacity, STRING_CONST("%.*s/%.2s/%.2s/%.*s"),
 	                     (int)base_length, base, uuidstr.str, uuidstr.str + 2,
 	                     STRING_FORMAT(uuidstr));
 }

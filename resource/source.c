@@ -18,11 +18,33 @@
 
 #include <resource/source.h>
 #include <resource/change.h>
+#include <resource/stream.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
+
+static char _resource_source_path_buffer[BUILD_MAX_PATHLEN];
+string_t _resource_source_path;
+
+bool
+resource_source_set_path(const char* path, size_t length) {
+	if (!_resource_config.enable_local_source)
+		return false;
+	_resource_source_path = string_copy(_resource_source_path_buffer,
+	                                    sizeof(_resource_source_path_buffer), path, length);
+	_resource_source_path = path_clean(STRING_ARGS(_resource_source_path),
+	                                   sizeof(_resource_source_path_buffer));
+	_resource_source_path = path_absolute(STRING_ARGS(_resource_source_path),
+	                                      sizeof(_resource_source_path_buffer));
+	return true;
+}
+
+string_const_t
+resource_source_path(void) {
+	return string_to_const(_resource_source_path);
+}
 
 resource_source_t*
 resource_source_allocate(void) {
@@ -92,9 +114,27 @@ resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, con
 		hashmap_insert((hashmap_t*)&source->merged, change->hash, change);
 }
 
+static stream_t*
+resource_source_open(const uuid_t uuid, unsigned int mode) {
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
+	                                          STRING_ARGS(_resource_source_path),
+	                                          uuid);
+	if (mode & STREAM_OUT) {
+		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
+		fs_make_directory(STRING_ARGS(dir_path));
+	}
+	return stream_open(STRING_ARGS(path), mode);
+}
+
 bool
-resource_source_read(resource_source_t* source, stream_t* stream) {
+resource_source_read(resource_source_t* source, const uuid_t uuid) {
+	stream_t* stream = resource_source_open(uuid, STREAM_IN);
+	if (!stream)
+		return false;
+	stream_determine_binary_mode(stream, 16);
 	const bool binary = stream_is_binary(stream);
+
 	while (!stream_eos(stream)) {
 		tick_t timestamp = stream_read_uint64(stream);
 		tick_t key = stream_read_uint64(stream);
@@ -103,13 +143,19 @@ resource_source_read(resource_source_t* source, stream_t* stream) {
 		string_deallocate(value.str);
 	}
 
+	stream_deallocate(stream);
+
 	return true;
 }
 
 bool
-resource_source_write(resource_source_t* source, stream_t* stream) {
-	const bool binary = stream_is_binary(stream);
+resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary) {
 	const char separator = ' ';
+	stream_t* stream = resource_source_open(uuid, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+	if (!stream)
+		return false;
+	stream_set_binary(stream, binary);
+
 	resource_change_block_t* block = &source->first;
 	while (block) {
 		size_t ichg, chgsize;
@@ -127,6 +173,8 @@ resource_source_write(resource_source_t* source, stream_t* stream) {
 		}
 		block = block->next;
 	}
+
+	stream_deallocate(stream);
 	return true;
 }
 
