@@ -1,4 +1,4 @@
-/* resource.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* platform.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -20,28 +20,11 @@
 
 #include <foundation/platform.h>
 
-#include <resource/build.h>
 #include <resource/types.h>
-#include <resource/hashstrings.h>
 
-#include <resource/stream.h>
-#include <resource/bundle.h>
-#include <resource/compile.h>
-#include <resource/local.h>
-#include <resource/remote.h>
-#include <resource/change.h>
-#include <resource/source.h>
-#include <resource/import.h>
-#include <resource/platform.h>
-
-RESOURCE_API int
-resource_module_initialize(resource_config_t config);
-
-RESOURCE_API void
-resource_module_finalize(void);
-
+/*! CHeck if platform is more specific than reference
+\param platform Platform
+\param reference Reference
+\return true if platform is more specific than reference, false if not */
 RESOURCE_API bool
-resource_module_is_initialized(void);
-
-RESOURCE_API version_t
-resource_module_version(void);
+resource_platform_is_more_specific(uint64_t platform, uint64_t reference);

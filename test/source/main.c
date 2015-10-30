@@ -51,18 +51,26 @@ test_source_finalize(void) {
 }
 
 DECLARE_TEST(source, set) {
+	hashmap_fixed_t fixedmap;
+	hashmap_t* map;
 	resource_source_t source;
+	resource_change_t* change;
+
+	map = (hashmap_t*)&fixedmap;
+	
 	resource_source_initialize(&source);
+	hashmap_initialize(map, sizeof(fixedmap.bucket)/sizeof(fixedmap.bucket[0]), 8);
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
-	hashmap_t* map = resource_source_map(&source);
+	resource_source_map(&source, 0, map);
 	EXPECT_EQ(hashmap_lookup(map, HASH_TEST), nullptr);
 
 	tick_t timestamp = time_system();
-	resource_source_set(&source, timestamp, HASH_TEST, STRING_CONST("test"));
+	resource_source_set(&source, timestamp, HASH_TEST, 0, STRING_CONST("test"));
 
-	resource_change_t* change = hashmap_lookup(map, HASH_TEST);
+	resource_source_map(&source, 0, map);
+	change = hashmap_lookup(map, HASH_TEST);
 	EXPECT_NE(change, nullptr);
 	EXPECT_EQ(change->timestamp, timestamp);
 	EXPECT_EQ(change->hash, HASH_TEST);
@@ -70,8 +78,9 @@ DECLARE_TEST(source, set) {
 
 	thread_sleep(100);
 
-	resource_source_set(&source, time_system(), HASH_TEST, STRING_CONST("foobar"));
+	resource_source_set(&source, time_system(), HASH_TEST, 0, STRING_CONST("foobar"));
 
+	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, HASH_TEST);
 	EXPECT_NE(change, nullptr);
 	EXPECT_GT(change->timestamp, timestamp);
@@ -84,8 +93,9 @@ DECLARE_TEST(source, set) {
 		hash_t hash = random64();
 		timestamp = time_system();
 		string_const_t rndstr = string_const(buffer, random32_range(0, sizeof(buffer)));
-		resource_source_set(&source, timestamp, hash, STRING_ARGS(rndstr));
+		resource_source_set(&source, timestamp, hash, 0, STRING_ARGS(rndstr));
 
+		resource_source_map(&source, 0, map);
 		change = hashmap_lookup(map, hash);
 		EXPECT_NE(change, nullptr);
 		EXPECT_EQ(change->timestamp, timestamp);

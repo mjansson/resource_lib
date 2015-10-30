@@ -44,7 +44,14 @@ resource_source_finalize(resource_source_t* source);
 
 RESOURCE_API void
 resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key,
-                    const char* value, size_t length);
+                    uint64_t platform, const char* value, size_t length);
+
+RESOURCE_API void
+resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
+                      uint64_t platform);
+
+RESOURCE_API void
+resource_source_collapse_history(resource_source_t* source);
 
 RESOURCE_API bool
 resource_source_read(resource_source_t* source, const uuid_t uuid);
@@ -52,8 +59,8 @@ resource_source_read(resource_source_t* source, const uuid_t uuid);
 RESOURCE_API bool
 resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary);
 
-RESOURCE_API hashmap_t*
-resource_source_map(resource_source_t* source);
+RESOURCE_API void
+resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map);
 
 #else
 

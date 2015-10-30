@@ -26,6 +26,7 @@ typedef struct {
 	int               binary;
 	string_const_t    source_path;
 	uuid_t            uuid;
+	uint64_t          platform;
 	string_const_t    key;
 	string_const_t    value;
 } resource_input_t;
@@ -87,7 +88,8 @@ main_run(void* main_arg) {
 	resource_source_set_path(STRING_ARGS(input.source_path));
 
 	resource_source_read(&source, input.uuid);
-	resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), STRING_ARGS(input.value));
+	resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), input.platform,
+	                    STRING_ARGS(input.value));
 	if (!resource_source_write(&source, input.uuid, input.binary)) {
 		log_warn(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to write output file"));
 		result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
@@ -127,6 +129,21 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				if (uuid_is_null(input.uuid))
 					log_warnf(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Invalid UUID: %.*s"),
 					          STRING_FORMAT(cmdline[arg]));
+			}
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--platform"))) {
+			if (arg < asize - 1) {
+				bool hex = false;
+				string_const_t value = cmdline[++arg];
+				if ((value.length > 2) && string_equal(value.str, 2, STRING_CONST("0x"))) {
+					value.str += 2;
+					value.length -=2;
+					hex = true;
+				}
+				else if (string_find_first_not_of(STRING_ARGS(cmdline[arg]), STRING_CONST("0123456789"), 0) != STRING_NPOS) {
+					hex = true;
+				}
+				input.platform = string_to_uint64(STRING_ARGS(value), hex);
 			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--set"))) {
@@ -179,6 +196,7 @@ resource_print_usage(void) {
 	             "      --uuid <uuid>                Resource UUID\n"
 	             "    Optional arguments:\n"
 	             "      --set <key> <value>          Set <key> to <value> in resource\n"
+	             "      --platform <id>              Platform specifier"
 	             "      --binary                     Write binary file\n"
 	             "      --ascii                      Write ASCII file (default)\n"
 	             "      --debug                      Enable debug output\n"

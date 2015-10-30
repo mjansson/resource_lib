@@ -69,7 +69,9 @@ struct resource_change_t {
 	tick_t timestamp;
 	/*! Key hash */
 	hash_t hash;
-	/*! Value */
+	/*! Platform */
+	uint64_t platform;
+	/*! Value (null string implies value is unset) */
 	string_const_t value;
 };
 
@@ -108,11 +110,6 @@ struct resource_change_block_t {
 	resource_change_block_t* next;
 };
 
-/*! Resource change hashmap */
-struct resource_change_map_t {
-	FOUNDATION_DECLARE_HASHMAP(RESOURCE_CHANGE_MAP_BUCKETS);
-};
-
 /*! Representation of data of an object as a timestamped
 key-value store */
 struct resource_source_t {
@@ -120,8 +117,4 @@ struct resource_source_t {
 	resource_change_block_t first;
 	/*! Current block */
 	resource_change_block_t* current;
-	/*! Resulting data of merged change,
-	as a key-value store where keys are hashes and the
-	data are resource_change_t timestamped entries */
-	resource_change_map_t merged;
 };

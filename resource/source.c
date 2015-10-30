@@ -19,6 +19,7 @@
 #include <resource/source.h>
 #include <resource/change.h>
 #include <resource/stream.h>
+#include <resource/platform.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -65,19 +66,16 @@ void
 resource_source_initialize(resource_source_t* source) {
 	resource_change_block_initialize(&source->first);
 	source->current = &source->first;
-	hashmap_initialize((hashmap_t*)&source->merged, RESOURCE_CHANGE_MAP_BUCKETS,
-	                   RESOURCE_CHANGE_MAP_BUCKET_SIZE);
 }
 
 void
 resource_source_finalize(resource_source_t* source) {
 	resource_change_block_finalize(&source->first);
-	hashmap_finalize((hashmap_t*)&source->merged);
 }
 
 void
-resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, const char* value,
-                    size_t length) {
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
+                    const char* value, size_t length) {
 	resource_change_block_t* block = source->current;
 	resource_change_t* change = block->changes + block->used++;
 	if (block->used == RESOURCE_CHANGE_BLOCK_SIZE) {
@@ -105,13 +103,29 @@ resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, con
 
 	change->timestamp = timestamp;
 	change->hash = key;
+	change->platform = platform;
 	change->value = string_const(STRING_ARGS(value_str));
 
 	data->used += length;
+}
 
-	resource_change_t* stored = hashmap_lookup((hashmap_t*)&source->merged, change->hash);
-	if (!stored || (stored->timestamp < change->timestamp))
-		hashmap_insert((hashmap_t*)&source->merged, change->hash, change);
+void
+resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform) {
+	resource_change_block_t* block = source->current;
+	resource_change_t* change = block->changes + block->used++;
+	if (block->used == RESOURCE_CHANGE_BLOCK_SIZE) {
+		block->next = resource_change_block_allocate();
+		source->current = block->next;
+	}
+
+	change->timestamp = timestamp;
+	change->hash = key;
+	change->platform = platform;
+	change->value = string_const(0, 0);
+}
+
+void resource_source_collapse_history(resource_source_t* source) {
+	//...
 }
 
 static stream_t*
@@ -129,6 +143,8 @@ resource_source_open(const uuid_t uuid, unsigned int mode) {
 
 bool
 resource_source_read(resource_source_t* source, const uuid_t uuid) {
+	const char op_set = '=';
+	const char op_unset = '-';
 	stream_t* stream = resource_source_open(uuid, STREAM_IN);
 	if (!stream)
 		return false;
@@ -136,11 +152,19 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 	const bool binary = stream_is_binary(stream);
 
 	while (!stream_eos(stream)) {
+		char op;
 		tick_t timestamp = stream_read_uint64(stream);
 		tick_t key = stream_read_uint64(stream);
-		string_t value = binary ? stream_read_string(stream) : stream_read_line(stream, '\n');
-		resource_source_set(source, timestamp, key, STRING_ARGS(value));
-		string_deallocate(value.str);
+		uint64_t platform = stream_read_uint64(stream);
+		stream_read(stream, &op, 1);
+		if (op == op_unset) {
+			resource_source_unset(source, timestamp, key, platform);
+		}
+		else {
+			string_t value = binary ? stream_read_string(stream) : stream_read_line(stream, '\n');
+			resource_source_set(source, timestamp, key, platform, STRING_ARGS(value));
+			string_deallocate(value.str);
+		}
 	}
 
 	stream_deallocate(stream);
@@ -151,6 +175,8 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 bool
 resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary) {
 	const char separator = ' ';
+	const char op_set = '=';
+	const char op_unset = '-';
 	stream_t* stream = resource_source_open(uuid, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (!stream)
 		return false;
@@ -167,7 +193,18 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 			stream_write_uint64(stream, change->hash);
 			if (!binary)
 				stream_write(stream, &separator, 1);
-			stream_write_string(stream, STRING_ARGS(change->value));
+			stream_write_uint64(stream, change->platform);
+			if (!binary)
+				stream_write(stream, &separator, 1);
+			if (change->value.str) {
+				stream_write(stream, &op_set, 1);
+				if (!binary)
+					stream_write(stream, &separator, 1);
+				stream_write_string(stream, STRING_ARGS(change->value));
+			}
+			else {
+				stream_write(stream, &op_unset, 1);
+			}
 			if (!binary)
 				stream_write_endl(stream);
 		}
@@ -178,9 +215,51 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	return true;
 }
 
-hashmap_t*
-resource_source_map(resource_source_t* source) {
-	return (hashmap_t*)&source->merged;
+void
+resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map) {
+
+	//Build an array of platform specific changes for each key
+	hashmap_clear(map);
+	resource_change_block_t* block = &source->first;
+	while (block) {
+		size_t ichg, chgsize;
+		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
+			resource_change_t* change = block->changes + ichg;
+			resource_change_t** maparr = hashmap_lookup(map, change->hash);
+			size_t imap, msize;
+			for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
+				if (maparr[imap]->platform == change->platform) {
+					if (maparr[imap]->timestamp < change->timestamp)
+						maparr[imap] = change;
+					break;
+				}
+			}
+			if (imap == msize) {
+				array_push(maparr, change);
+				hashmap_insert(map, change->hash, maparr);
+			}
+		}
+		block = block->next;
+	}
+
+	//Then collapse change array for each key to most specific platform
+	size_t ibucket, bsize;
+	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+		size_t inode, nsize;
+		hashmap_node_t* bucket = map->bucket[ibucket];
+		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
+			resource_change_t** maparr = bucket[inode].value;
+			resource_change_t* best = maparr[0];
+			size_t imap, msize;
+			for (imap = 1, msize = array_size(maparr); imap < msize; ++imap) {
+				resource_change_t* change = maparr[imap];
+				if (resource_platform_is_more_specific(change->platform, best->platform))
+					best = change;
+			}
+			array_deallocate(maparr);
+			bucket[inode].value = best;
+		}
+	}
 }
 
 #endif
