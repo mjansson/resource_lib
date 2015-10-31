@@ -37,6 +37,8 @@ resource_bundle_load(const uuid_t bundle) {
 	if (_resource_config.enable_local_cache) {
 	}
 #endif
+	
+	FOUNDATION_UNUSED(bundle);
 
 	return false;
 }

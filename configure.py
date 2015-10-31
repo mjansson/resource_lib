@@ -58,8 +58,8 @@ else:
   #Build one binary per test case
   generator.bin( module = 'all', sources = [ 'main.c' ], binname = 'test-all', basepath = 'test', implicit_deps = [ resource_lib ], libs = [ 'resource', 'foundation' ], includepaths = includepaths )
   for test in test_cases:
-    if target.is_macosx():
-      test_resources = [ os.path.join( 'osx', item ) for item in [ 'test-' + test + '.plist', 'Images.xcassets', 'test-' + test + '.xib' ] ]
-      generator.app( module = test, sources = [ 'main.c' ], binname = 'test-' + test, basepath = 'test', implicit_deps = [ resource_lib ], libs = [ 'test', 'resource', 'foundation' ], resources = test_resources, includepaths = includepaths )
-    else:
-      generator.bin( module = test, sources = [ 'main.c' ], binname = 'test-' + test, basepath = 'test', implicit_deps = [ resource_lib ], libs = [ 'test', 'resource', 'foundation' ], includepaths = includepaths )
+    #if target.is_macosx():
+    #  test_resources = [ os.path.join( 'osx', item ) for item in [ 'test-' + test + '.plist', 'Images.xcassets', 'test-' + test + '.xib' ] ]
+    #  generator.app( module = test, sources = [ 'main.c' ], binname = 'test-' + test, basepath = 'test', implicit_deps = [ resource_lib ], libs = [ 'test', 'resource', 'foundation' ], resources = test_resources, includepaths = includepaths )
+    #else:
+    generator.bin( module = test, sources = [ 'main.c' ], binname = 'test-' + test, basepath = 'test', implicit_deps = [ resource_lib ], libs = [ 'test', 'resource', 'foundation' ], includepaths = includepaths )

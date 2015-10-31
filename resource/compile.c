@@ -16,7 +16,7 @@
  *
  */
 
-#include <resource/remote.h>
+#include <resource/compile.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -27,7 +27,7 @@ bool
 resource_compile_need_update_static(const uuid_t uuid) {
 	if (!_resource_config.enable_local_source)
 		return false;
-
+	FOUNDATION_UNUSED(uuid);
 	return false;
 }
 
@@ -35,7 +35,7 @@ bool
 resource_compile_need_update_dynamic(const uuid_t uuid) {
 	if (!_resource_config.enable_local_source)
 		return false;
-
+	FOUNDATION_UNUSED(uuid);
 	return false;
 }
 
@@ -43,7 +43,7 @@ bool
 resource_compile_update_static(const uuid_t uuid) {
 	if (!_resource_config.enable_local_source)
 		return false;
-
+	FOUNDATION_UNUSED(uuid);
 	return false;
 }
 
@@ -51,7 +51,7 @@ bool
 resource_compile_update_dynamic(const uuid_t uuid) {
 	if (!_resource_config.enable_local_source)
 		return false;
-
+	FOUNDATION_UNUSED(uuid);
 	return false;
 }
 

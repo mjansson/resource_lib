@@ -23,5 +23,5 @@
 
 bool
 resource_platform_is_more_specific(uint64_t platform, uint64_t reference) {
-	return platform > reference;
+	return (platform & reference) == reference;
 }

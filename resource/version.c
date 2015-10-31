@@ -3,6 +3,7 @@
    Run the configure script to regeneerate this file */
 
 #include <foundation/foundation.h>
+#include <resource/resource.h>
 
 version_t
 resource_module_version(void) {

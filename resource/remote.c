@@ -37,21 +37,25 @@ resource_remote_set_url(const char* url, size_t length) {
 
 bool
 resource_remote_need_update_static(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
 	return false;
 }
 
 bool
 resource_remote_need_update_dynamic(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
 	return false;
 }
 
 stream_t*
 resource_remote_update_static(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
 	return 0;
 }
 
 stream_t*
 resource_remote_update_dynamic(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
 	return 0;
 }
 
