@@ -258,10 +258,16 @@ DECLARE_TEST(source, unset) {
 	return 0;
 }
 
+DECLARE_TEST(source, collapse) {
+
+	return 0;
+}
+
 static void
 test_source_declare(void) {
 	ADD_TEST(source, set);
 	ADD_TEST(source, unset);
+	ADD_TEST(source, collapse);
 }
 
 static test_suite_t test_source_suite = {
