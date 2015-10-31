@@ -126,6 +126,7 @@ resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key, u
 
 void resource_source_collapse_history(resource_source_t* source) {
 	//...
+	FOUNDATION_UNUSED(source);
 }
 
 static stream_t*
@@ -152,15 +153,15 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 	const bool binary = stream_is_binary(stream);
 
 	while (!stream_eos(stream)) {
-		char op;
-		tick_t timestamp = stream_read_uint64(stream);
-		tick_t key = stream_read_uint64(stream);
+		char op = 0;
+		tick_t timestamp = stream_read_int64(stream);
+		hash_t key = stream_read_uint64(stream);
 		uint64_t platform = stream_read_uint64(stream);
 		stream_read(stream, &op, 1);
 		if (op == op_unset) {
 			resource_source_unset(source, timestamp, key, platform);
 		}
-		else {
+		else if (op == op_set) {
 			string_t value = binary ? stream_read_string(stream) : stream_read_line(stream, '\n');
 			resource_source_set(source, timestamp, key, platform, STRING_ARGS(value));
 			string_deallocate(value.str);
@@ -187,7 +188,7 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 		size_t ichg, chgsize;
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
-			stream_write_uint64(stream, change->timestamp);
+			stream_write_int64(stream, change->timestamp);
 			if (!binary)
 				stream_write(stream, &separator, 1);
 			stream_write_uint64(stream, change->hash);
@@ -218,45 +219,78 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 void
 resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map) {
 
-	//Build an array of platform specific changes for each key
+	//Build an array of platform specific changes for each key, with an optimization
+	//that single platform values are stored directly tagged with a low bit set
 	hashmap_clear(map);
 	resource_change_block_t* block = &source->first;
 	while (block) {
 		size_t ichg, chgsize;
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
-			resource_change_t** maparr = hashmap_lookup(map, change->hash);
-			size_t imap, msize;
-			for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
-				if (maparr[imap]->platform == change->platform) {
-					if (maparr[imap]->timestamp < change->timestamp)
-						maparr[imap] = change;
-					break;
+			void* stored = hashmap_lookup(map, change->hash);
+			if (!stored) {
+				hashmap_insert(map, change->hash, (void*)(((uintptr_t)change) | 1));
+			}
+			else if ((uintptr_t)stored & 1) {
+				resource_change_t* previous = (void*)((uintptr_t)stored & ~(uintptr_t)1);
+				if (previous->platform == change->platform) {
+					if (previous->timestamp < change->timestamp)
+						hashmap_insert(map, change->hash, (void*)(((uintptr_t)change) | 1));
+				}
+				else {
+					resource_change_t** newarr = 0;
+					array_push(newarr, previous);
+					array_push(newarr, change);
+					hashmap_insert(map, change->hash, newarr);
 				}
 			}
-			if (imap == msize) {
-				array_push(maparr, change);
-				hashmap_insert(map, change->hash, maparr);
+			else {
+				size_t imap, msize;
+				resource_change_t** maparr = stored;
+				for	(imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
+					if (maparr[imap]->platform == change->platform) {
+						if (maparr[imap]->timestamp < change->timestamp)
+							maparr[imap] = change;
+						break;
+					}
+				}
+				if (imap == msize) {
+					array_push(maparr, change);
+					hashmap_insert(map, change->hash, maparr);
+				}
 			}
 		}
 		block = block->next;
 	}
 
-	//Then collapse change array for each key to most specific platform
+	//Then collapse change array for each key to most specific platform with a set operation
 	size_t ibucket, bsize;
 	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
 		size_t inode, nsize;
 		hashmap_node_t* bucket = map->bucket[ibucket];
 		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
-			resource_change_t** maparr = bucket[inode].value;
-			resource_change_t* best = maparr[0];
-			size_t imap, msize;
-			for (imap = 1, msize = array_size(maparr); imap < msize; ++imap) {
-				resource_change_t* change = maparr[imap];
-				if (resource_platform_is_more_specific(change->platform, best->platform))
-					best = change;
+			resource_change_t* best = 0;
+			void* stored = bucket[inode].value;
+			if (!stored)
+				continue;
+			else if ((uintptr_t)stored & 1) {
+				best = (resource_change_t*)((uintptr_t)stored & ~(uintptr_t)1);
+				if (!best->value.str)
+					best = 0; //Unset operation
 			}
-			array_deallocate(maparr);
+			else {
+				resource_change_t** maparr = stored;
+				size_t imap, msize;
+				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
+					resource_change_t* change = maparr[imap];
+					if (!change->value.str)
+						continue; //Unset operation
+					if (resource_platform_is_more_specific(platform, change->platform) &&
+						(!best || (resource_platform_is_more_specific(change->platform, best->platform))))
+						best = change;
+				}
+				array_deallocate(maparr);
+			}
 			bucket[inode].value = best;
 		}
 	}
