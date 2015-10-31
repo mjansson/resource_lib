@@ -275,16 +275,17 @@ resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map
 				continue;
 			else if ((uintptr_t)stored & 1) {
 				best = (resource_change_t*)((uintptr_t)stored & ~(uintptr_t)1);
-				if (!best->value.str)
-					best = 0; //Unset operation
+				if (!best->value.str || //Unset operation
+					!resource_platform_is_more_specific(platform, best->platform))
+					best = 0;
 			}
 			else {
 				resource_change_t** maparr = stored;
 				size_t imap, msize;
 				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
 					resource_change_t* change = maparr[imap];
-					if (!change->value.str)
-						continue; //Unset operation
+					if (!change->value.str) //Unset operation
+						continue;
 					if (resource_platform_is_more_specific(platform, change->platform) &&
 						(!best || (resource_platform_is_more_specific(change->platform, best->platform))))
 						best = change;
