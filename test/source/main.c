@@ -54,7 +54,6 @@ DECLARE_TEST(source, set) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
 	resource_source_t source;
-	resource_change_t* change;
 
 	map = (hashmap_t*)&fixedmap;
 
@@ -63,17 +62,19 @@ DECLARE_TEST(source, set) {
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
+	resource_change_t* change;
 	resource_source_map(&source, 0, map);
-	EXPECT_EQ(hashmap_lookup(map, HASH_TEST), nullptr);
+	change = hashmap_lookup(map, HASH_TEST);
+	EXPECT_PTREQ(change, nullptr);
 
 	tick_t timestamp = time_system();
 	resource_source_set(&source, timestamp, HASH_TEST, 0, STRING_CONST("test"));
 
 	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, HASH_TEST);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, timestamp);
-	EXPECT_EQ(change->hash, HASH_TEST);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, timestamp);
+	EXPECT_HASHEQ(change->hash, HASH_TEST);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("test")));
 
 	thread_sleep(100);
@@ -82,9 +83,9 @@ DECLARE_TEST(source, set) {
 
 	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, HASH_TEST);
-	EXPECT_NE(change, nullptr);
-	EXPECT_GT(change->timestamp, timestamp);
-	EXPECT_EQ(change->hash, HASH_TEST);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKGT(change->timestamp, timestamp);
+	EXPECT_HASHEQ(change->hash, HASH_TEST);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("foobar")));
 
 	size_t iloop, lsize;
@@ -97,9 +98,9 @@ DECLARE_TEST(source, set) {
 
 		resource_source_map(&source, 0, map);
 		change = hashmap_lookup(map, hash);
-		EXPECT_NE(change, nullptr);
-		EXPECT_EQ(change->timestamp, timestamp);
-		EXPECT_EQ(change->hash, hash);
+		EXPECT_PTRNE(change, nullptr);
+		EXPECT_TICKEQ(change->timestamp, timestamp);
+		EXPECT_HASHEQ(change->hash, hash);
 	}
 
 	size_t allocated = 0;
@@ -117,7 +118,7 @@ DECLARE_TEST(source, set) {
 
 	//log_infof(HASH_TEST, STRING_CONST("Used %" PRIsize "/%" PRIsize " (%.0" PRIREAL "%%)"),
 	//          used, allocated, REAL_C(100.0) * ((real)used / (real)allocated));
-	EXPECT_GT((real)used / (real)allocated, REAL_C(0.75));
+	EXPECT_REALGT((real)used / (real)allocated, REAL_C(0.75));
 
 #endif
 
@@ -131,7 +132,6 @@ DECLARE_TEST(source, unset) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
 	resource_source_t source;
-	resource_change_t* change;
 
 	map = (hashmap_t*)&fixedmap;
 
@@ -177,77 +177,78 @@ DECLARE_TEST(source, unset) {
 	resource_source_set(&source, tick, keyOne, platformA, STRING_CONST("a"));
 	resource_source_set(&source, tick, keyOne, 0, STRING_CONST("default"));
 
+	resource_change_t* change;
 	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, keyOne);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick);
-	EXPECT_EQ(change->hash, keyOne);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick);
+	EXPECT_HASHEQ(change->hash, keyOne);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("default")));
 	change = hashmap_lookup(map, keyTwo);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick + 3);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick + 3);
 	EXPECT_EQ(change->hash, keyTwo);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("defaultTwo")));
 	change = hashmap_lookup(map, keyThree);
-	EXPECT_EQ(change, nullptr);
+	EXPECT_PTREQ(change, nullptr);
 
 	resource_source_map(&source, platformA, map);
 	change = hashmap_lookup(map, keyOne);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick);
-	EXPECT_EQ(change->hash, keyOne);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick);
+	EXPECT_HASHEQ(change->hash, keyOne);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("a")));
 	change = hashmap_lookup(map, keyTwo);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick + 3);
-	EXPECT_EQ(change->hash, keyTwo);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick + 3);
+	EXPECT_HASHEQ(change->hash, keyTwo);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("defaultTwo")));
 	change = hashmap_lookup(map, keyThree);
-	EXPECT_EQ(change, nullptr);
+	EXPECT_PTREQ(change, nullptr);
 
 	resource_source_map(&source, platformB, map);
 	change = hashmap_lookup(map, keyOne);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick);
-	EXPECT_EQ(change->hash, keyOne);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick);
+	EXPECT_HASHEQ(change->hash, keyOne);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("a")));
 	change = hashmap_lookup(map, keyTwo);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick + 3);
-	EXPECT_EQ(change->hash, keyTwo);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick + 3);
+	EXPECT_HASHEQ(change->hash, keyTwo);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("defaultTwo")));
 	change = hashmap_lookup(map, keyThree);
-	EXPECT_EQ(change, nullptr);
+	EXPECT_PTREQ(change, nullptr);
 
 	resource_source_map(&source, platformC, map);
 	change = hashmap_lookup(map, keyOne);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick);
-	EXPECT_EQ(change->hash, keyOne);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick);
+	EXPECT_HASHEQ(change->hash, keyOne);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("a")));
 	change = hashmap_lookup(map, keyTwo);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick + 3);
-	EXPECT_EQ(change->hash, keyTwo);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick + 3);
+	EXPECT_HASHEQ(change->hash, keyTwo);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("cTwo")));
 	change = hashmap_lookup(map, keyThree);
-	EXPECT_EQ(change, nullptr);
+	EXPECT_PTREQ(change, nullptr);
 
 	resource_source_map(&source, platformD, map);
 	change = hashmap_lookup(map, keyOne);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick);
-	EXPECT_EQ(change->hash, keyOne);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick);
+	EXPECT_HASHEQ(change->hash, keyOne);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("d")));
 	change = hashmap_lookup(map, keyTwo);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick + 3);
-	EXPECT_EQ(change->hash, keyTwo);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick + 3);
+	EXPECT_HASHEQ(change->hash, keyTwo);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("defaultTwo")));
 	change = hashmap_lookup(map, keyThree);
-	EXPECT_NE(change, nullptr);
-	EXPECT_EQ(change->timestamp, tick + 4);
-	EXPECT_EQ(change->hash, keyThree);
+	EXPECT_PTRNE(change, nullptr);
+	EXPECT_TICKEQ(change->timestamp, tick + 4);
+	EXPECT_HASHEQ(change->hash, keyThree);
 	EXPECT_CONSTSTRINGEQ(change->value, string_const(STRING_CONST("dThree")));
 
 #endif
@@ -259,6 +260,87 @@ DECLARE_TEST(source, unset) {
 }
 
 DECLARE_TEST(source, collapse) {
+	hashmap_fixed_t fixedmap;
+	hashmap_t* map;
+	resource_source_t source;
+
+	map = (hashmap_t*)&fixedmap;
+
+	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
+	resource_source_initialize(&source);
+
+#if RESOURCE_ENABLE_LOCAL_SOURCE
+
+	const hash_t keys[8] = {
+		0, HASH_TEST, HASH_RESOURCE, HASH_DEBUG,
+		HASH_NONE, HASH_TRUE, HASH_FALSE, HASH_SYSTEM
+	};
+	const uint64_t platforms[4] = {
+		0, 1, 3, 7
+	};
+
+	resource_change_t expected[4][8];
+	resource_change_t* change;
+	size_t iloop, lsize;
+	char buffer[1024];
+	for (iloop = 0, lsize = 4096; iloop < lsize; ++iloop) {
+		size_t ichg, chgsize;
+		for (ichg = 0, chgsize = 1024; ichg < chgsize; ++ichg) {
+			hash_t hash = keys[random32_range(0, 8)];
+			hash_t platform = platforms[random32_range(0, 4)];
+			tick_t timestamp = time_system();
+			if (random32_range(0, 100) > 75) {
+				resource_source_unset(&source, timestamp, hash, platform);
+			}
+			else {
+				string_const_t rndstr = string_const(buffer, random32_range(0, sizeof(buffer)));
+				resource_source_set(&source, timestamp, hash, platform, STRING_ARGS(rndstr));
+			}
+		}
+
+		memset(expected, 0, sizeof(expected));
+
+		size_t iplat, platsize;
+		size_t ihash, hashsize;
+		for (iplat = 0, platsize = 4; iplat < platsize; ++iplat) {
+			resource_source_map(&source, platforms[iplat], map);
+			for (ihash = 0, hashsize = 8; ihash < hashsize; ++ihash) {
+				change = hashmap_lookup(map, keys[ihash]);
+				if (change) {
+					EXPECT_HASHEQ(change->hash, keys[ihash]);
+					if (change->value.str) {
+						expected[iplat][ihash] = *change;
+						expected[iplat][ihash].value = string_to_const(string_clone(STRING_ARGS(change->value)));
+					}
+				}
+			}
+		}
+
+		resource_source_collapse_history(&source);
+
+		for (iplat = 0, platsize = 4; iplat < platsize; ++iplat) {
+			resource_source_map(&source, platforms[iplat], map);
+			for (ihash = 0, hashsize = 8; ihash < hashsize; ++ihash) {
+				change = hashmap_lookup(map, keys[ihash]);
+				if (expected[iplat][ihash].value.str) {
+					EXPECT_PTRNE(change, nullptr);
+					EXPECT_TICKEQ(change->timestamp, expected[iplat][ihash].timestamp);
+					EXPECT_HASHEQ(change->hash, expected[iplat][ihash].hash);
+					EXPECT_TRUE(resource_platform_is_more_specific(platforms[iplat], change->platform));
+					EXPECT_CONSTSTRINGEQ(change->value, expected[iplat][ihash].value);
+					string_deallocate((char*)expected[iplat][ihash].value.str);
+				}
+				else {
+					EXPECT_PTREQ(change, nullptr);
+				}
+			}
+		}
+	}
+
+#endif
+
+	resource_source_finalize(&source);
+	hashmap_finalize(map);
 
 	return 0;
 }

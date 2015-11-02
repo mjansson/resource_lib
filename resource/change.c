@@ -52,10 +52,24 @@ resource_change_block_allocate(void) {
 	return block;
 }
 
+static void
+resource_change_block_finalize_data(resource_change_block_t* block) {
+	resource_change_data_t* data = block->fixed.data.next;
+	while (data) {
+		resource_change_data_t* next = data->next;
+		resource_change_data_deallocate(data);
+		data = next;
+	}
+}
+
 void
 resource_change_block_deallocate(resource_change_block_t* block) {
-	resource_change_block_finalize(block);
-	memory_deallocate(block);
+	while (block) {
+		resource_change_block_t* next = block->next;
+		resource_change_block_finalize_data(block);
+		memory_deallocate(block);
+		block = next;
+	}
 }
 
 void
@@ -68,16 +82,9 @@ resource_change_block_initialize(resource_change_block_t* block) {
 
 void
 resource_change_block_finalize(resource_change_block_t* block) {
-	resource_change_block_t* next_block = block->next;
-	resource_change_data_t* data = block->current_data;
-	while (data) {
-		resource_change_data_t* next = data->next;
-		if (data != &block->fixed.data)
-			resource_change_data_deallocate(data);
-		data = next;
-	}
-	if (next_block)
-		resource_change_block_deallocate(next_block);
+	resource_change_block_finalize_data(block);
+	if (block->next)
+		resource_change_block_deallocate(block->next);
 }
 
 

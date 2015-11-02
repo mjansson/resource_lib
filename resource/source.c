@@ -76,36 +76,42 @@ resource_source_finalize(resource_source_t* source) {
 static resource_change_block_t*
 resource_source_set_in_block(resource_change_block_t* block, tick_t timestamp, hash_t key,
                              uint64_t platform, const char* value, size_t length) {
+	resource_change_block_t* next = block;
 	resource_change_t* change = block->changes + block->used++;
-	if (block->used == RESOURCE_CHANGE_BLOCK_SIZE)
-		block->next = resource_change_block_allocate();
+	if (block->used == RESOURCE_CHANGE_BLOCK_SIZE) {
+		next = resource_change_block_allocate();
+		block->next = next;
+	}
 
 	resource_change_data_t* data = block->current_data;
-	while (data) {
-		if (length < data->size - data->used)
-			break;
-		data = data->next;
+	if (length > (data->size - data->used)) {
+		data = block->fixed.data.next;
+		while (data) {
+			if (length <= (data->size - data->used))
+				break;
+			data = data->next;
+		}
 	}
 	if (!data) {
 		size_t data_size = RESOURCE_CHANGE_BLOCK_DATA_SIZE;
 		if (data_size < length)
 			data_size = length;
 		data = resource_change_data_allocate(data_size);
-		data->next = block->current_data;
+		block->current_data->next = data;
 		block->current_data = data;
 	}
 
-	string_t value_str = string_copy(data->data + data->used, data->size - data->used,
-		value, length);
+	char* dst = data->data + data->used;
+	data->used += length;
+
+	memcpy(dst, value, length);
 
 	change->timestamp = timestamp;
 	change->hash = key;
 	change->platform = platform;
-	change->value = string_const(STRING_ARGS(value_str));
+	change->value = string_const(dst, length);
 
-	data->used += length;
-
-	return block->next ? block->next : block;
+	return next;
 }
 
 void
@@ -219,9 +225,7 @@ resource_source_collapse_history(resource_source_t* source) {
 	//Swap change block structure and free resources
 	resource_change_block_finalize(&source->first);
 	memcpy(&source->first, first, sizeof(resource_change_block_t));
-
-	first->next = nullptr;
-	resource_change_block_deallocate(first);
+	memory_deallocate(first);
 }
 
 static stream_t*

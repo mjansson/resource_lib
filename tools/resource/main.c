@@ -29,6 +29,7 @@ typedef struct {
 	uint64_t          platform;
 	string_const_t    key;
 	string_const_t    value;
+	bool              collapse;
 } resource_input_t;
 
 static resource_input_t
@@ -88,8 +89,15 @@ main_run(void* main_arg) {
 	resource_source_set_path(STRING_ARGS(input.source_path));
 
 	resource_source_read(&source, input.uuid);
-	resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), input.platform,
-	                    STRING_ARGS(input.value));
+	if (input.value.str) {
+		resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), input.platform,
+		                    STRING_ARGS(input.value));
+	}
+	else {
+		resource_source_unset(&source, time_system(), hash(STRING_ARGS(input.key)), input.platform);
+	}
+	if (input.collapse)
+		resource_source_collapse_history(&source);
 	if (!resource_source_write(&source, input.uuid, input.binary)) {
 		log_warn(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to write output file"));
 		result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
@@ -152,6 +160,15 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				input.value = cmdline[++arg];
 			}
 		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--unset"))) {
+			if (arg < asize - 1) {
+				input.key = cmdline[++arg];
+				input.value = string_const(0, 0);
+			}
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--collapse"))) {
+			input.collapse = true;
+		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--binary"))) {
 			input.binary = 1;
 		}
@@ -190,13 +207,17 @@ resource_print_usage(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_info(0, STRING_CONST(
 	             "resource usage:\n"
-	             "  resource --source <path> --uuid <uuid> [--set <key> <value>] [--binary] [--ascii] [--debug] [--help] [--]\n"
+	             "  resource --source <path> --uuid <uuid> [--platform <id>]\n"
+	             "           [--set <key> <value>] [--unset <key>] [--collapse]\n"
+	             "           [--binary] [--ascii] [--debug] [--help] [--]\n"
 	             "    Arguments:\n"
-	             "      --source <path>              Operate on resource file given by <path>\n"
+	             "      --source <path>              Set resource file repository to <path>\n"
 	             "      --uuid <uuid>                Resource UUID\n"
 	             "    Optional arguments:\n"
-	             "      --set <key> <value>          Set <key> to <value> in resource\n"
 	             "      --platform <id>              Platform specifier"
+	             "      --set <key> <value>          Set <key> to <value> in resource\n"
+	             "      --unset <key>                Unset <key> in resource\n"
+	             "      --collapse                   Collapse history\n"
 	             "      --binary                     Write binary file\n"
 	             "      --ascii                      Write ASCII file (default)\n"
 	             "      --debug                      Enable debug output\n"

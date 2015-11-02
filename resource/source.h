@@ -51,6 +51,10 @@ resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
                       uint64_t platform);
 
 RESOURCE_API void
+resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key,
+                         uint64_t platform, const void* data, size_t length);
+
+RESOURCE_API void
 resource_source_collapse_history(resource_source_t* source);
 
 RESOURCE_API bool
