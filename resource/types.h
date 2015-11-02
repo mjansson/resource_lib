@@ -28,6 +28,10 @@ typedef enum resource_event_id {
 	RESOURCEEVENT_UPDATE_DYNAMIC
 } resource_event_id;
 
+#define RESOURCE_SOURCEFLAG_UNSET 0
+#define RESOURCE_SOURCEFLAG_VALUE 1
+#define RESOURCE_SOURCEFLAG_BLOB  2
+
 typedef int (* resource_import_fn)(stream_t*);
 
 typedef struct resource_base_t              resource_base_t;
@@ -39,6 +43,7 @@ typedef struct resource_change_data_fixed_t resource_change_data_fixed_t;
 typedef struct resource_change_block_t      resource_change_block_t;
 typedef struct resource_change_map_t        resource_change_map_t;
 typedef struct resource_source_t            resource_source_t;
+typedef struct resource_blob_t              resource_blob_t;
 
 struct resource_config_t {
 	bool enable_local_cache;
@@ -62,6 +67,14 @@ FOUNDATION_ALIGNED_STRUCT(resource_base_t, 8) {
 	RESOURCE_DECLARE_OBJECT;
 };
 
+/*! Representation of metadata for a binary data blob */
+struct resource_blob_t {
+	/*! Checksum */
+	hash_t checksum;
+	/*! Data size */
+	size_t size;
+};
+
 /*! Representation of a single change of a key-value
 pair in a resource object */
 struct resource_change_t {
@@ -71,8 +84,16 @@ struct resource_change_t {
 	hash_t hash;
 	/*! Platform */
 	uint64_t platform;
-	/*! Value (null string implies value is unset) */
-	string_const_t value;
+	/*! FLags */
+	unsigned int flags;
+	/*! Value union */
+	union
+	{
+		/*! String value */
+		string_const_t value;
+		/*! Blob value */
+		resource_blob_t blob;
+	} value;
 };
 
 /*! Representation of a block of memory storing change data */

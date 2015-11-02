@@ -42,6 +42,12 @@ resource_source_initialize(resource_source_t* source);
 RESOURCE_API void
 resource_source_finalize(resource_source_t* source);
 
+RESOURCE_API bool
+resource_source_read(resource_source_t* source, const uuid_t uuid);
+
+RESOURCE_API bool
+resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary);
+
 RESOURCE_API void
 resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key,
                     uint64_t platform, const char* value, size_t length);
@@ -52,16 +58,21 @@ resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
 
 RESOURCE_API void
 resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key,
-                         uint64_t platform, const void* data, size_t length);
+                         uint64_t platform, hash_t checksum, size_t size);
+
+RESOURCE_API bool
+resource_source_read_blob(const uuid_t uuid, hash_t key,
+                          uint64_t platform, hash_t checksum, void* data, size_t capacity);
+
+RESOURCE_API bool
+resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
+                           uint64_t platform, hash_t checksum, const void* data, size_t size);
 
 RESOURCE_API void
 resource_source_collapse_history(resource_source_t* source);
 
-RESOURCE_API bool
-resource_source_read(resource_source_t* source, const uuid_t uuid);
-
-RESOURCE_API bool
-resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary);
+RESOURCE_API void
+resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid);
 
 RESOURCE_API void
 resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map);
