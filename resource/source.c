@@ -67,7 +67,7 @@ resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform,
 	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
 	                                          STRING_ARGS(_resource_source_path), uuid);
 	string_t file = string_format(filename, sizeof(filename),
-	                              STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash),
+	                              STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"),
 	                              key, platform, checksum);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_ARGS(file));
 	if (mode & STREAM_OUT) {
@@ -88,7 +88,7 @@ resource_source_get_all_blobs(const uuid_t uuid) {
 	string_const_t filename = path_file_name(STRING_ARGS(path));
 	string_t pattern = string_concat_varg(patbuffer, sizeof(patbuffer),
 	                                      STRING_CONST("^"), STRING_ARGS(filename),
-	                                      STRING_CONST("\\.[a-f0-9]*\\.[a-f0-9]*\\.[a-f0-9]*$"),
+	                                      STRING_CONST(".*\\.blob$"),
 	                                      nullptr);
 	return fs_matching_files(STRING_ARGS(pathname), STRING_ARGS(pattern), false);
 }
@@ -198,45 +198,53 @@ resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key, u
 	change->flags = RESOURCE_SOURCEFLAG_UNSET;
 }
 
-//Build an array of platform specific changes for each key, with an optimization
-//that single platform values are stored directly tagged with a low bit set
-static void
-resource_source_map_all_platforms(resource_source_t* source, hashmap_t* map) {
+void
+resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_timestamps) {
 	resource_change_block_t* block = &source->first;
+	hashmap_clear(map);
 	while (block) {
 		size_t ichg, chgsize;
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
 			void* stored = hashmap_lookup(map, change->hash);
 			if (!stored) {
-				hashmap_insert(map, change->hash, (void*)(((uintptr_t)change) | 1));
+				hashmap_insert(map, change->hash, change);
 			}
 			else if ((uintptr_t)stored & 1) {
-				resource_change_t* previous = (void*)((uintptr_t)stored & ~(uintptr_t)1);
-				if (previous->platform == change->platform) {
+				size_t imap = 0, msize = 0;
+				resource_change_t** maparr = (void*)((uintptr_t)stored & ~(uintptr_t)1);
+				if (!all_timestamps) {
+					for (msize = array_size(maparr); imap < msize; ++imap) {
+						if (maparr[imap]->platform == change->platform) {
+							if (maparr[imap]->timestamp < change->timestamp) {
+								if (change->flags == RESOURCE_SOURCEFLAG_UNSET) {
+									array_erase(maparr, imap);
+									hashmap_insert(map, change->hash, (void*)(((uintptr_t)maparr) | 1));
+								}
+								else {
+									maparr[imap] = change;
+								}
+							}
+							break;
+						}
+					}
+				}
+				if (imap == msize) {
+					array_push(maparr, change);
+					hashmap_insert(map, change->hash, (void*)(((uintptr_t)maparr) | 1));
+				}
+			}
+			else {
+				resource_change_t* previous = stored;
+				if (!all_timestamps && (previous->platform == change->platform)) {
 					if (previous->timestamp < change->timestamp)
-						hashmap_insert(map, change->hash, (void*)(((uintptr_t)change) | 1));
+						hashmap_insert(map, change->hash, (change->flags != RESOURCE_SOURCEFLAG_UNSET) ? change : 0);
 				}
 				else {
 					resource_change_t** newarr = 0;
 					array_push(newarr, previous);
 					array_push(newarr, change);
-					hashmap_insert(map, change->hash, newarr);
-				}
-			}
-			else {
-				size_t imap, msize;
-				resource_change_t** maparr = stored;
-				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
-					if (maparr[imap]->platform == change->platform) {
-						if (maparr[imap]->timestamp < change->timestamp)
-							maparr[imap] = change;
-						break;
-					}
-				}
-				if (imap == msize) {
-					array_push(maparr, change);
-					hashmap_insert(map, change->hash, maparr);
+					hashmap_insert(map, change->hash, (void*)(((uintptr_t)newarr) | 1));
 				}
 			}
 		}
@@ -245,16 +253,10 @@ resource_source_map_all_platforms(resource_source_t* source, hashmap_t* map) {
 }
 
 void
-resource_source_collapse_history(resource_source_t* source) {
-	hashmap_fixed_t fixedmap;
-	hashmap_t* map = (hashmap_t*)&fixedmap;
-	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
-	resource_source_map_all_platforms(source, map);
-
-	//Create a new change block structure with changes that are set operations
-	resource_change_block_t* block = resource_change_block_allocate();
-	resource_change_block_t* first = block;
+resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
+                           resource_source_map_reduce_fn reduce) {
 	size_t ibucket, bsize;
+	resource_change_t* best;
 	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
 		size_t inode, nsize;
 		hashmap_node_t* bucket = map->bucket[ibucket];
@@ -264,44 +266,59 @@ resource_source_collapse_history(resource_source_t* source) {
 			if (!stored)
 				continue;
 			else if ((uintptr_t)stored & 1) {
-				change = (resource_change_t*)((uintptr_t)stored & ~(uintptr_t)1);
-				if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
-					continue;
-
-				if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
-					resource_change_t* store = resource_source_change_grab(&block);
-					resource_source_change_set_blob(store, change->timestamp, change->hash, change->platform,
-					                                change->value.blob.checksum, change->value.blob.size);
-				}
-				else {
-					resource_change_t* store = resource_source_change_grab(&block);
-					resource_source_change_set(block, store, change->timestamp, change->hash, change->platform,
-					                           STRING_ARGS(change->value.value));
-				}
-			}
-			else {
-				resource_change_t** maparr = stored;
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
 				size_t imap, msize;
+				best = 0;
 				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
 					resource_change_t* change = maparr[imap];
 					if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
 						continue;
-
-					if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
-						resource_change_t* store = resource_source_change_grab(&block);
-						resource_source_change_set_blob(store, change->timestamp, change->hash, change->platform,
-						                                change->value.blob.checksum, change->value.blob.size);
-					}
-					else {
-						resource_change_t* store = resource_source_change_grab(&block);
-						resource_source_change_set(block, store, change->timestamp, change->hash, change->platform,
-						                           STRING_ARGS(change->value.value));
-					}
+					best = reduce(change, best, data);
+					if ((uintptr_t)best == (uintptr_t)(-1))
+						return;
 				}
 				array_deallocate(maparr);
+				bucket[inode].value = best;
+			}
+			else {
+				change = stored;
+				if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+					continue;
+				best = reduce(change, 0, data);
+				if ((uintptr_t)best == (uintptr_t)(-1))
+					return;
+				bucket[inode].value = best;
 			}
 		}
 	}
+}
+
+static resource_change_t*
+resource_source_collapse_reduce(resource_change_t* change, resource_change_t* best, void* data) {
+	resource_change_block_t** block = data;
+	FOUNDATION_UNUSED(best);
+	FOUNDATION_ASSERT(best == 0 || change->platform != best->platform);
+	resource_change_t* store = resource_source_change_grab(block);
+	if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
+		resource_source_change_set_blob(store, change->timestamp, change->hash, change->platform,
+		                                change->value.blob.checksum, change->value.blob.size);
+	else
+		resource_source_change_set(*block, store, change->timestamp, change->hash, change->platform,
+		                           STRING_ARGS(change->value.value));
+	return change;
+}
+
+void
+resource_source_collapse_history(resource_source_t* source) {
+	hashmap_fixed_t fixedmap;
+	hashmap_t* map = (hashmap_t*)&fixedmap;
+	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
+	resource_source_map_all(source, map, false);
+
+	//Create a new change block structure with changes that are set operations
+	resource_change_block_t* block = resource_change_block_allocate();
+	resource_change_block_t* first = block;
+	resource_source_map_reduce(source, map, &block, resource_source_collapse_reduce);
 
 	//Swap change block structure and free resources
 	resource_change_block_finalize(&source->first);
@@ -311,78 +328,62 @@ resource_source_collapse_history(resource_source_t* source) {
 	hashmap_finalize(map);
 }
 
+struct resource_source_clear_blob_t {
+	string_const_t uuidstr;
+	string_t* blobfiles;
+	char blobname[128];
+};
+
+static resource_change_t*
+resource_source_clear_blob_reduce(resource_change_t* change, resource_change_t* best, void* data) {
+	struct resource_source_clear_blob_t* clear = (struct resource_source_clear_blob_t*)data;
+	FOUNDATION_UNUSED(best);
+	if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+		return change;
+
+	if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
+		string_t blobfile = string_format(clear->blobname, sizeof(clear->blobname),
+		                                  STRING_CONST("%.*s.%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"),
+		                                  STRING_FORMAT(clear->uuidstr),
+		                                  change->hash, change->platform, change->value.blob.checksum);
+		size_t ifile, fsize;
+		for (ifile = 0, fsize = array_size(clear->blobfiles); ifile < fsize; ++ifile) {
+			if (string_equal(STRING_ARGS(clear->blobfiles[ifile]), STRING_ARGS(blobfile))) {
+				string_deallocate(clear->blobfiles[ifile].str);
+				array_erase(clear->blobfiles, ifile);
+				break;
+			}
+		}
+	}
+	return change;
+}
+
 void
 resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid) {
-	string_t* blobfiles = resource_source_get_all_blobs(uuid);
-	char blobname[128];
-	string_const_t uuidstr = string_from_uuid_static(uuid);
+	size_t ifile, fsize;
+	char buffer[BUILD_MAX_PATHLEN];
+	struct resource_source_clear_blob_t clear;
+	clear.blobfiles = resource_source_get_all_blobs(uuid);
+	clear.uuidstr = string_from_uuid_static(uuid);
 
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map = (hashmap_t*)&fixedmap;
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
-	resource_source_map_all_platforms(source, map);
+	resource_source_map_all(source, map, true);
 
-	size_t ibucket, bsize;
-	size_t ifile, fsize;
-	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
-		size_t inode, nsize;
-		hashmap_node_t* bucket = map->bucket[ibucket];
-		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
-			resource_change_t* change = 0;
-			void* stored = bucket[inode].value;
-			if (!stored)
-				continue;
-			else if ((uintptr_t)stored & 1) {
-				change = (resource_change_t*)((uintptr_t)stored & ~(uintptr_t)1);
-				if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
-					continue;
+	resource_source_map_reduce(source, map, &clear, resource_source_clear_blob_reduce);
 
-				if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
-					string_t blobfile = string_format(blobname, sizeof(blobname),
-					                                  STRING_CONST("%.*s.%" PRIhash ".%" PRIx64 ".%" PRIhash),
-					                                  STRING_FORMAT(uuidstr),
-					                                  change->hash, change->platform, change->value.blob.checksum);
-					for (ifile = 0, fsize = array_size(blobfiles); ifile < fsize; ++ifile) {
-						if (string_equal(STRING_ARGS(blobfiles[ifile]), STRING_ARGS(blobfile))) {
-							string_deallocate(blobfiles[ifile].str);
-							array_erase(blobfiles, ifile);
-							break;
-						}
-					}
-				}
-			}
-			else {
-				resource_change_t** maparr = stored;
-				size_t imap, msize;
-				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
-					resource_change_t* change = maparr[imap];
-					if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
-						continue;
-
-					if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
-						string_t blobfile = string_format(blobname, sizeof(blobname),
-						                                  STRING_CONST("%.*s.%" PRIhash ".%" PRIx64 ".%" PRIhash),
-						                                  STRING_FORMAT(uuidstr),
-						                                  change->hash, change->platform, change->value.blob.checksum);
-						for (ifile = 0, fsize = array_size(blobfiles); ifile < fsize; ++ifile) {
-							if (string_equal(STRING_ARGS(blobfiles[ifile]), STRING_ARGS(blobfile))) {
-								string_deallocate(blobfiles[ifile].str);
-								array_erase(blobfiles, ifile);
-								break;
-							}
-						}
-					}
-				}
-				array_deallocate(maparr);
-			}
-		}
+	for (ifile = 0, fsize = array_size(clear.blobfiles); ifile < fsize; ++ifile) {
+		string_t path = resource_stream_make_path(buffer, sizeof(buffer),
+		                                          STRING_ARGS(_resource_source_path), uuid);
+		string_const_t pathname = path_directory_name(STRING_ARGS(path));
+		size_t offset = pointer_diff(pathname.str, buffer);
+		string_t fullname = path_append(buffer + offset, pathname.length, sizeof(buffer) - offset,
+		                                STRING_ARGS(clear.blobfiles[ifile]));
+		fs_remove_file(STRING_ARGS(fullname));
 	}
 
-	for (ifile = 0, fsize = array_size(blobfiles); ifile < fsize; ++ifile) {
-		//	delete blob file
-	}
-
-	string_array_deallocate(blobfiles);
+	string_array_deallocate(clear.blobfiles);
 	hashmap_finalize(map);
 }
 
@@ -478,42 +479,22 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	return true;
 }
 
+static resource_change_t*
+resource_source_map_platform_reduce(resource_change_t* change, resource_change_t* best,
+                                    void* data) {
+	uint64_t platform = *(uint64_t*)data;
+	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
+	        resource_platform_is_more_specific(platform, change->platform) &&
+	        (!best || (resource_platform_is_more_specific(change->platform, best->platform) &&
+	                   (change->timestamp > best->timestamp))))
+		return change;
+	return best;
+}
+
 void
 resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map) {
-	hashmap_clear(map);
-	resource_source_map_all_platforms(source, map);
-
-	//Then collapse change array for each key to most specific platform with a set operation
-	size_t ibucket, bsize;
-	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
-		size_t inode, nsize;
-		hashmap_node_t* bucket = map->bucket[ibucket];
-		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
-			resource_change_t* best = 0;
-			void* stored = bucket[inode].value;
-			if (!stored)
-				continue;
-			else if ((uintptr_t)stored & 1) {
-				resource_change_t* change = (resource_change_t*)((uintptr_t)stored & ~(uintptr_t)1);
-				if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
-				        resource_platform_is_more_specific(platform, change->platform))
-					best = change;
-			}
-			else {
-				resource_change_t** maparr = stored;
-				size_t imap, msize;
-				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
-					resource_change_t* change = maparr[imap];
-					if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
-					        resource_platform_is_more_specific(platform, change->platform) &&
-					        (!best || (resource_platform_is_more_specific(change->platform, best->platform))))
-						best = change;
-				}
-				array_deallocate(maparr);
-			}
-			bucket[inode].value = best;
-		}
-	}
+	resource_source_map_all(source, map, false);
+	resource_source_map_reduce(source, map, &platform, resource_source_map_platform_reduce);
 }
 
 bool

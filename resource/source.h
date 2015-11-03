@@ -77,17 +77,43 @@ resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid)
 RESOURCE_API void
 resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map);
 
+/*! Build a map with arrays of platform specific changes for each key, with an optimization
+that single platform values are stored directly as pointers and arrays of platform values
+are tagged with a low bit set in the pointer. Mostly used in conjunction with
+resource_source_map_reduce which will internalize this representation and present clean
+resource_change_t* data for inspection. Clears the map before storing data.
+\param source Resource source
+\param map Map storing results
+\param all_timestamps Flag to include all timestamps, not only newest */
+RESOURCE_API void
+resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_timestamps);
+
+/*! Iterate of a map of source key-value to perform operations on each change and optionally
+selecting the best change. The iteration can be aborted by the reduce function returning
+a marker value of -1 */
+RESOURCE_API void
+resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
+                           resource_source_map_reduce_fn reduce);
+
 #else
 
-#define resource_source_set_path(path) ((void)sizeof(path)), false
+#define resource_source_set_path(...) false
 #define resource_source_path() string_empty()
 #define resource_source_allocate() nullptr
 #define resource_source_deallocate(source) memory_deallocate(source)
 #define resource_source_initialize(source) ((void)sizeof(source))
 #define resource_source_finalize(source) ((void)sizeof(source))
-#define resource_source_set(source, timestamp, key, value, length) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(value)), ((void)sizeof(length))
+#define resource_source_set(source, timestamp, key, platform, ...) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
+#define resource_source_unset(source, timestamp, key, platform) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
 #define resource_source_read(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)), false
 #define resource_source_write(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)), false
-#define resource_source_map(source) nullptr
+#define resource_source_set_blob(source, timestamp, key, platform, checksum, size) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(size))
+#define resource_source_read_blob(uuid, key, platform, checksum, data, capacity) ((void)sizeof(uuid)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(capacity)), false
+#define resource_source_write_blob(uuid, timestamp, key, platform, checksum, data, size) ((void)sizeof(uuid)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(size)), false
+#define resource_source_collapse_history(source) ((void)sizeof(source))
+#define resource_source_clear_blob_history(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)) 
+#define resource_source_map(source, platform, map) ((void)sizeof(source)), ((void)sizeof(platform)), ((void)sizeof(map))
+#define resource_source_map_all(source, map, all_platforms) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(all_platforms))
+#define resource_source_map_reduce(source, map, data, reduce) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
 
 #endif

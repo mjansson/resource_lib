@@ -32,8 +32,6 @@ typedef enum resource_event_id {
 #define RESOURCE_SOURCEFLAG_VALUE 1
 #define RESOURCE_SOURCEFLAG_BLOB  2
 
-typedef int (* resource_import_fn)(stream_t*);
-
 typedef struct resource_base_t              resource_base_t;
 typedef struct resource_config_t            resource_config_t;
 typedef struct resource_event_t             resource_event_t;
@@ -44,6 +42,10 @@ typedef struct resource_change_block_t      resource_change_block_t;
 typedef struct resource_change_map_t        resource_change_map_t;
 typedef struct resource_source_t            resource_source_t;
 typedef struct resource_blob_t              resource_blob_t;
+
+typedef int (* resource_import_fn)(stream_t*);
+typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
+        void*);
 
 struct resource_config_t {
 	bool enable_local_cache;
@@ -87,8 +89,7 @@ struct resource_change_t {
 	/*! FLags */
 	unsigned int flags;
 	/*! Value union */
-	union
-	{
+	union {
 		/*! String value */
 		string_const_t value;
 		/*! Blob value */
