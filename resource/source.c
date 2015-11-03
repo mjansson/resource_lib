@@ -270,7 +270,7 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
 				size_t imap, msize;
 				best = 0;
 				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
-					resource_change_t* change = maparr[imap];
+					change = maparr[imap];
 					if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
 						continue;
 					best = reduce(change, best, data);
@@ -513,6 +513,7 @@ resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
                            uint64_t platform, hash_t checksum, const void* data, size_t size) {
 	unsigned int mode = STREAM_OUT | STREAM_BINARY | STREAM_CREATE | STREAM_TRUNCATE;
 	stream_t* stream = resource_source_open_blob(uuid, key, platform, checksum, mode);
+	FOUNDATION_UNUSED(timestamp);
 	if (!stream)
 		return false;
 	size_t written = stream_write(stream, data, size);
