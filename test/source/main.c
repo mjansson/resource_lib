@@ -274,6 +274,8 @@ DECLARE_TEST(source, unset) {
 	return 0;
 }
 
+#if RESOURCE_ENABLE_LOCAL_SOURCE
+
 static resource_change_t*
 resource_unique_set_per_platform(resource_change_t* change, resource_change_t* best, void* data) {
 	int* result = (int*)data;
@@ -295,6 +297,8 @@ resource_unique_set_per_platform(resource_change_t* change, resource_change_t* b
 	}
 	return change;
 }
+
+#endif
 
 DECLARE_TEST(source, collapse) {
 	hashmap_fixed_t fixedmap;
@@ -318,18 +322,18 @@ DECLARE_TEST(source, collapse) {
 	resource_change_t* change;
 	size_t iloop, lsize;
 	char buffer[1024];
+	tick_t timestamp = time_system();
 	for (iloop = 0, lsize = 4096; iloop < lsize; ++iloop) {
 		size_t ichg, chgsize;
 		for (ichg = 0, chgsize = 1024; ichg < chgsize; ++ichg) {
 			hash_t hash = keys[random32_range(0, 8)];
 			hash_t platform = platforms[random32_range(0, 4)];
-			tick_t timestamp = time_system();
 			if (random32_range(0, 100) > 75) {
-				resource_source_unset(&source, timestamp, hash, platform);
+				resource_source_unset(&source, timestamp++, hash, platform);
 			}
 			else {
 				string_const_t rndstr = string_const(buffer, random32_range(0, sizeof(buffer)));
-				resource_source_set(&source, timestamp, hash, platform, STRING_ARGS(rndstr));
+				resource_source_set(&source, timestamp++, hash, platform, STRING_ARGS(rndstr));
 #if !RESOURCE_ENABLE_LOCAL_SOURCE
 				FOUNDATION_UNUSED(rndstr);
 #endif

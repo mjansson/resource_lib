@@ -257,6 +257,7 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
                            resource_source_map_reduce_fn reduce) {
 	size_t ibucket, bsize;
 	resource_change_t* best;
+	FOUNDATION_UNUSED(source);
 	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
 		size_t inode, nsize;
 		hashmap_node_t* bucket = map->bucket[ibucket];
@@ -377,8 +378,8 @@ resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid)
 		string_t path = resource_stream_make_path(buffer, sizeof(buffer),
 		                                          STRING_ARGS(_resource_source_path), uuid);
 		string_const_t pathname = path_directory_name(STRING_ARGS(path));
-		size_t offset = pointer_diff(pathname.str, buffer);
-		string_t fullname = path_append(buffer + offset, pathname.length, sizeof(buffer) - offset,
+		ptrdiff_t offset = pointer_diff(pathname.str, buffer);
+		string_t fullname = path_append(buffer + offset, pathname.length, sizeof(buffer) - (size_t)offset,
 		                                STRING_ARGS(clear.blobfiles[ifile]));
 		fs_remove_file(STRING_ARGS(fullname));
 	}
