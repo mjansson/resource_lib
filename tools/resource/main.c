@@ -22,14 +22,20 @@
 #include "errorcodes.h"
 
 typedef struct {
+	unsigned int      flag;
+	string_const_t    key;
+	string_const_t    value;
+} resource_op_t;
+
+typedef struct {
 	bool              display_help;
 	int               binary;
 	string_const_t    source_path;
 	uuid_t            uuid;
 	uint64_t          platform;
-	string_const_t    key;
-	string_const_t    value;
+	resource_op_t*    op;
 	bool              collapse;
+	bool              clearblobs;
 } resource_input_t;
 
 static resource_input_t
@@ -37,6 +43,23 @@ resource_parse_command_line(const string_const_t* cmdline);
 
 static void
 resource_print_usage(void);
+
+static void*
+resource_read_file(const char* path, size_t length, resource_blob_t* blob) {
+	stream_t* stream = stream_open(path, length, STREAM_IN | STREAM_BINARY);
+	if (!stream)
+		return 0;
+	size_t size = stream_size(stream);
+	void* data = memory_allocate(HASH_RESOURCE, size, 0, MEMORY_PERSISTENT);
+	if (stream_read(stream, data, size) != size) {
+		memory_deallocate(data);
+		data = 0;
+	}
+	stream_deallocate(stream);
+	blob->size = size;
+	blob->checksum = hash(data, size);
+	return data;
+}
 
 int
 main_initialize(void) {
@@ -74,7 +97,11 @@ main_initialize(void) {
 int
 main_run(void* main_arg) {
 	int result = RESOURCE_RESULT_OK;
+	size_t iop, opsize;
 	resource_source_t source;
+	resource_blob_t blob;
+	tick_t tick;
+	void* blobdata;
 	resource_input_t input = resource_parse_command_line(environment_command_line());
 
 	FOUNDATION_UNUSED(main_arg);
@@ -89,15 +116,43 @@ main_run(void* main_arg) {
 	resource_source_set_path(STRING_ARGS(input.source_path));
 
 	resource_source_read(&source, input.uuid);
-	if (input.value.str) {
-		resource_source_set(&source, time_system(), hash(STRING_ARGS(input.key)), input.platform,
-		                    STRING_ARGS(input.value));
-	}
-	else {
-		resource_source_unset(&source, time_system(), hash(STRING_ARGS(input.key)), input.platform);
+	tick = time_system();
+	for (iop = 0, opsize = array_size(input.op); iop < opsize; ++iop) {
+		resource_op_t op = input.op[iop];
+		switch (op.flag) {
+		case RESOURCE_SOURCEFLAG_VALUE:
+			resource_source_set(&source, tick++, hash(STRING_ARGS(op.key)), input.platform,
+			                    STRING_ARGS(op.value));
+			break;
+
+		case RESOURCE_SOURCEFLAG_UNSET:
+			resource_source_unset(&source, tick++, hash(STRING_ARGS(op.key)), input.platform);
+			break;
+
+		case RESOURCE_SOURCEFLAG_BLOB:
+			blobdata = resource_read_file(STRING_ARGS(op.value), &blob);
+			if (blobdata) {
+				if (resource_source_write_blob(input.uuid, tick, hash(STRING_ARGS(op.key)),
+				                               input.platform, blob.checksum, blobdata, blob.size))
+					resource_source_set_blob(&source, tick++, hash(STRING_ARGS(op.key)), input.platform,
+					                         blob.checksum, blob.size);
+				else
+					log_warnf(HASH_RESOURCE, WARNING_RESOURCE, STRING_CONST("Failed to write blob data for %.*s"),
+					          STRING_FORMAT(op.key));
+			}
+			else {
+				log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+				          STRING_CONST("Failed to read blob data for %.*s from %.*s"),
+				          STRING_FORMAT(op.key), STRING_FORMAT(op.value));
+			}
+			memory_deallocate(blobdata);
+			break;
+		}
 	}
 	if (input.collapse)
 		resource_source_collapse_history(&source);
+	if (input.clearblobs)
+		resource_source_clear_blob_history(&source, input.uuid);
 	if (!resource_source_write(&source, input.uuid, input.binary)) {
 		log_warn(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to write output file"));
 		result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
@@ -145,10 +200,11 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				string_const_t value = cmdline[++arg];
 				if ((value.length > 2) && string_equal(value.str, 2, STRING_CONST("0x"))) {
 					value.str += 2;
-					value.length -=2;
+					value.length -= 2;
 					hex = true;
 				}
-				else if (string_find_first_not_of(STRING_ARGS(cmdline[arg]), STRING_CONST("0123456789"), 0) != STRING_NPOS) {
+				else if (string_find_first_not_of(STRING_ARGS(cmdline[arg]), STRING_CONST("0123456789"),
+				                                  0) != STRING_NPOS) {
 					hex = true;
 				}
 				input.platform = string_to_uint64(STRING_ARGS(value), hex);
@@ -156,18 +212,35 @@ resource_parse_command_line(const string_const_t* cmdline) {
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--set"))) {
 			if (arg < asize - 2) {
-				input.key = cmdline[++arg];
-				input.value = cmdline[++arg];
+				resource_op_t op;
+				op.flag = RESOURCE_SOURCEFLAG_VALUE;
+				op.key = cmdline[++arg];
+				op.value = cmdline[++arg];
+				array_push(input.op, op);
 			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--unset"))) {
 			if (arg < asize - 1) {
-				input.key = cmdline[++arg];
-				input.value = string_const(0, 0);
+				resource_op_t op;
+				op.flag = RESOURCE_SOURCEFLAG_UNSET;
+				op.key = cmdline[++arg];
+				array_push(input.op, op);
+			}
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--blob"))) {
+			if (arg < asize - 1) {
+				resource_op_t op;
+				op.flag = RESOURCE_SOURCEFLAG_BLOB;
+				op.key = cmdline[++arg];
+				op.value = cmdline[++arg];
+				array_push(input.op, op);
 			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--collapse"))) {
 			input.collapse = true;
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--clearblobs"))) {
+			input.clearblobs = true;
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--binary"))) {
 			input.binary = 1;
@@ -208,16 +281,20 @@ resource_print_usage(void) {
 	log_info(0, STRING_CONST(
 	             "resource usage:\n"
 	             "  resource --source <path> --uuid <uuid> [--platform <id>]\n"
-	             "           [--set <key> <value>] [--unset <key>] [--collapse]\n"
+	             "           [--set <key> <value>] [--blob <key> <file>] [--unset <key>]\n"
+	             "           [--collapse] [--clearblobs]\n"
 	             "           [--binary] [--ascii] [--debug] [--help] [--]\n"
-	             "    Arguments:\n"
+	             "    Required arguments:\n"
 	             "      --source <path>              Set resource file repository to <path>\n"
 	             "      --uuid <uuid>                Resource UUID\n"
-	             "    Optional arguments:\n"
-	             "      --platform <id>              Platform specifier"
+	             "    Repeatable arguments:\n"
 	             "      --set <key> <value>          Set <key> to <value> in resource\n"
+	             "      --blob <key> <value>         Set <key> to blob read from <file> in resource\n"
 	             "      --unset <key>                Unset <key> in resource\n"
+	             "    Optional arguments:\n"
+	             "      --platform <id>              Platform specifier\n"
 	             "      --collapse                   Collapse history\n"
+	             "      --clearblobs                 Clear unreferenced blobs\n"
 	             "      --binary                     Write binary file\n"
 	             "      --ascii                      Write ASCII file (default)\n"
 	             "      --debug                      Enable debug output\n"
