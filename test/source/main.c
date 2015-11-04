@@ -318,7 +318,12 @@ DECLARE_TEST(source, collapse) {
 		0, 1, 3, 7
 	};
 
-	resource_change_t expected[4][8];
+	struct resource_expect_change_t {
+		resource_change_t change;
+		string_t value;
+	};
+
+	struct resource_expect_change_t expected[4][8];
 	resource_change_t* change;
 	size_t iloop, lsize;
 	char buffer[1024];
@@ -352,8 +357,9 @@ DECLARE_TEST(source, collapse) {
 					EXPECT_HASHEQ(change->hash, keys[ihash]);
 					if (change->flags == RESOURCE_SOURCEFLAG_VALUE) {
 						string_t clonestr = string_clone(STRING_ARGS(change->value.value));
-						expected[iplat][ihash] = *change;
-						expected[iplat][ihash].value.value = string_to_const(clonestr);
+						expected[iplat][ihash].change = *change;
+						expected[iplat][ihash].value = clonestr;
+						expected[iplat][ihash].change.value.value = string_to_const(clonestr);
 					}
 				}
 			}
@@ -377,15 +383,15 @@ DECLARE_TEST(source, collapse) {
 			resource_source_map(&source, platforms[iplat], map);
 			for (ihash = 0, hashsize = 8; ihash < hashsize; ++ihash) {
 				change = hashmap_lookup(map, keys[ihash]);
-				if (expected[iplat][ihash].flags == RESOURCE_SOURCEFLAG_VALUE) {
+				if (expected[iplat][ihash].change.flags == RESOURCE_SOURCEFLAG_VALUE) {
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 					EXPECT_PTRNE(change, nullptr);
-					EXPECT_TICKEQ(change->timestamp, expected[iplat][ihash].timestamp);
-					EXPECT_HASHEQ(change->hash, expected[iplat][ihash].hash);
+					EXPECT_TICKEQ(change->timestamp, expected[iplat][ihash].change.timestamp);
+					EXPECT_HASHEQ(change->hash, expected[iplat][ihash].change.hash);
 					EXPECT_TRUE(resource_platform_is_more_specific(platforms[iplat], change->platform));
-					EXPECT_CONSTSTRINGEQ(change->value.value, expected[iplat][ihash].value.value);
+					EXPECT_CONSTSTRINGEQ(change->value.value, expected[iplat][ihash].change.value.value);
 #endif
-					string_deallocate((char*)expected[iplat][ihash].value.value.str);
+					string_deallocate((char*)expected[iplat][ihash].value.str);
 				}
 				else {
 					EXPECT_PTREQ(change, nullptr);
