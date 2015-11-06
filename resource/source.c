@@ -340,6 +340,8 @@ resource_source_collapse_history(resource_source_t* source) {
 	source->first.current_data = &source->first.fixed.data;
 	while (source->first.current_data->next)
 		source->first.current_data = source->first.current_data->next;
+	//Patch up current block
+	source->current = (block == first) ? &source->first : block;
 	//Free first block
 	memory_deallocate(first);
 
