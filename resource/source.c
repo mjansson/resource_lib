@@ -311,19 +311,36 @@ resource_source_collapse_reduce(resource_change_t* change, resource_change_t* be
 
 void
 resource_source_collapse_history(resource_source_t* source) {
+	size_t ichg, chgsize;
+	resource_change_t* change;
+	resource_change_block_t* block;
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map = (hashmap_t*)&fixedmap;
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
 	resource_source_map_all(source, map, false);
 
 	//Create a new change block structure with changes that are set operations
-	resource_change_block_t* block = resource_change_block_allocate();
+	block = resource_change_block_allocate();
 	resource_change_block_t* first = block;
 	resource_source_map_reduce(source, map, &block, resource_source_collapse_reduce);
 
-	//Swap change block structure and free resources
+	//Copy first block data, swap next change block structure and free resources
 	resource_change_block_finalize(&source->first);
 	memcpy(&source->first, first, sizeof(resource_change_block_t));
+	//Patch up first block change data pointers
+	for (ichg = 0, chgsize = first->used; ichg < chgsize; ++ichg) {
+		change = first->changes + ichg;
+		if (change->flags == RESOURCE_SOURCEFLAG_VALUE) {
+			ptrdiff_t diff = pointer_diff(change->value.value.str, first->fixed.fixed);
+			if ((diff >= 0) && (diff < RESOURCE_CHANGE_BLOCK_DATA_SIZE))
+				source->first.changes[ichg].value.value.str = source->first.fixed.fixed + diff;
+		}
+	}
+	//Patch up first block current_data pointer
+	source->first.current_data = &source->first.fixed.data;
+	while (source->first.current_data->next)
+		source->first.current_data = source->first.current_data->next;
+	//Free first block
 	memory_deallocate(first);
 
 	hashmap_finalize(map);

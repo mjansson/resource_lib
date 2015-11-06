@@ -92,11 +92,13 @@ DECLARE_TEST(source, set) {
 
 	size_t iloop, lsize;
 	char buffer[1024];
+	for (iloop = 0; iloop < sizeof(buffer); ++iloop)
+		buffer[iloop] = (char)random32_range('a', 'z'+1);
+	timestamp = time_system();
 	for (iloop = 0, lsize = 4096; iloop < lsize; ++iloop) {
 		hash_t hash = random64();
-		timestamp = time_system();
 		string_const_t rndstr = string_const(buffer, random32_range(0, sizeof(buffer)));
-		resource_source_set(&source, timestamp, hash, 0, STRING_ARGS(rndstr));
+		resource_source_set(&source, ++timestamp, hash, 0, STRING_ARGS(rndstr));
 
 		resource_source_map(&source, 0, map);
 		change = hashmap_lookup(map, hash);
@@ -104,6 +106,8 @@ DECLARE_TEST(source, set) {
 		EXPECT_PTRNE(change, nullptr);
 		EXPECT_TICKEQ(change->timestamp, timestamp);
 		EXPECT_HASHEQ(change->hash, hash);
+		EXPECT_UINTEQ(change->flags, RESOURCE_SOURCEFLAG_VALUE);
+		EXPECT_CONSTSTRINGEQ(change->value.value, rndstr);
 #else
 		FOUNDATION_UNUSED(rndstr);
 #endif
@@ -328,6 +332,8 @@ DECLARE_TEST(source, collapse) {
 	size_t iloop, lsize;
 	char buffer[1024];
 	tick_t timestamp = time_system();
+	for (iloop = 0; iloop < sizeof(buffer); ++iloop)
+		buffer[iloop] = (char)random32_range('a', 'z'+1);
 	for (iloop = 0, lsize = 4096; iloop < lsize; ++iloop) {
 		size_t ichg, chgsize;
 		for (ichg = 0, chgsize = 1024; ichg < chgsize; ++ichg) {
@@ -337,11 +343,7 @@ DECLARE_TEST(source, collapse) {
 				resource_source_unset(&source, timestamp++, hash, platform);
 			}
 			else {
-				string_const_t rndstr = string_const(buffer, random32_range(0, sizeof(buffer)));
-				resource_source_set(&source, timestamp++, hash, platform, STRING_ARGS(rndstr));
-#if !RESOURCE_ENABLE_LOCAL_SOURCE
-				FOUNDATION_UNUSED(rndstr);
-#endif
+				resource_source_set(&source, timestamp++, hash, platform, buffer, random32_range(10, sizeof(buffer)));
 			}
 		}
 
@@ -356,6 +358,7 @@ DECLARE_TEST(source, collapse) {
 				if (change) {
 					EXPECT_HASHEQ(change->hash, keys[ihash]);
 					if (change->flags == RESOURCE_SOURCEFLAG_VALUE) {
+						EXPECT_CONSTSTRINGEQ(string_const(change->value.value.str, 10), string_const(buffer, 10));
 						string_t clonestr = string_clone(STRING_ARGS(change->value.value));
 						expected[iplat][ihash].change = *change;
 						expected[iplat][ihash].value = clonestr;
