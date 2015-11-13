@@ -19,12 +19,12 @@ static volatile bool _test_have_focus = false;
 static volatile bool _test_should_terminate = false;
 
 static void*
-event_thread(object_t thread, void* arg) {
+event_loop(void* arg) {
 	event_block_t* block;
 	event_t* event = 0;
 	FOUNDATION_UNUSED(arg);
 
-	while (!thread_should_terminate(thread)) {
+	while (!thread_is_signalled()) {
 		block = event_stream_process(system_event_stream());
 		event = 0;
 
@@ -169,8 +169,8 @@ main_initialize(void) {
 #endif
 
 #if BUILD_MONOLITHIC
-typedef int (*test_run_fn)(void);
 extern int test_source_run(void);
+typedef int (*test_run_fn)(void);
 
 static void*
 test_runner(object_t obj, void* arg) {
@@ -216,7 +216,7 @@ main_run(void* main_arg) {
 #endif
 	char* pathbuf;
 	int process_result = 0;
-	object_t thread = 0;
+	thread_t event_thread;
 	FOUNDATION_UNUSED(main_arg);
 	FOUNDATION_UNUSED(build_name);
 
@@ -226,12 +226,12 @@ main_run(void* main_arg) {
 	          string_from_version_static(resource_module_version()).str, FOUNDATION_PLATFORM_DESCRIPTION,
 	          FOUNDATION_COMPILER_DESCRIPTION, build_name.str);
 
-	thread = thread_create(event_thread, STRING_CONST("event_thread"), THREAD_PRIORITY_NORMAL, 0);
-	thread_start(thread, 0);
+	thread_initialize(&event_thread, event_loop, 0, STRING_CONST("event_thread"), THREAD_PRIORITY_NORMAL, 0);
+	thread_start(&event_thread);
 
 	pathbuf = memory_allocate(HASH_STRING, BUILD_MAX_PATHLEN, 0, MEMORY_PERSISTENT);
 
-	while (!thread_is_running(thread))
+	while (!thread_is_running(&event_thread))
 		thread_sleep(10);
 
 #if FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID || FOUNDATION_PLATFORM_PNACL
@@ -383,12 +383,8 @@ exit:
 
 #endif
 
-	thread_terminate(thread);
-	thread_destroy(thread);
-	while (thread_is_running(thread))
-		thread_sleep(10);
-	while (thread_is_thread(thread))
-		thread_sleep(10);
+	thread_signal(&event_thread);
+	thread_finalize(&event_thread);
 
 	memory_deallocate(pathbuf);
 
