@@ -207,10 +207,11 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
 			void* stored = hashmap_lookup(map, change->hash);
+			FOUNDATION_ASSERT(!((uintptr_t)change & (uintptr_t)1));
 			if (!stored) {
 				hashmap_insert(map, change->hash, change);
 			}
-			else if ((uintptr_t)stored & 1) {
+			else if ((uintptr_t)stored & (uintptr_t)1) {
 				size_t imap = 0, msize = 0;
 				resource_change_t** maparr = (void*)((uintptr_t)stored & ~(uintptr_t)1);
 				if (!all_timestamps) {
@@ -219,7 +220,6 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 							if (maparr[imap]->timestamp < change->timestamp) {
 								if (change->flags == RESOURCE_SOURCEFLAG_UNSET) {
 									array_erase(maparr, imap);
-									hashmap_insert(map, change->hash, (void*)(((uintptr_t)maparr) | 1));
 								}
 								else {
 									maparr[imap] = change;
@@ -231,7 +231,7 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 				}
 				if (imap == msize) {
 					array_push(maparr, change);
-					hashmap_insert(map, change->hash, (void*)(((uintptr_t)maparr) | 1));
+					hashmap_insert(map, change->hash, (void*)(((uintptr_t)maparr) | (uintptr_t)1));
 				}
 			}
 			else {
@@ -244,7 +244,7 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 					resource_change_t** newarr = 0;
 					array_push(newarr, previous);
 					array_push(newarr, change);
-					hashmap_insert(map, change->hash, (void*)(((uintptr_t)newarr) | 1));
+					hashmap_insert(map, change->hash, (void*)(((uintptr_t)newarr) | (uintptr_t)1));
 				}
 			}
 		}
@@ -294,6 +294,25 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
 	}
 }
 
+void
+resource_source_map_clear(hashmap_t* map) {
+	size_t ibucket, bsize;
+	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+		size_t inode, nsize;
+		hashmap_node_t* bucket = map->bucket[ibucket];
+		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
+			void* stored = bucket[inode].value;
+			if (!stored)
+				continue;
+			else if ((uintptr_t)stored & 1) {
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
+				array_deallocate(maparr);
+			}
+		}
+	}
+	hashmap_clear(map);
+}
+
 static resource_change_t*
 resource_source_collapse_reduce(resource_change_t* change, resource_change_t* best, void* data) {
 	resource_change_block_t** block = data;
@@ -328,6 +347,7 @@ resource_source_collapse_history(resource_source_t* source) {
 	resource_change_block_finalize(&source->first);
 	memcpy(&source->first, first, sizeof(resource_change_block_t));
 	//Patch up first block change data pointers
+	source->first.fixed.data.data = source->first.fixed.fixed;
 	for (ichg = 0, chgsize = first->used; ichg < chgsize; ++ichg) {
 		change = first->changes + ichg;
 		if (change->flags == RESOURCE_SOURCEFLAG_VALUE) {
@@ -342,7 +362,7 @@ resource_source_collapse_history(resource_source_t* source) {
 		source->first.current_data = source->first.current_data->next;
 	//Patch up current block
 	source->current = (block == first) ? &source->first : block;
-	//Free first block
+	//Free first block memory
 	memory_deallocate(first);
 
 	hashmap_finalize(map);
@@ -504,9 +524,14 @@ resource_source_map_platform_reduce(resource_change_t* change, resource_change_t
                                     void* data) {
 	uint64_t platform = *(uint64_t*)data;
 	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
+//Change must be superset of requested platform
 	        resource_platform_is_more_specific(platform, change->platform) &&
+//Either no previous result, or
+//  previous best is platform superset of change platform and
+//    either platforms are different (change is exclusively more specific), or
+///   change is newer (and platforms are equal)
 	        (!best || (resource_platform_is_more_specific(change->platform, best->platform) &&
-	                   (change->timestamp > best->timestamp))))
+	                   ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
 		return change;
 	return best;
 }
