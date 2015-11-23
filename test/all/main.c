@@ -14,9 +14,9 @@
 #include <resource/resource.h>
 #include <test/test.h>
 
-static volatile bool _test_should_start = false;
-static volatile bool _test_have_focus = false;
-static volatile bool _test_should_terminate = false;
+static volatile bool _test_should_start;
+static volatile bool _test_have_focus;
+static volatile bool _test_should_terminate;
 
 static void*
 event_loop(void* arg) {
@@ -24,7 +24,10 @@ event_loop(void* arg) {
 	event_t* event = 0;
 	FOUNDATION_UNUSED(arg);
 
-	while (!thread_is_signalled()) {
+	event_stream_set_beacon(system_event_stream(), &thread_self()->beacon);
+
+	while (!_test_should_terminate) {
+		thread_wait();
 		block = event_stream_process(system_event_stream());
 		event = 0;
 
@@ -59,8 +62,6 @@ event_loop(void* arg) {
 				break;
 			}
 		}
-
-		thread_sleep(10);
 	}
 
 	log_debug(HASH_TEST, STRING_CONST("Application event thread exiting"));
@@ -128,11 +129,10 @@ test_should_terminate(void) {
 int
 main_initialize(void) {
 	foundation_config_t config;
-	resource_config_t resource_config;
 	application_t application;
+	int ret;
 
 	memset(&config, 0, sizeof(config));
-	memset(&resource_config, 0, sizeof(resource_config));
 
 	memset(&application, 0, sizeof(application));
 	application.name = string_const(STRING_CONST("Resource library test suite"));
@@ -154,14 +154,19 @@ main_initialize(void) {
 
 #endif
 
-	if (foundation_initialize(memory_system_malloc(), application, config) < 0)
-		return -1;
+	ret = foundation_initialize(memory_system_malloc(), application, config);
 
 #if BUILD_MONOLITHIC
-	return resource_module_initialize(resource_config);
-#else
-	return 0;
+	if (ret == 0) {
+		resource_config_t resource_config;
+		memset(&resource_config, 0, sizeof(resource_config));
+		resource_config.enable_local_cache = true;
+		resource_config.enable_local_source = true;
+		resource_config.enable_remote_source = true;
+		ret = resource_module_initialize(resource_config);
+	}
 #endif
+	return ret;
 }
 
 #if FOUNDATION_PLATFORM_ANDROID
@@ -226,7 +231,8 @@ main_run(void* main_arg) {
 	          string_from_version_static(resource_module_version()).str, FOUNDATION_PLATFORM_DESCRIPTION,
 	          FOUNDATION_COMPILER_DESCRIPTION, build_name.str);
 
-	thread_initialize(&event_thread, event_loop, 0, STRING_CONST("event_thread"), THREAD_PRIORITY_NORMAL, 0);
+	thread_initialize(&event_thread, event_loop, 0, STRING_CONST("event_thread"),
+	                  THREAD_PRIORITY_NORMAL, 0);
 	thread_start(&event_thread);
 
 	pathbuf = memory_allocate(HASH_STRING, BUILD_MAX_PATHLEN, 0, MEMORY_PERSISTENT);
@@ -383,12 +389,15 @@ exit:
 
 #endif
 
+	_test_should_terminate = true;
+
 	thread_signal(&event_thread);
 	thread_finalize(&event_thread);
 
 	memory_deallocate(pathbuf);
 
-	log_infof(HASH_TEST, STRING_CONST("Tests exiting: %d"), process_result);
+	log_infof(HASH_TEST, STRING_CONST("Tests exiting: %s (%d)"),
+	          process_result ? "FAILED" : "PASSED", process_result);
 
 	return process_result;
 }
@@ -397,10 +406,6 @@ void
 main_finalize(void) {
 #if FOUNDATION_PLATFORM_ANDROID
 	thread_detach_jvm();
-#endif
-
-#if BUILD_MONOLITHIC
-	resource_module_finalize();
 #endif
 
 	foundation_finalize();
