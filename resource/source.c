@@ -439,7 +439,7 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 	const bool binary = stream_is_binary(stream);
 
 	while (!stream_eos(stream)) {
-		char op = 0;
+		char separator, op = 0;
 		tick_t timestamp = stream_read_int64(stream);
 		hash_t key = stream_read_uint64(stream);
 		uint64_t platform = stream_read_uint64(stream);
@@ -448,7 +448,14 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 			resource_source_unset(source, timestamp, key, platform);
 		}
 		else if (op == op_set) {
-			string_t value = binary ? stream_read_string(stream) : stream_read_line(stream, '\n');
+			string_t value;
+			if (binary) {
+				value = stream_read_string(stream);
+			}
+			else {
+				stream_read(stream, &separator, 1);
+				value = stream_read_line(stream, '\n');
+			}
 			resource_source_set(source, timestamp, key, platform, STRING_ARGS(value));
 			string_deallocate(value.str);
 		}
