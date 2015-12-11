@@ -32,6 +32,7 @@ typedef struct {
 	int               binary;
 	string_const_t    source_path;
 	uuid_t            uuid;
+	string_const_t    lookup_path;
 	uint64_t          platform;
 	resource_op_t*    op;
 	bool              collapse;
@@ -43,6 +44,9 @@ resource_parse_command_line(const string_const_t* cmdline);
 
 static void
 resource_print_usage(void);
+
+static uuid_t
+resource_lookup(const string_const_t path);
 
 static void*
 resource_read_file(const char* path, size_t length, resource_blob_t* blob) {
@@ -112,6 +116,11 @@ main_run(void* main_arg) {
 		resource_print_usage();
 		goto exit;
 	}
+
+	if (uuid_is_null(input.uuid))
+		goto exit;
+	if (!input.source_path.length)
+		goto exit;
 
 	resource_source_set_path(STRING_ARGS(input.source_path));
 
@@ -194,6 +203,10 @@ resource_parse_command_line(const string_const_t* cmdline) {
 					          STRING_FORMAT(cmdline[arg]));
 			}
 		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--lookup"))) {
+			if (arg < asize - 1)
+				input.lookup_path = cmdline[++arg];
+		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--platform"))) {
 			if (arg < asize - 1) {
 				bool hex = false;
@@ -261,17 +274,47 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	}
 	error_context_pop();
 
+	bool lookup_done = false;
+	if (uuid_is_null(input.uuid) && input.lookup_path.length) {
+		input.uuid = resource_lookup(input.lookup_path);
+		lookup_done = true;
+	}
+
+	bool need_source = true;
+	if (lookup_done)
+		need_source = false;
+	if (array_size(input.op) || input.collapse || input.clearblobs)
+		need_source = true;
+
 	bool already_help = input.display_help;
-	if (!already_help && !input.source_path.length) {
+	if (!already_help && !input.source_path.length && need_source) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input.display_help = true;
 	}
-	if (!already_help && uuid_is_null(input.uuid)) {
+	if (!already_help && uuid_is_null(input.uuid) && !lookup_done) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
 		input.display_help = true;
 	}
 
+	if (lookup_done && !need_source) {
+		string_const_t lookupstr;
+		const error_level_t saved_level = log_suppress(HASH_RESOURCE);
+
+		lookupstr = string_from_uuid_static(input.uuid);
+		log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
+		log_infof(HASH_RESOURCE, STRING_CONST("%.*s"), STRING_FORMAT(lookupstr));
+		log_set_suppress(HASH_RESOURCE, saved_level);
+	}
+
 	return input;
+}
+
+static uuid_t
+resource_lookup(const string_const_t path) {
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t pathstr = string_copy(buffer, sizeof(buffer), STRING_ARGS(path));
+	pathstr = path_absolute(STRING_ARGS(pathstr), sizeof(buffer));
+	return resource_import_map_lookup(STRING_ARGS(pathstr));
 }
 
 static void
@@ -280,26 +323,29 @@ resource_print_usage(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_info(0, STRING_CONST(
 	             "resource usage:\n"
-	             "  resource --source <path> --uuid <uuid> [--platform <id>]\n"
+	             "  resource --source <path> --uuid <uuid> --lookup <path>\n"
 	             "           [--set <key> <value>] [--blob <key> <file>] [--unset <key>]\n"
+	             "           [--platform <id>]\n"
 	             "           [--collapse] [--clearblobs]\n"
 	             "           [--binary] [--ascii] [--debug] [--help] [--]\n"
-	             "    Required arguments:\n"
-	             "      --source <path>              Set resource file repository to <path>\n"
-	             "      --uuid <uuid>                Resource UUID\n"
-	             "    Repeatable arguments:\n"
-	             "      --set <key> <value>          Set <key> to <value> in resource\n"
-	             "      --blob <key> <value>         Set <key> to blob read from <file> in resource\n"
-	             "      --unset <key>                Unset <key> in resource\n"
+	             "    Resource specification arguments:\n"
+	             "      --source <path>        Set resource file repository to <path>\n"
+	             "      --uuid <uuid>          Resource UUID\n"
+	             "      --lookup <path>        Resource UUID by lookup of source path <path>\n"
+	             "                             (UUID will be printed to stdout if no other command)\n"
+	             "    Repeatable command arguments:\n"
+	             "      --set <key> <value>    Set <key> to <value> in resource\n"
+	             "      --blob <key> <value>   Set <key> to blob read from <file> in resource\n"
+	             "      --unset <key>          Unset <key> in resource\n"
 	             "    Optional arguments:\n"
-	             "      --platform <id>              Platform specifier\n"
-	             "      --collapse                   Collapse history\n"
-	             "      --clearblobs                 Clear unreferenced blobs\n"
-	             "      --binary                     Write binary file\n"
-	             "      --ascii                      Write ASCII file (default)\n"
-	             "      --debug                      Enable debug output\n"
-	             "      --help                       Display this help message\n"
-	             "      --                           Stop processing command line arguments"
+	             "      --platform <id>        Platform specifier\n"
+	             "      --collapse             Collapse history after all commands\n"
+	             "      --clearblobs           Clear unreferenced blobs after all commands\n"
+	             "      --binary               Write binary file\n"
+	             "      --ascii                Write ASCII file (default)\n"
+	             "      --debug                Enable debug output\n"
+	             "      --help                 Display this help message\n"
+	             "      --                     Stop processing command line arguments"
 	         ));
 	log_set_suppress(0, saved_level);
 }

@@ -161,10 +161,10 @@ DECLARE_TEST(source, unset) {
 	//Verify map result for default platform and A-D
 	resource_source_initialize(&source);
 
-	uint64_t platformA = 0x0001;
-	uint64_t platformB = 0x0011;
-	uint64_t platformC = 0x0101;
-	uint64_t platformD = 0x1000;
+	uint64_t platformA = resource_platform((resource_platform_t){1,-1,-1,-1,-1});
+	uint64_t platformB = resource_platform((resource_platform_t){1,2,-1,-1,-1});
+	uint64_t platformC = resource_platform((resource_platform_t){1,2,3,-1,-1});
+	uint64_t platformD = resource_platform((resource_platform_t){1,-1,-1,4,-1});
 
 	hash_t keyOne = HASH_TEST;
 	hash_t keyTwo = HASH_RESOURCE;
@@ -319,7 +319,10 @@ DECLARE_TEST(source, collapse) {
 		HASH_NONE, HASH_TRUE, HASH_FALSE, HASH_SYSTEM
 	};
 	const uint64_t platforms[4] = {
-		0, 1, 3, 7
+		resource_platform((resource_platform_t){-1,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,2,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,2,3,4,-1})
 	};
 
 	struct resource_expect_change_t {
@@ -391,7 +394,7 @@ DECLARE_TEST(source, collapse) {
 					EXPECT_PTRNE(change, nullptr);
 					EXPECT_TICKEQ(change->timestamp, expected[iplat][ihash].change.timestamp);
 					EXPECT_HASHEQ(change->hash, expected[iplat][ihash].change.hash);
-					EXPECT_TRUE(resource_platform_is_more_specific(platforms[iplat], change->platform));
+					EXPECT_TRUE(resource_platform_is_equal_or_more_specific(platforms[iplat], change->platform));
 					EXPECT_CONSTSTRINGEQ(change->value.value, expected[iplat][ihash].change.value.value);
 #endif
 					string_deallocate((char*)expected[iplat][ihash].value.str);

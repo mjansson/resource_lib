@@ -42,6 +42,7 @@ typedef struct resource_change_block_t      resource_change_block_t;
 typedef struct resource_change_map_t        resource_change_map_t;
 typedef struct resource_source_t            resource_source_t;
 typedef struct resource_blob_t              resource_blob_t;
+typedef struct resource_platform_t          resource_platform_t;
 
 typedef int (* resource_import_fn)(stream_t*);
 typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
@@ -51,6 +52,19 @@ struct resource_config_t {
 	bool enable_local_cache;
 	bool enable_local_source;
 	bool enable_remote_source;
+};
+
+struct resource_platform_t {
+	//! Platform identifier, 7 bits, [0,127)
+	int  platform;
+	//! Render API group identifier, 5 bits, [0,31)
+	int  render_api_group;
+	//! Render API identifier, 7 bits, [0,127)
+	int  render_api;
+	//! Quality level identifier, 4 bits, [0,15)
+	int  quality_level;
+	//! Custom identifier, 8 bits, [0,255)
+	int  custom;
 };
 
 #define RESOURCE_DECLARE_EVENT   \

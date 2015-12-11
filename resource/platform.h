@@ -22,9 +22,16 @@
 
 #include <resource/types.h>
 
-/*! CHeck if platform is more specific than reference
+/*! Compute a resource platform compact identifier from a platform
+declaration structure
+\param declaration Declaration
+\return Compact identifier */
+RESOURCE_API uint64_t
+resource_platform(const resource_platform_t declaration);
+
+/*! Check if platform is equal or more specific than reference
 \param platform Platform
 \param reference Reference
-\return true if platform is more specific than reference, false if not */
+\return true if platform is equal or more specific than reference, false if not */
 RESOURCE_API bool
-resource_platform_is_more_specific(uint64_t platform, uint64_t reference);
+resource_platform_is_equal_or_more_specific(uint64_t platform, uint64_t reference);

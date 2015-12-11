@@ -532,12 +532,12 @@ resource_source_map_platform_reduce(resource_change_t* change, resource_change_t
 	uint64_t platform = *(uint64_t*)data;
 	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
 //Change must be superset of requested platform
-	        resource_platform_is_more_specific(platform, change->platform) &&
+	        resource_platform_is_equal_or_more_specific(platform, change->platform) &&
 //Either no previous result, or
 //  previous best is platform superset of change platform and
 //    either platforms are different (change is exclusively more specific), or
 ///   change is newer (and platforms are equal)
-	        (!best || (resource_platform_is_more_specific(change->platform, best->platform) &&
+	        (!best || (resource_platform_is_equal_or_more_specific(change->platform, best->platform) &&
 	                   ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
 		return change;
 	return best;
