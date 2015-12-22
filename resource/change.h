@@ -24,6 +24,12 @@
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
+RESOURCE_API bool
+resource_change_is_value(resource_change_t* change);
+
+RESOURCE_API bool
+resource_change_is_blob(resource_change_t* change);
+
 RESOURCE_API resource_change_data_t*
 resource_change_data_allocate(size_t size);
 

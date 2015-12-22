@@ -36,26 +36,30 @@ resource_remote_set_url(const char* url, size_t length) {
 }
 
 bool
-resource_remote_need_update_static(const uuid_t uuid) {
+resource_remote_need_update_static(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
 	return false;
 }
 
 bool
-resource_remote_need_update_dynamic(const uuid_t uuid) {
+resource_remote_need_update_dynamic(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
 	return false;
 }
 
 stream_t*
-resource_remote_update_static(const uuid_t uuid) {
+resource_remote_update_static(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
 	return 0;
 }
 
 stream_t*
-resource_remote_update_dynamic(const uuid_t uuid) {
+resource_remote_update_dynamic(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
 	return 0;
 }
 

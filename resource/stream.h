@@ -23,10 +23,10 @@
 #include <resource/types.h>
 
 RESOURCE_API stream_t*
-resource_stream_open_static(const uuid_t res);
+resource_stream_open_static(const uuid_t res, uint64_t platform);
 
 RESOURCE_API stream_t*
-resource_stream_open_dynamic(const uuid_t res);
+resource_stream_open_dynamic(const uuid_t res, uint64_t platform);
 
 RESOURCE_API string_t
 resource_stream_make_path(char* buffer, size_t capacity, const char* base, size_t base_length,

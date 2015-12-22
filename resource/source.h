@@ -56,6 +56,9 @@ RESOURCE_API void
 resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
                       uint64_t platform);
 
+RESOURCE_API resource_change_t*
+resource_source_get(resource_source_t* source, hash_t key, uint64_t platform);
+
 RESOURCE_API void
 resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key,
                          uint64_t platform, hash_t checksum, size_t size);

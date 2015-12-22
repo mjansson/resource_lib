@@ -29,6 +29,10 @@
 static char _resource_source_path_buffer[BUILD_MAX_PATHLEN];
 string_t _resource_source_path;
 
+static resource_change_t*
+resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
+                                        uint64_t platform);
+
 bool
 resource_source_set_path(const char* path, size_t length) {
 	if (!_resource_config.enable_local_source)
@@ -196,6 +200,22 @@ resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key, u
 	change->hash = key;
 	change->platform = platform;
 	change->flags = RESOURCE_SOURCEFLAG_UNSET;
+}
+
+resource_change_t*
+resource_source_get(resource_source_t* source, hash_t key, uint64_t platform) {
+	resource_change_t* best = 0;
+	resource_change_block_t* block = &source->first;
+	while (block) {
+		size_t ichg, chgsize;
+		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
+			resource_change_t* change = block->changes + ichg;
+			if (change->hash == key)
+				best = resource_source_change_platform_compare(change, best, platform);
+		}
+		block = block->next;
+	}
+	return best;
 }
 
 void
@@ -527,9 +547,8 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 }
 
 static resource_change_t*
-resource_source_map_platform_reduce(resource_change_t* change, resource_change_t* best,
-                                    void* data) {
-	uint64_t platform = *(uint64_t*)data;
+resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
+                                        uint64_t platform) {
 	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
 //Change must be superset of requested platform
 	        resource_platform_is_equal_or_more_specific(platform, change->platform) &&
@@ -541,6 +560,12 @@ resource_source_map_platform_reduce(resource_change_t* change, resource_change_t
 	                   ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
 		return change;
 	return best;
+}
+
+static resource_change_t*
+resource_source_map_platform_reduce(resource_change_t* change, resource_change_t* best,
+                                    void* data) {
+	return resource_source_change_platform_compare(change, best, *(uint64_t*)data);
 }
 
 void

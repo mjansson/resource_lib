@@ -23,11 +23,12 @@
 
 /* Platform field description
 
-bits    description      variants
-0-6     platform         128
-7-13    render api       128
-14-17   quality level    16
-18-25   custom           256
+bits    description       variants
+0-6     platform          128
+7-11    render api group  32
+12-18   render api        128
+19-22   quality level     16
+23-30   custom            256
 
 */
 
@@ -97,4 +98,19 @@ resource_platform_is_equal_or_more_specific(uint64_t platform, uint64_t referenc
 	        RESOURCE_RENDERAPI_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
 	        RESOURCE_QUALITYLEVEL_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
 	        RESOURCE_CUSTOM_EQUAL_OR_MORE_SPECIFIC(platform, reference));
+}
+
+uint64_t
+resource_platform_reduce(uint64_t platform) {
+	if (platform | RESOURCE_CUSTOM_INPLACE)
+		return platform & ~RESOURCE_CUSTOM_INPLACE;
+	if (platform | RESOURCE_QUALITYLEVEL_INPLACE)
+		return platform & ~RESOURCE_QUALITYLEVEL_INPLACE;
+	if (platform | RESOURCE_RENDERAPI_INPLACE)
+		return platform & ~RESOURCE_RENDERAPI_INPLACE;
+	if (platform | RESOURCE_RENDERAPIGROUP_INPLACE)
+		return platform & ~RESOURCE_RENDERAPIGROUP_INPLACE;
+	if (platform | RESOURCE_PLATFORM_INPLACE)
+		return platform & ~RESOURCE_PLATFORM_INPLACE;
+	return 0;
 }

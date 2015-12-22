@@ -23,6 +23,16 @@
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
+bool
+resource_change_is_value(resource_change_t* change) {
+	return (change->flags & RESOURCE_SOURCEFLAG_VALUE) != 0;
+}
+
+bool
+resource_change_is_blob(resource_change_t* change) {
+	return (change->flags & RESOURCE_SOURCEFLAG_BLOB) != 0;
+}
+
 resource_change_data_t*
 resource_change_data_allocate(size_t size) {
 	resource_change_data_t* data = memory_allocate(HASH_RESOURCE,

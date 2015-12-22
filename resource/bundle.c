@@ -37,8 +37,30 @@ resource_bundle_load(const uuid_t bundle) {
 	if (_resource_config.enable_local_cache) {
 	}
 #endif
-	
+
 	FOUNDATION_UNUSED(bundle);
 
 	return false;
+}
+
+stream_t*
+resource_bundle_stream(const uuid_t bundle) {
+#if RESOURCE_ENABLE_REMOTE_SOURCE
+	if (_resource_config.enable_remote_source) {
+	}
+#endif
+
+#if RESOURCE_ENABLE_LOCAL_SOURCE
+	if (_resource_config.enable_local_source) {
+	}
+#endif
+
+#if RESOURCE_ENABLE_LOCAL_CACHE
+	if (_resource_config.enable_local_cache) {
+	}
+#endif
+
+	FOUNDATION_UNUSED(bundle);
+
+	return nullptr;
 }

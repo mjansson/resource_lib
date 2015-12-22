@@ -35,7 +35,7 @@
 #include <resource/platform.h>
 
 RESOURCE_API int
-resource_module_initialize(resource_config_t config);
+resource_module_initialize(const resource_config_t config);
 
 RESOURCE_API void
 resource_module_finalize(void);

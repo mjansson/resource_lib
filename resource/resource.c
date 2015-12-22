@@ -27,10 +27,19 @@ static bool _resource_module_initialized;
 static void
 resource_module_initialize_config(const resource_config_t config) {
 	memcpy(&_resource_config, &config, sizeof(resource_config_t));
+#if !RESOURCE_ENABLE_LOCAL_SOURCE
+	_resource_config.enable_local_source = false;
+#endif
+#if !RESOURCE_ENABLE_LOCAL_CACHE
+	_resource_config.enable_local_cache = false;
+#endif
+#if !RESOURCE_ENABLE_REMOTE_SOURCE
+	_resource_config.enable_remote_source = false;
+#endif
 }
 
 int
-resource_module_initialize(resource_config_t config) {
+resource_module_initialize(const resource_config_t config) {
 	if (_resource_module_initialized)
 		return 0;
 
@@ -38,52 +47,57 @@ resource_module_initialize(resource_config_t config) {
 
 	_resource_event_stream = event_stream_allocate(0);
 
-	/*
-	const char* remote_url;
-	const char* local_source;
-	const char* local_cache;
-	char** paths;
-	const char* const* cmdline;
-	unsigned int iarg, argsize;
+	config_load(STRING_CONST("resource"), HASH_RESOURCE, true, false);
+	{
+		size_t ipath;
+		const string_const_t remote_url = config_string(HASH_RESOURCE, HASH_REMOTE_URL);
+		if (remote_url.length)
+			resource_remote_set_url(STRING_ARGS(remote_url));
 
-	remote_url = config_string(HASH_RESOURCE, HASH_REMOTE_URL);
-	if (remote_url)
-		resource_remote_set_url(remote_url);
+		const string_const_t local_source = config_string(HASH_RESOURCE, HASH_LOCAL_SOURCE);
+		if (local_source.length)
+			resource_source_set_path(STRING_ARGS(local_source));
 
-	local_source = config_string(HASH_RESOURCE, HASH_LOCAL_SOURCE);
-	if (local_source)
-		resource_local_set_source(local_source);
+		const string_const_t local_path = config_string(HASH_RESOURCE, HASH_LOCAL_PATH);
+		if (local_path.length) {
+			string_const_t paths[32];
+			size_t numpaths = string_explode(STRING_ARGS(local_path), STRING_CONST(";,"), paths,
+			                                 sizeof(paths)/sizeof(paths[0]), false);
+			for (ipath = 0; ipath < numpaths; ++ipath)
+				resource_local_add_path(STRING_ARGS(paths[ipath]));
+		}
 
-	local_cache = config_string(HASH_RESOURCE, HASH_LOCAL_CACHE);
-	if (local_cache) {
-		paths = string_explode(local_cache, ";,", false);
-		resource_local_set_paths((const char* const*)paths);
-		string_array_deallocate(paths);
+		size_t iarg, argsize;
+		const string_const_t* cmdline = environment_command_line();
+		for (iarg = 0, argsize = array_size(cmdline); iarg < argsize; ++iarg) {
+			if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-url")) &&
+			        (iarg < (argsize - 1))) {
+				++iarg;
+				resource_remote_set_url(STRING_ARGS(cmdline[iarg]));
+			}
+			else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-source")) &&
+			         (iarg < (argsize - 1))) {
+				++iarg;
+				resource_source_set_path(STRING_ARGS(cmdline[iarg]));
+			}
+			else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-path")) &&
+			         (iarg < (argsize - 1))) {
+				++iarg;
+				string_const_t paths[32];
+				size_t numpaths = string_explode(STRING_ARGS(cmdline[iarg]), STRING_CONST(";,"), paths,
+				                                 sizeof(paths)/sizeof(paths[0]), false);
+				for (ipath = 0; ipath < numpaths; ++ipath)
+					resource_local_add_path(STRING_ARGS(paths[ipath]));
+			}
+		}
 	}
-
-	cmdline = environment_command_line();
-	for (iarg = 0, argsize = array_size(cmdline); iarg < argsize; ++iarg) {
-		if (string_equal(cmdline[iarg], "--resource-remote-url") && (iarg < (argsize - 1))) {
-			++iarg;
-			resource_remote_set_url(cmdline[iarg]);
-		}
-		else if (string_equal(cmdline[iarg], "--resource-local-source") && (iarg < (argsize - 1))) {
-			++iarg;
-			resource_local_set_source(cmdline[iarg]);
-		}
-		else if (string_equal(cmdline[iarg], "--resource-local-cache") && (iarg < (argsize - 1))) {
-			++iarg;
-			paths = string_explode(cmdline[iarg], ";,", false);
-			resource_local_set_paths((const char* const*)paths);
-			string_array_deallocate(paths);
-		}
-	}*/
 
 	//Make sure we have at least one way of loading resources
 	if (!_resource_config.enable_local_cache &&
-		!_resource_config.enable_local_source &&
-		!_resource_config.enable_remote_source) {
-		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("Invalid config, no way of loading resources"));
+	        !_resource_config.enable_local_source &&
+	        !_resource_config.enable_remote_source) {
+		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE,
+		          STRING_CONST("Invalid config, no way of loading resources"));
 		return -1;
 	}
 

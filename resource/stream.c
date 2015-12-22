@@ -21,16 +21,16 @@
 #include <foundation/foundation.h>
 
 stream_t*
-resource_stream_open_static(const uuid_t res) {
+resource_stream_open_static(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_remote_need_update_static(res))
-		return resource_remote_update_static(res);
+	if (resource_remote_need_update_static(res, platform))
+		return resource_remote_update_static(res, platform);
 
-	if (resource_compile_need_update_static(res))
-		resource_compile_update_static(res);
+	if (resource_compile_need_update(res, platform))
+		resource_compile(res, platform);
 
-	stream = resource_local_open_static(res);
+	stream = resource_local_open_static(res, platform);
 	if (stream)
 		return stream;
 
@@ -43,16 +43,16 @@ resource_stream_open_static(const uuid_t res) {
 }
 
 stream_t*
-resource_stream_open_dynamic(const uuid_t res) {
+resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_remote_need_update_dynamic(res))
-		return resource_remote_update_dynamic(res);
+	if (resource_remote_need_update_dynamic(res, platform))
+		return resource_remote_update_dynamic(res, platform);
 
-	if (resource_compile_need_update_dynamic(res))
-		resource_compile_update_dynamic(res);
+	if (resource_compile_need_update(res, platform))
+		resource_compile(res, platform);
 
-	stream = resource_local_open_dynamic(res);
+	stream = resource_local_open_dynamic(res, platform);
 	if (stream)
 		return stream;
 
