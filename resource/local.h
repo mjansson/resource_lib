@@ -52,3 +52,18 @@ resource_local_open_dynamic(const uuid_t uuid, uint64_t platform);
 #define resource_local_open_dynamic(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
 
 #endif
+
+#if RESOURCE_ENABLE_LOCAL_CACHE && RESOURCE_ENABLE_LOCAL_SOURCE
+
+RESOURCE_API stream_t*
+resource_local_create_static(const uuid_t uuid, uint64_t platform);
+
+RESOURCE_API stream_t*
+resource_local_create_dynamic(const uuid_t uuid, uint64_t platform);
+
+#else
+
+#define resource_local_create_static(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
+#define resource_local_create_dynamic(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
+
+#endif

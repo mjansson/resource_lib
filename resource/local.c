@@ -64,13 +64,14 @@ void resource_local_remove_path(const char* path, size_t length) {
 }
 
 stream_t*
-resource_local_open_static(const uuid_t uuid, uint64_t platform) {
+resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suffix,
+                           size_t suffix_length, unsigned int mode) {
 	stream_t* stream = 0;
 	size_t ipath, pathsize;
 	char buffer[BUILD_MAX_PATHLEN];
 
 	if (!_resource_config.enable_local_cache)
-		return 0;
+		return nullptr;
 
 	for (ipath = 0, pathsize = array_size(_resource_local_paths); !stream &&
 	        (ipath < pathsize); ++ipath) {
@@ -81,45 +82,51 @@ resource_local_open_static(const uuid_t uuid, uint64_t platform) {
 			string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
 			string_t platformpath = path_append(STRING_ARGS(curpath), sizeof(buffer),
 			                                    STRING_ARGS(platformstr));
-			stream = stream_open(STRING_ARGS(platformpath), STREAM_IN);
+			if (suffix_length)
+				platformpath = string_append(STRING_ARGS(platformpath), sizeof(buffer), suffix, suffix_length);
+			if (mode & STREAM_CREATE) {
+				string_const_t path = path_directory_name(STRING_ARGS(platformpath));
+				fs_make_directory(STRING_ARGS(path));
+			}
+			stream = stream_open(STRING_ARGS(platformpath), mode);
 			platform = resource_platform_reduce(platform);
 		}
-		if (!stream)
-			stream = stream_open(STRING_ARGS(curpath), STREAM_IN);
+		if (!stream) {
+			if (suffix_length)
+				curpath = string_append(STRING_ARGS(curpath), sizeof(buffer), suffix, suffix_length);
+			if (mode & STREAM_CREATE) {
+				string_const_t path = path_directory_name(STRING_ARGS(curpath));
+				fs_make_directory(STRING_ARGS(path));
+			}
+			stream = stream_open(STRING_ARGS(curpath), mode);
+		}
 	}
 
 	return stream;
 }
 
 stream_t*
+resource_local_open_static(const uuid_t uuid, uint64_t platform) {
+	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_IN);
+}
+
+stream_t*
 resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
-	stream_t* stream = 0;
-	size_t ipath, pathsize;
-	char buffer[BUILD_MAX_PATHLEN];
+	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_IN);
+}
 
-	if (!_resource_config.enable_local_cache)
-		return 0;
+#endif
 
-	for (ipath = 0, pathsize = array_size(_resource_local_paths); !stream &&
-	        (ipath < pathsize); ++ipath) {
-		string_t curpath = resource_stream_make_path(buffer, sizeof(buffer),
-		                                             STRING_ARGS(_resource_local_paths[ipath]),
-		                                             uuid);
-		while (platform && !stream) {
-			string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
-			string_t platformpath = path_append(STRING_ARGS(curpath), sizeof(buffer),
-			                                    STRING_ARGS(platformstr));
-			platformpath = string_append(STRING_ARGS(platformpath), sizeof(buffer), STRING_CONST(".blob"));
-			stream = stream_open(STRING_ARGS(platformpath), STREAM_IN);
-			platform = resource_platform_reduce(platform);
-		}
-		if (!stream) {
-			curpath = string_append(STRING_ARGS(curpath), sizeof(buffer), STRING_CONST(".blob"));
-			stream = stream_open(STRING_ARGS(curpath), STREAM_IN);
-		}
-	}
+#if RESOURCE_ENABLE_LOCAL_CACHE && RESOURCE_ENABLE_LOCAL_SOURCE
 
-	return stream;
+stream_t*
+resource_local_create_static(const uuid_t uuid, uint64_t platform) {
+	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+}
+
+stream_t*
+resource_local_create_dynamic(const uuid_t uuid, uint64_t platform) {
+	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 }
 
 #endif

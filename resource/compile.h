@@ -22,7 +22,7 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
+#if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
 
 RESOURCE_API void
 resource_compile_register(resource_compile_fn compiler);

@@ -23,7 +23,7 @@
 
 #include <foundation/foundation.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
+#if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
 
 static resource_compile_fn* _resource_compilers;
 
@@ -48,6 +48,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	resource_source_initialize(&source);
 	if (resource_source_read(&source, uuid)) {
 		resource_change_t* change;
+		resource_source_collapse_history(&source);
 		change = resource_source_get(&source, HASH_RESOURCE_TYPE,
 		                             platform != RESOURCE_PLATFORM_ALL ? platform : 0);
 		if (change && resource_change_is_value(change)) {
