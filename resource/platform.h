@@ -29,6 +29,13 @@ declaration structure
 RESOURCE_API uint64_t
 resource_platform(const resource_platform_t declaration);
 
+/*! Decompose a resource platform compact identifier to a platform
+declaration structure
+\param platform Compact identifier
+\return Declaration */
+RESOURCE_API resource_platform_t
+resource_platform_decompose(uint64_t platform);
+
 /*! Check if platform is equal or more specific than reference
 \param platform Platform
 \param reference Reference

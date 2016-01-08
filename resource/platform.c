@@ -64,10 +64,11 @@ bits    description       variants
 #define RESOURCE_QUALITYLEVEL_TO_BITS(qualitylevel) (((uint64_t)(qualitylevel) & RESOURCE_QUALITYLEVEL_MASK) << RESOURCE_QUALITYLEVEL_SHIFT)
 #define RESOURCE_CUSTOM_TO_BITS(custom) (((uint64_t)(custom) & RESOURCE_CUSTOM_MASK) << RESOURCE_CUSTOM_SHIFT)
 
-/*#define RESOURCE_PLATFORM_FROM_BITS(bits) (((bits) >> RESOURCE_PLATFORM_SHIFT) & RESOURCE_PLATFORM_MASK)
-#define RESOURCE_RENDERAPI_FROM_BITS(bits) (((bits) >> RESOURCE_RENDERAPI_SHIFT) & RESOURCE_RENDERAPI_MASK)
-#define RESOURCE_QUALITYLEVEL_FROM_BITS(bits) (((bits) >> RESOURCE_QUALITYLEVEL_SHIFT) & RESOURCE_QUALITYLEVEL_MASK)
-#define RESOURCE_CUSTOM_FROM_BITS(bits) (((bits) >> RESOURCE_CUSTOM_SHIFT) & RESOURCE_CUSTOM_MASK)*/
+#define RESOURCE_PLATFORM_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_PLATFORM_SHIFT) & RESOURCE_PLATFORM_MASK))
+#define RESOURCE_RENDERAPIGROUP_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_RENDERAPIGROUP_SHIFT) & RESOURCE_RENDERAPIGROUP_MASK))
+#define RESOURCE_RENDERAPI_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_RENDERAPI_SHIFT) & RESOURCE_RENDERAPI_MASK))
+#define RESOURCE_QUALITYLEVEL_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_QUALITYLEVEL_SHIFT) & RESOURCE_QUALITYLEVEL_MASK))
+#define RESOURCE_CUSTOM_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_CUSTOM_SHIFT) & RESOURCE_CUSTOM_MASK))
 
 #define RESOURCE_PLATFORM_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_PLATFORM_INPLACE) || ((test & RESOURCE_PLATFORM_INPLACE) == (ref & RESOURCE_PLATFORM_INPLACE)))
 #define RESOURCE_RENDERAPIGROUP_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_RENDERAPIGROUP_INPLACE) || ((test & RESOURCE_RENDERAPIGROUP_INPLACE) == (ref & RESOURCE_RENDERAPIGROUP_INPLACE)))
@@ -89,6 +90,18 @@ resource_platform(const resource_platform_t declaration) {
 	if ((declaration.custom >= 0) && (declaration.custom < RESOURCE_CUSTOM_MASK))
 		compact |= RESOURCE_QUALITYLEVEL_TO_BITS(declaration.custom+1);
 	return compact;
+}
+
+resource_platform_t
+resource_platform_decompose(uint64_t platform) {
+	resource_platform_t decl;
+	memset(&decl, 0, sizeof(decl));
+	decl.platform = RESOURCE_PLATFORM_FROM_BITS(platform) - 1;
+	decl.render_api_group = RESOURCE_RENDERAPIGROUP_FROM_BITS(platform) - 1;
+	decl.render_api = RESOURCE_RENDERAPI_FROM_BITS(platform) - 1;
+	decl.quality_level = RESOURCE_QUALITYLEVEL_FROM_BITS(platform) - 1;
+	decl.custom = RESOURCE_CUSTOM_FROM_BITS(platform) - 1;
+	return decl;
 }
 
 bool
