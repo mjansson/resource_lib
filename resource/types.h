@@ -46,7 +46,7 @@ typedef struct resource_source_t            resource_source_t;
 typedef struct resource_blob_t              resource_blob_t;
 typedef struct resource_platform_t          resource_platform_t;
 
-typedef int (* resource_import_fn)(stream_t*);
+typedef int (* resource_import_fn)(stream_t*, const uuid_t);
 typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const char*, size_t);
 typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
         void*);

@@ -26,7 +26,7 @@
 static resource_import_fn* _resource_importers;
 
 bool
-resource_import(const char* path, size_t length) {
+resource_import(const char* path, size_t length, const uuid_t uuid) {
 	size_t iimp, isize;
 	bool was_imported = false;
 	stream_t* stream = stream_open(path, length, STREAM_IN);
@@ -37,7 +37,7 @@ resource_import(const char* path, size_t length) {
 	}
 	for (iimp = 0, isize = array_size(_resource_importers); iimp != isize; ++iimp) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
-		was_imported |= (_resource_importers[iimp](stream) == 0);
+		was_imported |= (_resource_importers[iimp](stream, uuid) == 0);
 	}
 	return was_imported;
 }

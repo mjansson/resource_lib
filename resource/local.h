@@ -36,6 +36,9 @@ resource_local_add_path(const char* path, size_t length);
 RESOURCE_API void
 resource_local_remove_path(const char* path, size_t length);
 
+RESOURCE_API void
+resource_local_clear_paths(void);
+
 RESOURCE_API stream_t*
 resource_local_open_static(const uuid_t uuid, uint64_t platform);
 
@@ -48,6 +51,7 @@ resource_local_open_dynamic(const uuid_t uuid, uint64_t platform);
 #define resource_local_set_paths(paths, num) ((void)sizeof(paths)), ((void)sizeof(num))
 #define resource_local_add_path(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
 #define resource_local_remove_path(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+#define resource_local_clear_paths() do {} while(0)
 #define resource_local_open_static(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
 #define resource_local_open_dynamic(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
 

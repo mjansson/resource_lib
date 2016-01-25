@@ -25,7 +25,7 @@
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
 RESOURCE_API bool
-resource_import(const char* path, size_t length);
+resource_import(const char* path, size_t length, const uuid_t uuid);
 
 RESOURCE_API void
 resource_import_register(resource_import_fn importer);

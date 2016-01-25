@@ -63,12 +63,18 @@ void resource_local_remove_path(const char* path, size_t length) {
 	}
 }
 
+void
+resource_local_clear_paths(void) {
+	string_array_deallocate(_resource_local_paths);
+}
+
 stream_t*
 resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suffix,
                            size_t suffix_length, unsigned int mode) {
 	stream_t* stream = 0;
 	size_t ipath, pathsize;
 	char buffer[BUILD_MAX_PATHLEN];
+	uint64_t full_platform = platform;
 
 	if (!_resource_config.enable_local_cache)
 		return nullptr;
@@ -89,7 +95,7 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 				fs_make_directory(STRING_ARGS(path));
 			}
 			stream = stream_open(STRING_ARGS(platformpath), mode);
-			platform = resource_platform_reduce(platform);
+			platform = resource_platform_reduce(platform, full_platform);
 		}
 		if (!stream) {
 			if (suffix_length)
@@ -107,12 +113,12 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 
 stream_t*
 resource_local_open_static(const uuid_t uuid, uint64_t platform) {
-	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_IN);
+	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_IN | STREAM_BINARY);
 }
 
 stream_t*
 resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
-	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_IN);
+	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_IN | STREAM_BINARY);
 }
 
 #endif
@@ -121,12 +127,12 @@ resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
 
 stream_t*
 resource_local_create_static(const uuid_t uuid, uint64_t platform) {
-	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
 }
 
 stream_t*
 resource_local_create_dynamic(const uuid_t uuid, uint64_t platform) {
-	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
 }
 
 #endif

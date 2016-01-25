@@ -43,9 +43,9 @@ resource_platform_decompose(uint64_t platform);
 RESOURCE_API bool
 resource_platform_is_equal_or_more_specific(uint64_t platform, uint64_t reference);
 
-/*! Gradual reduction of platform specification, by removing highest group
-specifier.
-\param platform Platform specifier
+/*! Gradual reduction of platform specification
+\param platform Current platform specifier
+\param full_platform Original full platform specifier
 \return Reduced platform specifier */
 RESOURCE_API uint64_t
-resource_platform_reduce(uint64_t platform);
+resource_platform_reduce(uint64_t platform, uint64_t full_platform);

@@ -111,6 +111,8 @@ resource_module_finalize(void) {
 	if (!_resource_module_initialized)
 		return;
 
+	resource_local_clear_paths();
+
 	event_stream_deallocate(_resource_event_stream);
 
 	_resource_event_stream = 0;

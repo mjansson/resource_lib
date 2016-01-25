@@ -81,14 +81,15 @@ resource_platform(const resource_platform_t declaration) {
 	uint64_t compact = 0;
 	if ((declaration.platform >= 0) && (declaration.platform < RESOURCE_PLATFORM_MASK))
 		compact |= RESOURCE_PLATFORM_TO_BITS(declaration.platform+1);
-	if ((declaration.render_api_group >= 0) && (declaration.render_api_group < RESOURCE_RENDERAPIGROUP_MASK))
+	if ((declaration.render_api_group >= 0) &&
+	        (declaration.render_api_group < RESOURCE_RENDERAPIGROUP_MASK))
 		compact |= RESOURCE_RENDERAPIGROUP_TO_BITS(declaration.render_api_group+1);
 	if ((declaration.render_api >= 0) && (declaration.render_api < RESOURCE_RENDERAPI_MASK))
 		compact |= RESOURCE_RENDERAPI_TO_BITS(declaration.render_api+1);
 	if ((declaration.quality_level >= 0) && (declaration.quality_level < RESOURCE_QUALITYLEVEL_MASK))
 		compact |= RESOURCE_QUALITYLEVEL_TO_BITS(declaration.quality_level+1);
 	if ((declaration.custom >= 0) && (declaration.custom < RESOURCE_CUSTOM_MASK))
-		compact |= RESOURCE_QUALITYLEVEL_TO_BITS(declaration.custom+1);
+		compact |= RESOURCE_CUSTOM_TO_BITS(declaration.custom+1);
 	return compact;
 }
 
@@ -114,16 +115,25 @@ resource_platform_is_equal_or_more_specific(uint64_t platform, uint64_t referenc
 }
 
 uint64_t
-resource_platform_reduce(uint64_t platform) {
-	if (platform | RESOURCE_CUSTOM_INPLACE)
+resource_platform_reduce(uint64_t platform, uint64_t full_platform) {
+	if (platform & RESOURCE_CUSTOM_INPLACE)
 		return platform & ~RESOURCE_CUSTOM_INPLACE;
-	if (platform | RESOURCE_QUALITYLEVEL_INPLACE)
-		return platform & ~RESOURCE_QUALITYLEVEL_INPLACE;
-	if (platform | RESOURCE_RENDERAPI_INPLACE)
+	if (platform & RESOURCE_QUALITYLEVEL_INPLACE) {
+		int level = RESOURCE_QUALITYLEVEL_FROM_BITS(platform) - 1;
+		return (platform & ~RESOURCE_QUALITYLEVEL_INPLACE) | RESOURCE_QUALITYLEVEL_TO_BITS(level);
+	}
+	platform |= (full_platform & RESOURCE_CUSTOM_INPLACE) |
+	            (full_platform & RESOURCE_QUALITYLEVEL_INPLACE);
+
+	if (platform & RESOURCE_RENDERAPI_INPLACE)
 		return platform & ~RESOURCE_RENDERAPI_INPLACE;
-	if (platform | RESOURCE_RENDERAPIGROUP_INPLACE)
+	if (platform & RESOURCE_RENDERAPIGROUP_INPLACE)
 		return platform & ~RESOURCE_RENDERAPIGROUP_INPLACE;
-	if (platform | RESOURCE_PLATFORM_INPLACE)
+	platform |= (full_platform & RESOURCE_RENDERAPI_INPLACE) |
+	            (full_platform & RESOURCE_RENDERAPIGROUP_INPLACE);
+
+	if (platform & RESOURCE_PLATFORM_INPLACE)
 		return platform & ~RESOURCE_PLATFORM_INPLACE;
+
 	return 0;
 }
