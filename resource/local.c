@@ -84,7 +84,7 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 		string_t curpath = resource_stream_make_path(buffer, sizeof(buffer),
 		                                             STRING_ARGS(_resource_local_paths[ipath]),
 		                                             uuid);
-		while (platform && !stream) {
+		while (!stream) {
 			string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
 			string_t platformpath = path_append(STRING_ARGS(curpath), sizeof(buffer),
 			                                    STRING_ARGS(platformstr));
@@ -95,16 +95,9 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 				fs_make_directory(STRING_ARGS(path));
 			}
 			stream = stream_open(STRING_ARGS(platformpath), mode);
+			if (!platform)
+				break;
 			platform = resource_platform_reduce(platform, full_platform);
-		}
-		if (!stream) {
-			if (suffix_length)
-				curpath = string_append(STRING_ARGS(curpath), sizeof(buffer), suffix, suffix_length);
-			if (mode & STREAM_CREATE) {
-				string_const_t path = path_directory_name(STRING_ARGS(curpath));
-				fs_make_directory(STRING_ARGS(path));
-			}
-			stream = stream_open(STRING_ARGS(curpath), mode);
 		}
 	}
 
