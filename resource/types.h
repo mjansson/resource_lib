@@ -57,8 +57,8 @@ struct resource_config_t {
 	bool enable_local_cache;
 	/*! Enable use of locally stored resource source files */
 	bool enable_local_source;
-	/*! Enable use of remotely stored resource source files */
-	bool enable_remote_source;
+	/*! Enable use of remotely stored compiler resource files */
+	bool enable_remote_cache;
 };
 
 struct resource_platform_t {

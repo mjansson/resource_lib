@@ -20,7 +20,7 @@
 
 #include <foundation/foundation.h>
 
-#if RESOURCE_ENABLE_REMOTE_SOURCE
+#if RESOURCE_ENABLE_REMOTE_CACHE
 
 static string_t _remote_url;
 
@@ -35,29 +35,15 @@ resource_remote_set_url(const char* url, size_t length) {
 	_remote_url = string_clone(url, length);
 }
 
-bool
-resource_remote_need_update_static(const uuid_t uuid, uint64_t platform) {
-	FOUNDATION_UNUSED(uuid);
-	FOUNDATION_UNUSED(platform);
-	return false;
-}
-
-bool
-resource_remote_need_update_dynamic(const uuid_t uuid, uint64_t platform) {
-	FOUNDATION_UNUSED(uuid);
-	FOUNDATION_UNUSED(platform);
-	return false;
-}
-
 stream_t*
-resource_remote_update_static(const uuid_t uuid, uint64_t platform) {
+resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	return 0;
 }
 
 stream_t*
-resource_remote_update_dynamic(const uuid_t uuid, uint64_t platform) {
+resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	return 0;

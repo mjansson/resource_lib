@@ -77,7 +77,7 @@ main_initialize(void) {
 
 	resource_config.enable_local_source = true;
 	resource_config.enable_local_cache = true;
-	resource_config.enable_remote_source = true;
+	resource_config.enable_remote_cache = true;
 
 	memset(&application, 0, sizeof(application));
 	application.name = string_const(STRING_CONST("resource"));

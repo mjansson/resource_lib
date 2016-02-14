@@ -22,7 +22,7 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_REMOTE_SOURCE
+#if RESOURCE_ENABLE_REMOTE_CACHE
 
 RESOURCE_API string_const_t
 resource_remote_url(void);
@@ -30,25 +30,17 @@ resource_remote_url(void);
 RESOURCE_API void
 resource_remote_set_url(const char* url, size_t length);
 
-RESOURCE_API bool
-resource_remote_need_update_static(const uuid_t uuid, uint64_t platform);
-
-RESOURCE_API bool
-resource_remote_need_update_dynamic(const uuid_t uuid, uint64_t platform);
+RESOURCE_API stream_t*
+resource_remote_open_static(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API stream_t*
-resource_remote_update_static(const uuid_t uuid, uint64_t platform);
-
-RESOURCE_API stream_t*
-resource_remote_update_dynamic(const uuid_t uuid, uint64_t platform);
+resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform);
 
 #else
 
-#define resource_remote_url() ((const char*)0)
+#define resource_remote_url() string_empty()
 #define resource_remote_set_url(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
-#define resource_remote_need_update_static(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), false
-#define resource_remote_need_update_dynamic(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), false
-#define resource_remote_update_static(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0
-#define resource_remote_update_dynamic(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0
+#define resource_remote_open_static(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
+#define resource_remote_open_dynamic(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
 
 #endif

@@ -33,8 +33,8 @@ resource_module_initialize_config(const resource_config_t config) {
 #if !RESOURCE_ENABLE_LOCAL_CACHE
 	_resource_config.enable_local_cache = false;
 #endif
-#if !RESOURCE_ENABLE_REMOTE_SOURCE
-	_resource_config.enable_remote_source = false;
+#if !RESOURCE_ENABLE_REMOTE_CACHE
+	_resource_config.enable_remote_cache = false;
 #endif
 }
 
@@ -95,7 +95,7 @@ resource_module_initialize(const resource_config_t config) {
 	//Make sure we have at least one way of loading resources
 	if (!_resource_config.enable_local_cache &&
 	        !_resource_config.enable_local_source &&
-	        !_resource_config.enable_remote_source) {
+	        !_resource_config.enable_remote_cache) {
 		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE,
 		          STRING_CONST("Invalid config, no way of loading resources"));
 		return -1;

@@ -23,8 +23,8 @@
 
 bool
 resource_bundle_load(const uuid_t bundle) {
-#if RESOURCE_ENABLE_REMOTE_SOURCE
-	if (_resource_config.enable_remote_source) {
+#if RESOURCE_ENABLE_REMOTE_CACHE
+	if (_resource_config.enable_remote_cache) {
 	}
 #endif
 
@@ -45,8 +45,8 @@ resource_bundle_load(const uuid_t bundle) {
 
 stream_t*
 resource_bundle_stream(const uuid_t bundle) {
-#if RESOURCE_ENABLE_REMOTE_SOURCE
-	if (_resource_config.enable_remote_source) {
+#if RESOURCE_ENABLE_REMOTE_CACHE
+	if (_resource_config.enable_remote_cache) {
 	}
 #endif
 

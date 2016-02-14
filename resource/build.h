@@ -51,9 +51,9 @@
 #endif
 
 #if !BUILD_DEPLOY || !RESOURCE_ENABLE_LOCAL_CACHE
-#  define RESOURCE_ENABLE_REMOTE_SOURCE 1
+#  define RESOURCE_ENABLE_REMOTE_CACHE 1
 #else
-#  define RESOURCE_ENABLE_REMOTE_SOURCE 0
+#  define RESOURCE_ENABLE_REMOTE_CACHE 0
 #endif
 
 /*! Number of changes in a change block */
@@ -63,6 +63,6 @@
 #define RESOURCE_CHANGE_BLOCK_DATA_SIZE 1024
 
 //Make sure we have at least one way of loading resources
-#if !RESOURCE_ENABLE_REMOTE_SOURCE && !RESOURCE_ENABLE_LOCAL_CACHE
+#if !RESOURCE_ENABLE_REMOTE_CACHE && !RESOURCE_ENABLE_LOCAL_CACHE
 #  error Invalid build configuration, no way of loading resources
 #endif

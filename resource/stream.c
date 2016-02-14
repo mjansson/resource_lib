@@ -24,13 +24,14 @@ stream_t*
 resource_stream_open_static(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_remote_need_update_static(res, platform))
-		return resource_remote_update_static(res, platform);
-
 	if (resource_compile_need_update(res, platform))
 		resource_compile(res, platform);
 
 	stream = resource_local_open_static(res, platform);
+	if (stream)
+		return stream;
+
+	stream = resource_remote_open_static(res, platform);
 	if (stream)
 		return stream;
 
@@ -46,13 +47,14 @@ stream_t*
 resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_remote_need_update_dynamic(res, platform))
-		return resource_remote_update_dynamic(res, platform);
-
 	if (resource_compile_need_update(res, platform))
 		resource_compile(res, platform);
 
 	stream = resource_local_open_dynamic(res, platform);
+	if (stream)
+		return stream;
+
+	stream = resource_remote_open_dynamic(res, platform);
 	if (stream)
 		return stream;
 
