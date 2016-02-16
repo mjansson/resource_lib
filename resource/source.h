@@ -30,6 +30,9 @@ resource_source_path(void);
 RESOURCE_API bool
 resource_source_set_path(const char* path, size_t length);
 
+RESOURCE_API uint256_t
+resource_source_read_hash(const uuid_t uuid);
+
 RESOURCE_API resource_source_t*
 resource_source_allocate(void);
 

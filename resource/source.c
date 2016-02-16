@@ -64,6 +64,19 @@ resource_source_open(const uuid_t uuid, unsigned int mode) {
 }
 
 static stream_t*
+resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
+	                                          STRING_ARGS(_resource_source_path), uuid);
+	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".hash"));
+	if (mode & STREAM_OUT) {
+		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
+		fs_make_directory(STRING_ARGS(dir_path));
+	}
+	return stream_open(STRING_ARGS(path), mode);
+}
+
+static stream_t*
 resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform,
                           hash_t checksum, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
@@ -457,6 +470,7 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 		return false;
 	stream_determine_binary_mode(stream, 16);
 	const bool binary = stream_is_binary(stream);
+	source->read_binary = binary;
 
 	while (!stream_eos(stream)) {
 		char separator, op = 0;
@@ -497,10 +511,13 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	const char op_set = '=';
 	const char op_unset = '-';
 	const char op_blob = '#';
+	sha256_t sha;
 	stream_t* stream = resource_source_open(uuid, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (!stream)
 		return false;
 	stream_set_binary(stream, binary);
+
+	sha256_initialize(&sha);
 
 	resource_change_block_t* block = &source->first;
 	while (block) {
@@ -508,34 +525,40 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
 			stream_write_int64(stream, change->timestamp);
+			sha256_digest(&sha, &change->timestamp, sizeof(change->timestamp));
 			if (!binary)
 				stream_write(stream, &separator, 1);
 			stream_write_uint64(stream, change->hash);
+			sha256_digest(&sha, &change->hash, sizeof(change->hash));
 			if (!binary)
 				stream_write(stream, &separator, 1);
 			stream_write_uint64(stream, change->platform);
+			sha256_digest(&sha, &change->platform, sizeof(change->platform));
 			if (!binary)
 				stream_write(stream, &separator, 1);
-			if (change->flags == RESOURCE_SOURCEFLAG_UNSET) {
+			if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
 				stream_write(stream, &op_unset, 1);
-			}
 			else {
 				if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
 					stream_write(stream, &op_blob, 1);
 					if (!binary)
 						stream_write(stream, &separator, 1);
 					stream_write_uint64(stream, change->value.blob.checksum);
+					sha256_digest(&sha, &change->value.blob.checksum, sizeof(change->value.blob.checksum));
 					if (!binary)
 						stream_write(stream, &separator, 1);
 					stream_write_uint64(stream, change->value.blob.size);
+					sha256_digest(&sha, &change->value.blob.size, sizeof(change->value.blob.size));
 				}
 				else {
 					stream_write(stream, &op_set, 1);
 					if (!binary)
 						stream_write(stream, &separator, 1);
 					stream_write_string(stream, STRING_ARGS(change->value.value));
+					sha256_digest(&sha, STRING_ARGS(change->value.value));
 				}
 			}
+			sha256_digest(&sha, &change->flags, sizeof(change->flags));
 			if (!binary)
 				stream_write_endl(stream);
 		}
@@ -543,7 +566,34 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	}
 
 	stream_deallocate(stream);
+
+	sha256_digest_finalize(&sha);
+
+	stream = resource_source_open_hash(uuid, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+	if (stream) {
+		uint256_t hash = sha256_get_digest_raw(&sha);
+		stream_write_uint64(stream, hash.word[0]);
+		stream_write_uint64(stream, hash.word[1]);
+		stream_write_uint64(stream, hash.word[2]);
+		stream_write_uint64(stream, hash.word[3]);
+	}
+	stream_deallocate(stream);
+
 	return true;
+}
+
+uint256_t
+resource_source_read_hash(const uuid_t uuid) {
+	uint256_t hash = uint256_null();
+	stream_t* stream = resource_source_open_hash(uuid, STREAM_IN);
+	if (stream) {
+		hash.word[0] = stream_read_uint64(stream);
+		hash.word[1] = stream_read_uint64(stream);
+		hash.word[2] = stream_read_uint64(stream);
+		hash.word[3] = stream_read_uint64(stream);
+	}
+	stream_deallocate(stream);
+	return hash;
 }
 
 static resource_change_t*

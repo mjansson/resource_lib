@@ -111,10 +111,13 @@ resource_module_finalize(void) {
 	if (!_resource_module_initialized)
 		return;
 
+	array_deallocate(_resource_compilers);
+
 	resource_local_clear_paths();
 
 	event_stream_deallocate(_resource_event_stream);
 
+	_resource_compilers = 0;
 	_resource_event_stream = 0;
 	_resource_module_initialized = false;
 }

@@ -24,8 +24,11 @@ stream_t*
 resource_stream_open_static(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_compile_need_update(res, platform))
+	if (resource_compile_need_update(res, platform)) {
+		string_const_t uuidstr = string_from_uuid_static(res);
+		log_infof(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s"), STRING_FORMAT(uuidstr));
 		resource_compile(res, platform);
+	}
 
 	stream = resource_local_open_static(res, platform);
 	if (stream)
@@ -47,8 +50,11 @@ stream_t*
 resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_compile_need_update(res, platform))
+	if (resource_compile_need_update(res, platform)) {
+		string_const_t uuidstr = string_from_uuid_static(res);
+		log_infof(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s"), STRING_FORMAT(uuidstr));
 		resource_compile(res, platform);
+	}
 
 	stream = resource_local_open_dynamic(res, platform);
 	if (stream)
@@ -73,4 +79,26 @@ resource_stream_make_path(char* buffer, size_t capacity, const char* base, size_
 	return string_format(buffer, capacity, STRING_CONST("%.*s/%.2s/%.2s/%.*s"),
 	                     (int)base_length, base, uuidstr.str, uuidstr.str + 2,
 	                     STRING_FORMAT(uuidstr));
+}
+
+void
+resource_stream_write_header(stream_t* stream, const resource_header_t header) {
+	stream_write_uint64(stream, header.type);
+	stream_write_uint32(stream, header.version);
+	stream_write_uint64(stream, header.source_hash.word[0]);
+	stream_write_uint64(stream, header.source_hash.word[1]);
+	stream_write_uint64(stream, header.source_hash.word[2]);
+	stream_write_uint64(stream, header.source_hash.word[3]);
+}
+
+resource_header_t
+resource_stream_read_header(stream_t* stream) {
+	resource_header_t header;
+	header.type = stream_read_uint64(stream);
+	header.version = stream_read_uint32(stream);
+	header.source_hash.word[0] = stream_read_uint64(stream);
+	header.source_hash.word[1] = stream_read_uint64(stream);
+	header.source_hash.word[2] = stream_read_uint64(stream);
+	header.source_hash.word[3] = stream_read_uint64(stream);
+	return header;
 }

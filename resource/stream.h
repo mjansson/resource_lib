@@ -31,3 +31,9 @@ resource_stream_open_dynamic(const uuid_t res, uint64_t platform);
 RESOURCE_API string_t
 resource_stream_make_path(char* buffer, size_t capacity, const char* base, size_t base_length,
                           const uuid_t res);
+
+RESOURCE_API void
+resource_stream_write_header(stream_t* stream, const resource_header_t header);
+
+RESOURCE_API resource_header_t
+resource_stream_read_header(stream_t* stream);

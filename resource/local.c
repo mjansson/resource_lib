@@ -68,7 +68,7 @@ resource_local_clear_paths(void) {
 	string_array_deallocate(_resource_local_paths);
 }
 
-stream_t*
+static stream_t*
 resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suffix,
                            size_t suffix_length, unsigned int mode) {
 	stream_t* stream = 0;

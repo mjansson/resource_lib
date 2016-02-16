@@ -45,9 +45,10 @@ typedef struct resource_change_map_t        resource_change_map_t;
 typedef struct resource_source_t            resource_source_t;
 typedef struct resource_blob_t              resource_blob_t;
 typedef struct resource_platform_t          resource_platform_t;
+typedef struct resource_header_t            resource_header_t;
 
 typedef int (* resource_import_fn)(stream_t*, const uuid_t);
-typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const char*, size_t);
+typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t, const char*, size_t);
 typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
         void*);
 
@@ -160,4 +161,16 @@ struct resource_source_t {
 	resource_change_block_t first;
 	/*! Current block */
 	resource_change_block_t* current;
+	/*! Flag if source was read as binary */
+	bool read_binary;
+};
+
+/*! Header for single resource file */
+struct resource_header_t {
+	/*! Type hash */
+	hash_t type;
+	/*! Version */
+	uint32_t version;
+	/*! Source hash */
+	uint256_t source_hash;
 };

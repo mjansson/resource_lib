@@ -19,21 +19,39 @@
 #include <resource/compile.h>
 #include <resource/source.h>
 #include <resource/change.h>
+#include <resource/stream.h>
+#include <resource/local.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
+resource_compile_fn* _resource_compilers;
 
-static resource_compile_fn* _resource_compilers;
+#if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
 
 bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
+	uint256_t source_hash;
+	stream_t* stream;
+	resource_header_t header;
+
 	if (!_resource_config.enable_local_source)
 		return false;
-	FOUNDATION_UNUSED(uuid);
-	FOUNDATION_UNUSED(platform);
-	return false;
+
+	source_hash = resource_source_read_hash(uuid);
+	if (uint256_is_null(source_hash))
+		return true;
+
+	stream = resource_local_open_static(uuid, platform);
+	if (!stream)
+		return true;
+
+	header = resource_stream_read_header(stream);
+
+	stream_deallocate(stream);
+
+	//TODO: Based on resource_type_hash, check expected version
+	return !uint256_equal(source_hash, header.source_hash);
 }
 
 bool
@@ -47,17 +65,26 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 
 	resource_source_initialize(&source);
 	if (resource_source_read(&source, uuid)) {
+		uint256_t source_hash;
 		resource_change_t* change;
+
+		source_hash = resource_source_read_hash(uuid);
+		if (uint256_is_null(source_hash)) {
+			//Recreate source hash data
+			resource_source_write(&source, uuid, source.read_binary);
+			source_hash = resource_source_read_hash(uuid);
+		}
+
 		resource_source_collapse_history(&source);
 		change = resource_source_get(&source, HASH_RESOURCE_TYPE,
 		                             platform != RESOURCE_PLATFORM_ALL ? platform : 0);
 		if (change && resource_change_is_value(change)) {
 			type = change->value.value;
 		}
-	}
 
-	for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize); ++icmp)
-		success = (_resource_compilers[icmp](uuid, platform, &source, STRING_ARGS(type)) == 0);
+		for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize); ++icmp)
+			success = (_resource_compilers[icmp](uuid, platform, &source, source_hash, STRING_ARGS(type)) == 0);
+	}
 
 	resource_source_finalize(&source);
 
