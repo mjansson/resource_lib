@@ -79,16 +79,16 @@ bits    description       variants
 uint64_t
 resource_platform(const resource_platform_t declaration) {
 	uint64_t compact = 0;
-	if ((declaration.platform >= 0) && (declaration.platform < RESOURCE_PLATFORM_MASK))
+	if ((declaration.platform >= 0) && ((unsigned int)declaration.platform < RESOURCE_PLATFORM_MASK))
 		compact |= RESOURCE_PLATFORM_TO_BITS(declaration.platform+1);
 	if ((declaration.render_api_group >= 0) &&
-	        (declaration.render_api_group < RESOURCE_RENDERAPIGROUP_MASK))
+	        ((unsigned int)declaration.render_api_group < RESOURCE_RENDERAPIGROUP_MASK))
 		compact |= RESOURCE_RENDERAPIGROUP_TO_BITS(declaration.render_api_group+1);
-	if ((declaration.render_api >= 0) && (declaration.render_api < RESOURCE_RENDERAPI_MASK))
+	if ((declaration.render_api >= 0) && ((unsigned int)declaration.render_api < RESOURCE_RENDERAPI_MASK))
 		compact |= RESOURCE_RENDERAPI_TO_BITS(declaration.render_api+1);
-	if ((declaration.quality_level >= 0) && (declaration.quality_level < RESOURCE_QUALITYLEVEL_MASK))
+	if ((declaration.quality_level >= 0) && ((unsigned int)declaration.quality_level < RESOURCE_QUALITYLEVEL_MASK))
 		compact |= RESOURCE_QUALITYLEVEL_TO_BITS(declaration.quality_level+1);
-	if ((declaration.custom >= 0) && (declaration.custom < RESOURCE_CUSTOM_MASK))
+	if ((declaration.custom >= 0) && ((unsigned int)declaration.custom < RESOURCE_CUSTOM_MASK))
 		compact |= RESOURCE_CUSTOM_TO_BITS(declaration.custom+1);
 	return compact;
 }

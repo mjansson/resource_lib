@@ -200,6 +200,8 @@ resource_import_map_store(const char* path, size_t length, uuid_t* uuid) {
 bool
 resource_import_map_purge(const char* path, size_t length) {
 	//TODO: Implement
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
 	return false;
 }
 
