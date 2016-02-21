@@ -205,4 +205,44 @@ resource_import_map_purge(const char* path, size_t length) {
 	return false;
 }
 
+#else
+
+bool
+resource_import(const char* path, size_t length, const uuid_t uuid) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	FOUNDATION_UNUSED(uuid);
+	return false;
+}
+
+void
+resource_import_register(resource_import_fn importer) {
+}
+
+void
+resource_import_unregister(resource_import_fn importer) {
+}
+
+uuid_t
+resource_import_map_lookup(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	return uuid_null();
+}
+
+bool
+resource_import_map_store(const char* path, size_t length, uuid_t* uuid) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	FOUNDATION_UNUSED(uuid);
+	return false;
+}
+
+bool
+resource_import_map_purge(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	return false;
+}
+
 #endif

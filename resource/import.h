@@ -22,8 +22,6 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
 RESOURCE_API bool
 resource_import(const char* path, size_t length, const uuid_t uuid);
 
@@ -41,14 +39,3 @@ resource_import_map_store(const char* path, size_t length, uuid_t* uuid);
 
 RESOURCE_API bool
 resource_import_map_purge(const char* path, size_t length);
-
-#else
-
-#define resource_import(path, length) ((void)sizeof(path)), ((void)sizeof(length))
-#define resource_import_register(importer) do { /* */ } while(0)
-#define resource_import_unregister(importer) ((void)sizeof(importer))
-#define resource_import_map_lookup(path, length, uuid) ((void)sizeof(path)), ((void)sizeof(length)), ((void)sizeof(uuid))
-#define resource_import_map_store(path, length) ((void)sizeof(path)), ((void)sizeof(length))
-#define resource_import_map_purge(path, length) ((void)sizeof(path)), ((void)sizeof(length))
-
-#endif

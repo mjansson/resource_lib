@@ -117,11 +117,11 @@ resource_source_map_clear(hashmap_t* map);
 #define resource_source_finalize(source) ((void)sizeof(source))
 #define resource_source_set(source, timestamp, key, platform, ...) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
 #define resource_source_unset(source, timestamp, key, platform) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
-#define resource_source_read(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)), false
-#define resource_source_write(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)), false
+#define resource_source_read(source, uuid) (((void)sizeof(source)), ((void)sizeof(uuid)), false)
+#define resource_source_write(source, uuid, binary) (((void)sizeof(source)), ((void)sizeof(uuid)), ((void)sizeof(binary)), false)
 #define resource_source_set_blob(source, timestamp, key, platform, checksum, size) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(size))
-#define resource_source_read_blob(uuid, key, platform, checksum, data, capacity) ((void)sizeof(uuid)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(capacity)), false
-#define resource_source_write_blob(uuid, timestamp, key, platform, checksum, data, size) ((void)sizeof(uuid)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(size)), false
+#define resource_source_read_blob(uuid, key, platform, checksum, data, capacity) (((void)sizeof(uuid)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(capacity)), false)
+#define resource_source_write_blob(uuid, timestamp, key, platform, checksum, data, size) (((void)sizeof(uuid)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(size)), false)
 #define resource_source_collapse_history(source) ((void)sizeof(source))
 #define resource_source_clear_blob_history(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)) 
 #define resource_source_map(source, platform, map) ((void)sizeof(source)), ((void)sizeof(platform)), ((void)sizeof(map))
