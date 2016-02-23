@@ -21,9 +21,9 @@
 
 #include <foundation/foundation.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
+resource_import_fn* _resource_importers;
 
-static resource_import_fn* _resource_importers;
+#if RESOURCE_ENABLE_LOCAL_SOURCE
 
 bool
 resource_import(const char* path, size_t length, const uuid_t uuid) {
@@ -39,6 +39,7 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
 		was_imported |= (_resource_importers[iimp](stream, uuid) == 0);
 	}
+	stream_deallocate(stream);
 	return was_imported;
 }
 
