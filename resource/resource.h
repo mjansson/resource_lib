@@ -45,3 +45,7 @@ resource_module_is_initialized(void);
 
 RESOURCE_API version_t
 resource_module_version(void);
+
+RESOURCE_API void
+resource_module_parse_config(const char* buffer, size_t size,
+                             const json_token_t* tokens, size_t num_tokens);

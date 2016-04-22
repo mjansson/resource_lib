@@ -107,3 +107,32 @@ bool
 resource_module_is_initialized(void) {
 	return _resource_module_initialized;
 }
+
+void
+resource_module_parse_config(const char* buffer, size_t size,
+                             const json_token_t* tokens, size_t num_tokens) {
+	FOUNDATION_UNUSED(size);
+
+	for (size_t tok = num_tokens ? tokens[0].child : 0; tok &&
+	        tok < num_tokens; tok = tokens[tok].sibling) {
+
+		string_const_t id = json_token_identifier(buffer, tokens + tok);
+		if ((tokens[tok].type == JSON_OBJECT) && string_equal(STRING_ARGS(id), STRING_CONST("resource"))) {
+
+			for (size_t restok = tokens[tok].child; restok &&
+			        (restok < num_tokens); restok = tokens[restok].sibling) {
+
+				string_const_t resid = json_token_identifier(buffer, tokens + restok);
+				if (tokens[restok].type == JSON_STRING) {
+					string_const_t value = json_token_value(buffer, tokens + restok);
+					hash_t idhash = hash(STRING_ARGS(resid));
+
+					if (idhash == HASH_LOCAL_PATH)
+						resource_local_add_path(STRING_ARGS(value));
+					else if (idhash == HASH_SOURCE_PATH)
+						resource_source_set_path(STRING_ARGS(value));
+				}
+			}
+		}
+	}
+}

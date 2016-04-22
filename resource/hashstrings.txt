@@ -1,6 +1,6 @@
 
 HASH_RESOURCE                              resource
 HASH_REMOTE_URL                            remote_url
-HASH_LOCAL_SOURCE                          local_source
+HASH_SOURCE_PATH                           source_path
 HASH_LOCAL_PATH                            local_path
 HASH_RESOURCE_TYPE                         resource_type
