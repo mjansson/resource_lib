@@ -75,14 +75,13 @@ static string_t
 resource_local_make_platform_path(char* buffer, size_t capacity, size_t local_path,
                                   const uuid_t uuid, uint64_t platform,
                                   const char* suffix, size_t suffix_length) {
-	string_t curpath = resource_stream_make_path(buffer, sizeof(buffer),
+	string_t curpath = resource_stream_make_path(buffer, capacity,
 	                                             STRING_ARGS(_resource_local_paths[local_path]),
 	                                             uuid);
 	string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
-	string_t platformpath = path_append(STRING_ARGS(curpath), sizeof(buffer),
-	                                    STRING_ARGS(platformstr));
+	string_t platformpath = path_append(STRING_ARGS(curpath), capacity, STRING_ARGS(platformstr));
 	if (suffix_length)
-		platformpath = string_append(STRING_ARGS(platformpath), sizeof(buffer), suffix, suffix_length);
+		platformpath = string_append(STRING_ARGS(platformpath), capacity, suffix, suffix_length);
 	return platformpath;
 }
 
