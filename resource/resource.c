@@ -69,6 +69,15 @@ resource_module_initialize(const resource_config_t config) {
 			for (ipath = 0; ipath < numpaths; ++ipath)
 				resource_local_add_path(STRING_ARGS(paths[ipath]));
 		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-autoimport")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			string_const_t paths[32];
+			size_t numpaths = string_explode(STRING_ARGS(cmdline[iarg]), STRING_CONST(";,"), paths,
+			                                 sizeof(paths)/sizeof(paths[0]), false);
+			for (ipath = 0; ipath < numpaths; ++ipath)
+				resource_autoimport_watch(STRING_ARGS(paths[ipath]));
+		}
 	}
 
 	//Make sure we have at least one way of loading resources
@@ -94,6 +103,7 @@ resource_module_finalize(void) {
 	array_deallocate(_resource_compilers);
 
 	resource_local_clear_paths();
+	resource_autoimport_clear();
 
 	event_stream_deallocate(_resource_event_stream);
 
@@ -131,6 +141,8 @@ resource_module_parse_config(const char* buffer, size_t size,
 						resource_local_add_path(STRING_ARGS(value));
 					else if (idhash == HASH_SOURCE_PATH)
 						resource_source_set_path(STRING_ARGS(value));
+					else if (idhash == HASH_AUTOIMPORT)
+						resource_autoimport_watch(STRING_ARGS(value));
 				}
 			}
 		}

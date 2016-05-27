@@ -572,10 +572,8 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	stream = resource_source_open_hash(uuid, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (stream) {
 		uint256_t hash = sha256_get_digest_raw(&sha);
-		stream_write_uint64(stream, hash.word[0]);
-		stream_write_uint64(stream, hash.word[1]);
-		stream_write_uint64(stream, hash.word[2]);
-		stream_write_uint64(stream, hash.word[3]);
+		string_const_t value = string_from_uint256_static(hash);
+		stream_write_string(stream, STRING_ARGS(value));
 	}
 	stream_deallocate(stream);
 
@@ -587,10 +585,9 @@ resource_source_read_hash(const uuid_t uuid) {
 	uint256_t hash = uint256_null();
 	stream_t* stream = resource_source_open_hash(uuid, STREAM_IN);
 	if (stream) {
-		hash.word[0] = stream_read_uint64(stream);
-		hash.word[1] = stream_read_uint64(stream);
-		hash.word[2] = stream_read_uint64(stream);
-		hash.word[3] = stream_read_uint64(stream);
+		char buffer[65];
+		string_t value = stream_read_string_buffer(stream, buffer, sizeof(buffer));
+		hash = string_to_uint256(STRING_ARGS(value));
 	}
 	stream_deallocate(stream);
 	return hash;
@@ -600,12 +597,12 @@ static resource_change_t*
 resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
                                         uint64_t platform) {
 	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
-//Change must be superset of requested platform
+	        //Change must be superset of requested platform
 	        resource_platform_is_equal_or_more_specific(platform, change->platform) &&
-//Either no previous result, or
-//  previous best is platform superset of change platform and
-//    either platforms are different (change is exclusively more specific), or
-///   change is newer (and platforms are equal)
+	        //Either no previous result, or
+	        //  previous best is platform superset of change platform and
+	        //    either platforms are different (change is exclusively more specific), or
+	        ///   change is newer (and platforms are equal)
 	        (!best || (resource_platform_is_equal_or_more_specific(change->platform, best->platform) &&
 	                   ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
 		return change;

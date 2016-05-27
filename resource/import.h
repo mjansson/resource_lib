@@ -31,11 +31,27 @@ resource_import_register(resource_import_fn importer);
 RESOURCE_API void
 resource_import_unregister(resource_import_fn importer);
 
-RESOURCE_API uuid_t
+RESOURCE_API resource_signature_t
 resource_import_map_lookup(const char* path, size_t length);
 
-RESOURCE_API bool
-resource_import_map_store(const char* path, size_t length, uuid_t* uuid);
+RESOURCE_API uuid_t
+resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash);
 
 RESOURCE_API bool
 resource_import_map_purge(const char* path, size_t length);
+
+
+RESOURCE_API bool
+resource_autoimport(const uuid_t uuid);
+
+RESOURCE_API bool
+resource_autoimport_need_update(const uuid_t uuid);
+
+RESOURCE_API void
+resource_autoimport_watch(const char* path, size_t length);
+
+RESOURCE_API void
+resource_autoimport_unwatch(const char* path, size_t length);
+
+RESOURCE_API void
+resource_autoimport_clear(void);

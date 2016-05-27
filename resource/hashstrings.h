@@ -11,3 +11,4 @@
 #define HASH_SOURCE_PATH static_hash_string("source_path", 11, 0x4c7ddc6a3ffe4b6aULL)
 #define HASH_LOCAL_PATH static_hash_string("local_path", 10, 0x3027c851419cc372ULL)
 #define HASH_RESOURCE_TYPE static_hash_string("resource_type", 13, 0xefc35ea8ecba8be3ULL)
+#define HASH_AUTOIMPORT static_hash_string("autoimport", 10, 0xcb4bb8dba8873846ULL)

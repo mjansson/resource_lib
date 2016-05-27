@@ -62,6 +62,9 @@
 /*! Initial size of change block string data */
 #define RESOURCE_CHANGE_BLOCK_DATA_SIZE 1024
 
+/*! Name of import map files */
+#define RESOURCE_IMPORT_MAP "import.map"
+
 //Make sure we have at least one way of loading resources
 #if !RESOURCE_ENABLE_REMOTE_CACHE && !RESOURCE_ENABLE_LOCAL_CACHE
 #  error Invalid build configuration, no way of loading resources

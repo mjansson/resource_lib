@@ -59,8 +59,6 @@ resource_import_unregister(resource_import_fn importer) {
 	}
 }
 
-#define IMPORT_MAP "import.map"
-
 static stream_t*
 resource_import_open_map(const char* cpath, size_t length, bool write) {
 	char buffer[BUILD_MAX_PATHLEN];
@@ -68,7 +66,7 @@ resource_import_open_map(const char* cpath, size_t length, bool write) {
 	string_const_t path = path_directory_name(cpath, length);
 	while (path.length > 1) {
 		string_t map_path = path_concat(buffer, sizeof(buffer),
-		                                STRING_ARGS(path), STRING_CONST(IMPORT_MAP));
+		                                STRING_ARGS(path), STRING_CONST(RESOURCE_IMPORT_MAP));
 		stream_t* stream = stream_open(STRING_ARGS(map_path), STREAM_IN | (write ? STREAM_OUT : 0));
 		if (stream)
 			return stream;
@@ -80,21 +78,12 @@ resource_import_open_map(const char* cpath, size_t length, bool write) {
 	if (write) {
 		path = path_directory_name(cpath, length);
 		string_t map_path = path_concat(buffer, sizeof(buffer),
-		                                STRING_ARGS(path), STRING_CONST(IMPORT_MAP));
+		                                STRING_ARGS(path), STRING_CONST(RESOURCE_IMPORT_MAP));
 		stream_t* stream = stream_open(STRING_ARGS(map_path), STREAM_IN | STREAM_OUT | STREAM_CREATE);
 		if (stream)
 			return stream;
 	}
 	return nullptr;
-}
-
-static stream_t*
-resource_import_create_map(const char* cpath, size_t length) {
-	char buffer[BUILD_MAX_PATHLEN];
-	string_t map_path = path_concat(buffer, sizeof(buffer),
-	                                cpath, length, STRING_CONST(IMPORT_MAP));
-	stream_t* stream = stream_open(STRING_ARGS(map_path), STREAM_OUT | STREAM_CREATE);
-	return stream;
 }
 
 static FOUNDATION_NOINLINE string_const_t
@@ -109,70 +98,82 @@ resource_import_map_subpath(stream_t* map, const char* path, size_t length) {
 	return subpath;
 }
 
-static FOUNDATION_NOINLINE uuid_t
-resource_import_map_read(stream_t* map, hash_t pathhash, const char* path, size_t length) {
+static FOUNDATION_NOINLINE resource_signature_t
+resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* path, size_t length,
+                                    uint256_t update_hash) {
 	char buffer[BUILD_MAX_PATHLEN+64];
 	string_t line;
+	resource_signature_t sig = {uuid_null(), uint256_null()};
+	//TODO: This needs to be a DB as number of imported files grow
 	while (!stream_eos(map)) {
 		hash_t linehash;
 		string_const_t linepath;
+		size_t streampos = stream_tell(map);
 
 		line = stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
-		if (line.length < 54)
+		if (line.length < 119)
 			continue;
 
 		linehash = string_to_uint64(STRING_ARGS(line), true);
 		if (linehash != pathhash)
 			continue;
 
-		linepath = string_substr(STRING_ARGS(line), 54, line.length);
+		linepath = string_substr(STRING_ARGS(line), 119, line.length);
 		if (!string_equal(STRING_ARGS(linepath), path, length))
 			continue;
 
-		return string_to_uuid(line.str + 17, 37);
+		sig.uuid = string_to_uuid(line.str + 17, 37);
+		sig.hash = string_to_uint256(line.str + 54, 64);
+
+		if (!uint256_is_null(update_hash) && !uint256_equal(sig.hash, update_hash)) {
+			if (map->mode & STREAM_OUT) {
+				string_const_t token = string_from_uint256_static(update_hash);
+				stream_seek(map, streampos + 54, STREAM_SEEK_BEGIN);
+				stream_write(map, STRING_ARGS(token));
+				stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
+				sig.hash = update_hash;
+			}
+		}
 	}
-	return uuid_null();
+	return sig;
 }
 
-uuid_t
+resource_signature_t
 resource_import_map_lookup(const char* path, size_t length) {
 	string_const_t subpath;
 	hash_t pathhash;
-	uuid_t uuid;
+	resource_signature_t sig = {uuid_null(), uint256_null()};
 
 	stream_t* map = resource_import_open_map(path, length, false);
 	if (!map)
-		return uuid_null();
+		return sig;
 
 	subpath = resource_import_map_subpath(map, path, length);
 	pathhash = hash(STRING_ARGS(subpath));
-	uuid = resource_import_map_read(map, pathhash, STRING_ARGS(subpath));
+	sig = resource_import_map_read_and_update(map, pathhash, STRING_ARGS(subpath), uint256_null());
 
 	stream_deallocate(map);
 
-	return uuid;
+	return sig;
 }
 
-bool
-resource_import_map_store(const char* path, size_t length, uuid_t* uuid) {
+uuid_t
+resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash) {
 	string_const_t subpath;
 	hash_t pathhash;
-	uuid_t founduuid;
+	resource_signature_t sig;
 
 	stream_t* map = resource_import_open_map(path, length, true);
 	if (!map) {
-		map = resource_import_create_map(path, length);
-		if (!map) {
-			log_warn(HASH_RESOURCE, WARNING_SUSPICIOUS, STRING_CONST("No map to store in"));
-			return false;
-		}
+		log_warn(HASH_RESOURCE, WARNING_SUSPICIOUS, STRING_CONST("No map to store in"));
+		return uuid_null();
 	}
 
 	subpath = resource_import_map_subpath(map, path, length);
 	pathhash = hash(STRING_ARGS(subpath));
-	founduuid = resource_import_map_read(map, pathhash, STRING_ARGS(subpath));
+	sig = resource_import_map_read_and_update(map, pathhash, STRING_ARGS(subpath), sighash);
 
-	if (uuid_is_null(founduuid)) {
+	if (uuid_is_null(sig.uuid)) {
 		string_const_t token;
 		char separator = ' ';
 
@@ -182,20 +183,23 @@ resource_import_map_store(const char* path, size_t length, uuid_t* uuid) {
 		stream_write(map, STRING_ARGS(token));
 		stream_write(map, &separator, 1);
 
-		token = string_from_uuid_static(*uuid);
+		token = string_from_uuid_static(uuid);
+		stream_write(map, STRING_ARGS(token));
+		stream_write(map, &separator, 1);
+
+		token = string_from_uint256_static(sighash);
 		stream_write(map, STRING_ARGS(token));
 		stream_write(map, &separator, 1);
 
 		stream_write(map, STRING_ARGS(subpath));
 		stream_write_endl(map);
-	}
-	else {
-		*uuid = founduuid;
+
+		sig.uuid = uuid;
 	}
 
 	stream_deallocate(map);
 
-	return true;
+	return sig.uuid;
 }
 
 bool
@@ -204,6 +208,45 @@ resource_import_map_purge(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	return false;
+}
+
+string_t* _resource_autoimport;
+
+bool
+resource_autoimport(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
+	//Use watched auto import maps to reverse lookup
+	//uuid to source files, then resource_import on the source files
+	return false;
+}
+
+bool
+resource_autoimport_need_update(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
+	//Use watched auto import maps to reverse lookup
+	//uuid to source files, compare hash from resource_import_map_lookup
+	//to source files hashes
+	return false;
+}
+
+void
+resource_autoimport_watch(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	//Setup watcher on the given import map or directory
+	//Auto import on file changes
+}
+
+void
+resource_autoimport_unwatch(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	//Remove watcher on the given import map or directory
+}
+
+void
+resource_autoimport_clear(void) {
+	//Remove all watchers
 }
 
 #else
@@ -224,19 +267,21 @@ void
 resource_import_unregister(resource_import_fn importer) {
 }
 
-uuid_t
+resource_signature_t
 resource_import_map_lookup(const char* path, size_t length) {
+	resource_signature_t sig = {uuid_null(), uint256_null()};
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
-	return uuid_null();
+	return sig;
 }
 
-bool
-resource_import_map_store(const char* path, size_t length, uuid_t* uuid) {
+uuid_t
+resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	FOUNDATION_UNUSED(uuid);
-	return false;
+	FOUNDATION_UNUSED(sighash);
+	return uuid_null();
 }
 
 bool
@@ -244,6 +289,34 @@ resource_import_map_purge(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	return false;
+}
+
+bool
+resource_autoimport(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
+	return false;
+}
+
+bool
+resource_autoimport_need_update(const uuid_t uuid) {
+	FOUNDATION_UNUSED(uuid);
+	return false;
+}
+
+void
+resource_autoimport_watch(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_autoimport_unwatch(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_autoimport_clear(void) {
 }
 
 #endif

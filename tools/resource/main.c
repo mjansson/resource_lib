@@ -45,7 +45,7 @@ resource_parse_command_line(const string_const_t* cmdline);
 static void
 resource_print_usage(void);
 
-static uuid_t
+static resource_signature_t
 resource_lookup(const string_const_t path);
 
 static void*
@@ -276,7 +276,8 @@ resource_parse_command_line(const string_const_t* cmdline) {
 
 	bool lookup_done = false;
 	if (uuid_is_null(input.uuid) && input.lookup_path.length) {
-		input.uuid = resource_lookup(input.lookup_path);
+		resource_signature_t sig = resource_lookup(input.lookup_path);
+		input.uuid = sig.uuid;
 		lookup_done = true;
 	}
 
@@ -309,7 +310,7 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	return input;
 }
 
-static uuid_t
+static resource_signature_t
 resource_lookup(const string_const_t path) {
 	char buffer[BUILD_MAX_PATHLEN];
 	string_t pathstr = string_copy(buffer, sizeof(buffer), STRING_ARGS(path));

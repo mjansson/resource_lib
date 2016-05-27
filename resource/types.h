@@ -46,6 +46,7 @@ typedef struct resource_source_t            resource_source_t;
 typedef struct resource_blob_t              resource_blob_t;
 typedef struct resource_platform_t          resource_platform_t;
 typedef struct resource_header_t            resource_header_t;
+typedef struct resource_signature_t         resource_signature_t;
 
 typedef int (* resource_import_fn)(stream_t*, const uuid_t);
 typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t, const char*, size_t);
@@ -173,4 +174,12 @@ struct resource_header_t {
 	uint32_t version;
 	/*! Source hash */
 	uint256_t source_hash;
+};
+
+/*! Signature for a resource source file */
+struct resource_signature_t {
+	/*! Resource UUID */
+	uuid_t uuid;
+	/*! Source file hash */
+	uint256_t hash;
 };

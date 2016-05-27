@@ -50,6 +50,13 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 
 	stream_deallocate(stream);
 
+	string_const_t uuidstr = string_from_uuid_static(uuid);
+	log_infof(HASH_RESOURCE, STRING_CONST("Check compilation for resource %.*s"), STRING_FORMAT(uuidstr));
+	string_const_t hashstr = string_from_uint256_static(source_hash);
+	log_infof(HASH_RESOURCE, STRING_CONST("  source: %.*s"), STRING_FORMAT(hashstr));
+	hashstr = string_from_uint256_static(header.source_hash);
+	log_infof(HASH_RESOURCE, STRING_CONST("  target: %.*s"), STRING_FORMAT(hashstr));
+
 	//TODO: Based on resource_type_hash, check expected version
 	return !uint256_equal(source_hash, header.source_hash);
 }
