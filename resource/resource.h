@@ -24,6 +24,7 @@
 #include <resource/types.h>
 #include <resource/hashstrings.h>
 
+#include <resource/event.h>
 #include <resource/stream.h>
 #include <resource/bundle.h>
 #include <resource/compile.h>

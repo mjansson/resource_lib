@@ -55,3 +55,6 @@ resource_autoimport_unwatch(const char* path, size_t length);
 
 RESOURCE_API void
 resource_autoimport_clear(void);
+
+RESOURCE_API void
+resource_autoimport_event_handle(event_t* event);

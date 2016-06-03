@@ -51,6 +51,11 @@ test_source_finalize(void) {
 	resource_module_finalize();
 }
 
+static void
+test_source_event(event_t* event) {
+	resource_event_handle(event);
+}
+
 DECLARE_TEST(source, set) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
@@ -539,7 +544,8 @@ static test_suite_t test_source_suite = {
 	test_source_config,
 	test_source_declare,
 	test_source_initialize,
-	test_source_finalize
+	test_source_finalize,
+	test_source_event
 };
 
 #if BUILD_MONOLITHIC

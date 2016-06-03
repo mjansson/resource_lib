@@ -60,6 +60,8 @@ event_loop(void* arg) {
 			default:
 				break;
 			}
+
+			test_event(event);
 		}
 		thread_wait();
 	}
@@ -67,6 +69,11 @@ event_loop(void* arg) {
 	log_debug(HASH_TEST, STRING_CONST("Application event thread exiting"));
 
 	return 0;
+}
+
+void
+test_event(event_t* event) {
+	resource_event_handle(event);
 }
 
 #if ( FOUNDATION_PLATFORM_IOS || FOUNDATION_PLATFORM_ANDROID ) && BUILD_ENABLE_LOG

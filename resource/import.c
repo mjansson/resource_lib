@@ -105,13 +105,13 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 	string_t line;
 	resource_signature_t sig = {uuid_null(), uint256_null()};
 	//TODO: This needs to be a DB as number of imported files grow
-	while (!stream_eos(map)) {
+	while (!stream_eos(map) && uuid_is_null(sig.uuid)) {
 		hash_t linehash;
 		string_const_t linepath;
 		size_t streampos = stream_tell(map);
 
 		line = stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
-		if (line.length < 119)
+		if (line.length < 120)
 			continue;
 
 		linehash = string_to_uint64(STRING_ARGS(line), true);
@@ -130,7 +130,6 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 				string_const_t token = string_from_uint256_static(update_hash);
 				stream_seek(map, streampos + 54, STREAM_SEEK_BEGIN);
 				stream_write(map, STRING_ARGS(token));
-				stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
 				sig.hash = update_hash;
 			}
 		}
@@ -210,43 +209,110 @@ resource_import_map_purge(const char* path, size_t length) {
 	return false;
 }
 
-string_t* _resource_autoimport;
+string_t* _resource_autoimport_dir;
+
+static string_t
+resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capacity) {
+	//... implement ...
+	return (string_t){buffer, 0};
+}
 
 bool
 resource_autoimport(const uuid_t uuid) {
-	FOUNDATION_UNUSED(uuid);
-	//Use watched auto import maps to reverse lookup
-	//uuid to source files, then resource_import on the source files
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	if (path.length)
+		return resource_import(STRING_ARGS(path), uuid);
 	return false;
 }
 
 bool
 resource_autoimport_need_update(const uuid_t uuid) {
 	FOUNDATION_UNUSED(uuid);
-	//Use watched auto import maps to reverse lookup
-	//uuid to source files, compare hash from resource_import_map_lookup
-	//to source files hashes
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	if (path.length) {
+		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
+		stream_t* stream = stream_open(STRING_ARGS(path), STREAM_IN);
+		uint256_t newhash = stream_sha256(stream);
+		stream_deallocate(stream);
+		return !uint256_equal(sig.hash, newhash);
+	}
 	return false;
+}
+
+static void
+resource_autoimport_watch_dir(const char* path, size_t length) {
+	size_t ipath, psize;
+	for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
+		//Check if something is already watching this dir or any parent
+		if (string_equal(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])) ||
+		        path_subpath(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])).length)
+			break;
+	}
+	if (ipath == psize) {
+		//Check if we will replace a more specific monitor
+		for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
+			if (path_subpath(STRING_ARGS(_resource_autoimport_dir[ipath]), path, length).length) {
+				//... implement ...
+			}
+		}
+		if (fs_monitor(path, length))
+			array_push(_resource_autoimport_dir, string_clone(path, length));
+	}
+}
+
+static void
+resource_autoimport_unwatch_dir(const char* path, size_t length) {
+	ssize_t idx = string_array_find((const string_const_t*)_resource_autoimport_dir,
+	                                array_size(_resource_autoimport_dir), path, length);
+	if (idx < 0)
+		return;
+
+	fs_unmonitor(path, length);
+	string_deallocate(_resource_autoimport_dir[idx].str);
+	array_erase(_resource_autoimport_dir, idx);
 }
 
 void
 resource_autoimport_watch(const char* path, size_t length) {
-	FOUNDATION_UNUSED(path);
-	FOUNDATION_UNUSED(length);
-	//Setup watcher on the given import map or directory
-	//Auto import on file changes
+	if (fs_is_directory(path, length)) {
+		resource_autoimport_watch_dir(path, length);
+	}
+	else if (fs_is_file(path, length)) {
+		string_const_t filename = path_file_name(path, length);
+		if (string_equal(STRING_ARGS(filename), STRING_CONST(RESOURCE_IMPORT_MAP))) {
+			string_const_t dir = path_directory_name(path, length);
+			resource_autoimport_watch_dir(STRING_ARGS(dir));
+		}
+	}
 }
 
 void
 resource_autoimport_unwatch(const char* path, size_t length) {
-	FOUNDATION_UNUSED(path);
-	FOUNDATION_UNUSED(length);
-	//Remove watcher on the given import map or directory
+	if (fs_is_directory(path, length)) {
+		resource_autoimport_unwatch_dir(path, length);
+	}
+	else if (fs_is_file(path, length)) {
+		string_const_t filename = path_file_name(path, length);
+		if (string_equal(STRING_ARGS(filename), STRING_CONST(RESOURCE_IMPORT_MAP))) {
+			string_const_t dir = path_directory_name(path, length);
+			resource_autoimport_unwatch_dir(STRING_ARGS(dir));
+		}
+	}
 }
 
 void
 resource_autoimport_clear(void) {
-	//Remove all watchers
+	size_t ipath, psize;
+	for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath)
+		fs_unmonitor(STRING_ARGS(_resource_autoimport_dir[ipath]));
+	string_array_deallocate(_resource_autoimport_dir);
+}
+
+void
+resource_autoimport_event_handle(event_t* event) {
+	//... implement ...
 }
 
 #else
@@ -317,6 +383,10 @@ resource_autoimport_unwatch(const char* path, size_t length) {
 
 void
 resource_autoimport_clear(void) {
+}
+
+void
+resource_autoimport_event_handle(event_t* event) {
 }
 
 #endif

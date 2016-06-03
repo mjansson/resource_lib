@@ -18,6 +18,7 @@
 
 
 #include <resource/event.h>
+#include <resource/import.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -39,3 +40,7 @@ resource_event_stream(void) {
 	return _resource_event_stream;
 }
 
+void
+resource_event_handle(event_t* event) {
+	resource_autoimport_event_handle(event);
+}

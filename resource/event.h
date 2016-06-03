@@ -31,3 +31,5 @@ resource_event_post(resource_event_id id, uuid_t uuid);
 RESOURCE_API event_stream_t*
 resource_event_stream(void);
 
+RESOURCE_API void
+resource_event_handle(event_t* event);
