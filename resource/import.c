@@ -209,18 +209,84 @@ resource_import_map_purge(const char* path, size_t length) {
 	return false;
 }
 
+mutex_t* _resource_autoimport_lock;
 string_t* _resource_autoimport_dir;
+
+int
+resource_autoimport_initialize(void) {
+	_resource_autoimport_lock = mutex_allocate(STRING_CONST("resource-autoimport"));
+	return 0;
+}
+
+void
+resource_autoimport_finalize(void) {
+	resource_autoimport_clear();
+	mutex_deallocate(_resource_autoimport_lock);
+}
 
 static string_t
 resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capacity) {
-	//... implement ...
-	return (string_t){buffer, 0};
+	//TODO: Improve
+	string_t result = (string_t) {buffer, 0};
+	regex_t* regex;
+	size_t ipath, psize;
+	size_t imap, msize;
+	uuid_t siguuid;
+	char linebuffer[BUILD_MAX_PATHLEN];
+
+	regex = regex_compile(STRING_CONST("^" RESOURCE_IMPORT_MAP "$"));
+
+	for (ipath = 0, psize = array_size(_resource_autoimport_dir);
+	        !result.length && (ipath < psize); ++ipath) {
+
+		string_t* maps = fs_matching_files_regex(STRING_ARGS(_resource_autoimport_dir[ipath]), regex, true);
+		for (imap = 0, msize = array_size(maps); !result.length && (imap < msize); ++imap) {
+			string_t mappath = path_concat(linebuffer, sizeof(linebuffer),
+			                               STRING_ARGS(_resource_autoimport_dir[ipath]), STRING_ARGS(maps[imap]));
+			stream_t* map = stream_open(STRING_ARGS(mappath), STREAM_IN);
+
+			while (map && !stream_eos(map)) {
+				string_t line = stream_read_line_buffer(map, linebuffer, sizeof(linebuffer), '\n');
+				if (line.length < 120)
+					continue;
+
+				siguuid = string_to_uuid(line.str + 17, 37);
+				if (uuid_equal(uuid, siguuid)) {
+					string_const_t linepath = string_substr(STRING_ARGS(line), 119, line.length);
+					string_const_t mapdir = stream_path(map);
+					mapdir = path_directory_name(STRING_ARGS(mapdir));
+
+					result = path_concat(buffer, capacity, STRING_ARGS(mapdir), STRING_ARGS(linepath));
+
+					string_const_t uuidstr = string_from_uuid_static(uuid);
+					log_infof(HASH_RESOURCE, STRING_CONST("Autoimport reversed lookup: %.*s -> %.*s"),
+					          STRING_FORMAT(uuidstr), STRING_FORMAT(result));
+					break;
+				}
+			}
+
+			stream_deallocate(map);
+		}
+
+		string_array_deallocate(maps);
+	}
+
+	regex_deallocate(regex);
+
+	return result;
 }
 
 bool
 resource_autoimport(const uuid_t uuid) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	string_t path;
+
+	string_const_t uuidstr = string_from_uuid_static(uuid);
+	log_infof(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s"), STRING_FORMAT(uuidstr));
+
+	mutex_lock(_resource_autoimport_lock);
+	path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	mutex_unlock(_resource_autoimport_lock);
 	if (path.length)
 		return resource_import(STRING_ARGS(path), uuid);
 	return false;
@@ -230,7 +296,14 @@ bool
 resource_autoimport_need_update(const uuid_t uuid) {
 	FOUNDATION_UNUSED(uuid);
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	string_t path;
+
+	string_const_t uuidstr = string_from_uuid_static(uuid);
+	log_infof(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s"), STRING_FORMAT(uuidstr));
+
+	mutex_lock(_resource_autoimport_lock);
+	path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	mutex_unlock(_resource_autoimport_lock);
 	if (path.length) {
 		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
 		stream_t* stream = stream_open(STRING_ARGS(path), STREAM_IN);
@@ -242,40 +315,52 @@ resource_autoimport_need_update(const uuid_t uuid) {
 }
 
 static void
-resource_autoimport_watch_dir(const char* path, size_t length) {
-	size_t ipath, psize;
-	for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
-		//Check if something is already watching this dir or any parent
-		if (string_equal(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])) ||
-		        path_subpath(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])).length)
-			break;
-	}
-	if (ipath == psize) {
-		//Check if we will replace a more specific monitor
-		for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
-			if (path_subpath(STRING_ARGS(_resource_autoimport_dir[ipath]), path, length).length) {
-				//... implement ...
-			}
-		}
-		if (fs_monitor(path, length))
-			array_push(_resource_autoimport_dir, string_clone(path, length));
-	}
-}
-
-static void
 resource_autoimport_unwatch_dir(const char* path, size_t length) {
 	ssize_t idx = string_array_find((const string_const_t*)_resource_autoimport_dir,
 	                                array_size(_resource_autoimport_dir), path, length);
 	if (idx < 0)
 		return;
 
+	log_infof(HASH_RESOURCE, STRING_CONST("Autoimport unwatch dir: %.*s"), (int)length, path);
+
 	fs_unmonitor(path, length);
 	string_deallocate(_resource_autoimport_dir[idx].str);
 	array_erase(_resource_autoimport_dir, idx);
 }
 
+static void
+resource_autoimport_watch_dir(const char* path, size_t length) {
+	size_t ipath, psize;
+	for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
+		//Check if something is already watching this dir or any parent
+		if (string_equal(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])) ||
+		        path_subpath(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
+			log_infof(HASH_RESOURCE, STRING_CONST("Autoimport already watching dir: %.*s (%.*s)"), (int)length,
+			          path,
+			          STRING_FORMAT(_resource_autoimport_dir[ipath]));
+			break;
+		}
+	}
+	if (ipath == psize) {
+		//Check if we will replace a more specific monitor
+		for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize;) {
+			if (path_subpath(STRING_ARGS(_resource_autoimport_dir[ipath]), path, length).length) {
+				resource_autoimport_unwatch_dir(STRING_ARGS(_resource_autoimport_dir[ipath]));
+				psize = array_size(_resource_autoimport_dir);
+			}
+			else {
+				++ipath;
+			}
+		}
+		log_infof(HASH_RESOURCE, STRING_CONST("Autoimport watch dir: %.*s"), (int)length, path);
+		if (fs_monitor(path, length))
+			array_push(_resource_autoimport_dir, string_clone(path, length));
+	}
+}
+
 void
 resource_autoimport_watch(const char* path, size_t length) {
+	mutex_lock(_resource_autoimport_lock);
 	if (fs_is_directory(path, length)) {
 		resource_autoimport_watch_dir(path, length);
 	}
@@ -286,10 +371,12 @@ resource_autoimport_watch(const char* path, size_t length) {
 			resource_autoimport_watch_dir(STRING_ARGS(dir));
 		}
 	}
+	mutex_unlock(_resource_autoimport_lock);
 }
 
 void
 resource_autoimport_unwatch(const char* path, size_t length) {
+	mutex_lock(_resource_autoimport_lock);
 	if (fs_is_directory(path, length)) {
 		resource_autoimport_unwatch_dir(path, length);
 	}
@@ -300,14 +387,17 @@ resource_autoimport_unwatch(const char* path, size_t length) {
 			resource_autoimport_unwatch_dir(STRING_ARGS(dir));
 		}
 	}
+	mutex_unlock(_resource_autoimport_lock);
 }
 
 void
 resource_autoimport_clear(void) {
 	size_t ipath, psize;
+	mutex_lock(_resource_autoimport_lock);
 	for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath)
 		fs_unmonitor(STRING_ARGS(_resource_autoimport_dir[ipath]));
 	string_array_deallocate(_resource_autoimport_dir);
+	mutex_unlock(_resource_autoimport_lock);
 }
 
 void
@@ -355,6 +445,15 @@ resource_import_map_purge(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	return false;
+}
+
+int
+resource_autoimport_initialize(void) {
+	return 0;
+}
+
+void
+resource_autoimport_finalize(void) {
 }
 
 bool

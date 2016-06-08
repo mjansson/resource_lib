@@ -89,6 +89,9 @@ resource_module_initialize(const resource_config_t config) {
 		return -1;
 	}
 
+	if (resource_autoimport_initialize() < 0)
+		return -1;
+
 	_resource_module_initialized = true;
 
 	return 0;
@@ -103,7 +106,8 @@ resource_module_finalize(void) {
 	array_deallocate(_resource_compilers);
 
 	resource_local_clear_paths();
-	resource_autoimport_clear();
+
+	resource_autoimport_finalize();
 
 	event_stream_deallocate(_resource_event_stream);
 
