@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -31,6 +31,7 @@ typedef struct {
 	bool              display_help;
 	int               binary;
 	string_const_t    source_path;
+	string_const_t*   config_files;
 	uuid_t            uuid;
 	string_const_t    lookup_path;
 	uint64_t          platform;
@@ -112,6 +113,51 @@ main_run(void* main_arg) {
 
 	resource_source_initialize(&source);
 
+	for (size_t cfgfile = 0, fsize = array_size(input.config_files); cfgfile < fsize; ++cfgfile)
+		sjson_parse_path(STRING_ARGS(input.config_files[cfgfile]), resource_module_parse_config);
+
+	if (input.source_path.length)
+		resource_source_set_path(STRING_ARGS(input.source_path));
+
+	if (!resource_source_path().length) {
+		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
+		input.display_help = true;
+	}
+	else {
+		bool lookup_done = false;
+		if (uuid_is_null(input.uuid) && input.lookup_path.length) {
+			resource_signature_t sig = resource_lookup(input.lookup_path);
+			input.uuid = sig.uuid;
+			lookup_done = true;
+		}
+
+		bool need_source = true;
+		if (lookup_done)
+			need_source = false;
+		if (array_size(input.op) || input.collapse || input.clearblobs)
+			need_source = true;
+
+		bool already_help = input.display_help;
+		if (!already_help && !input.source_path.length && need_source) {
+			log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
+			input.display_help = true;
+		}
+		if (!already_help && uuid_is_null(input.uuid) && !lookup_done) {
+			log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
+			input.display_help = true;
+		}
+
+		if (lookup_done && !need_source) {
+			string_const_t lookupstr;
+			const error_level_t saved_level = log_suppress(HASH_RESOURCE);
+
+			lookupstr = string_from_uuid_static(input.uuid);
+			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
+			log_infof(HASH_RESOURCE, STRING_CONST("%.*s"), STRING_FORMAT(lookupstr));
+			log_set_suppress(HASH_RESOURCE, saved_level);
+		}
+	}
+
 	if (input.display_help) {
 		resource_print_usage();
 		goto exit;
@@ -119,10 +165,6 @@ main_run(void* main_arg) {
 
 	if (uuid_is_null(input.uuid))
 		goto exit;
-	if (!input.source_path.length)
-		goto exit;
-
-	resource_source_set_path(STRING_ARGS(input.source_path));
 
 	resource_source_read(&source, input.uuid);
 	tick = time_system();
@@ -170,6 +212,7 @@ main_run(void* main_arg) {
 exit:
 
 	resource_source_finalize(&source);
+	array_deallocate(input.config_files);
 
 	return result;
 }
@@ -185,6 +228,7 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	resource_input_t input;
 	size_t arg, asize;
 
+	error_context_push(STRING_CONST("parse command line"), STRING_CONST(""));
 	memset(&input, 0, sizeof(input));
 
 	for (arg = 1, asize = array_size(cmdline); arg < asize; ++arg) {
@@ -193,6 +237,10 @@ resource_parse_command_line(const string_const_t* cmdline) {
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--source"))) {
 			if (arg < asize - 1)
 				input.source_path = cmdline[++arg];
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--config"))) {
+			if (arg < asize - 1)
+				array_push(input.config_files, cmdline[++arg]);
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--uuid"))) {
 			if (arg < asize - 1) {
@@ -274,39 +322,6 @@ resource_parse_command_line(const string_const_t* cmdline) {
 	}
 	error_context_pop();
 
-	bool lookup_done = false;
-	if (uuid_is_null(input.uuid) && input.lookup_path.length) {
-		resource_signature_t sig = resource_lookup(input.lookup_path);
-		input.uuid = sig.uuid;
-		lookup_done = true;
-	}
-
-	bool need_source = true;
-	if (lookup_done)
-		need_source = false;
-	if (array_size(input.op) || input.collapse || input.clearblobs)
-		need_source = true;
-
-	bool already_help = input.display_help;
-	if (!already_help && !input.source_path.length && need_source) {
-		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
-		input.display_help = true;
-	}
-	if (!already_help && uuid_is_null(input.uuid) && !lookup_done) {
-		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
-		input.display_help = true;
-	}
-
-	if (lookup_done && !need_source) {
-		string_const_t lookupstr;
-		const error_level_t saved_level = log_suppress(HASH_RESOURCE);
-
-		lookupstr = string_from_uuid_static(input.uuid);
-		log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
-		log_infof(HASH_RESOURCE, STRING_CONST("%.*s"), STRING_FORMAT(lookupstr));
-		log_set_suppress(HASH_RESOURCE, saved_level);
-	}
-
 	return input;
 }
 
@@ -324,13 +339,15 @@ resource_print_usage(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_info(0, STRING_CONST(
 	             "resource usage:\n"
-	             "  resource --source <path> --uuid <uuid> --lookup <path>\n"
+	             "  resource [--source <path>] [--config <path>] [--uuid <uuid>] [--lookup <path>]\n"
 	             "           [--set <key> <value>] [--blob <key> <file>] [--unset <key>]\n"
 	             "           [--platform <id>]\n"
 	             "           [--collapse] [--clearblobs]\n"
 	             "           [--binary] [--ascii] [--debug] [--help] [--]\n"
 	             "    Resource specification arguments:\n"
 	             "      --source <path>        Set resource file repository to <path>\n"
+	             "      --config <path> ...    Read and parse config file given by <path>\n"
+	             "                             Loads all .json/.sjson files in <path> if it is a directory\n"
 	             "      --uuid <uuid>          Resource UUID\n"
 	             "      --lookup <path>        Resource UUID by lookup of source path <path>\n"
 	             "                             (UUID will be printed to stdout if no other command)\n"

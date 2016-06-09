@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *

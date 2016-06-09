@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -48,5 +48,6 @@ RESOURCE_API version_t
 resource_module_version(void);
 
 RESOURCE_API void
-resource_module_parse_config(const char* buffer, size_t size,
+resource_module_parse_config(const char* path, size_t path_size,
+                             const char* buffer, size_t size,
                              const json_token_t* tokens, size_t num_tokens);

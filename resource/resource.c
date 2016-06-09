@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -123,9 +123,11 @@ resource_module_is_initialized(void) {
 }
 
 void
-resource_module_parse_config(const char* buffer, size_t size,
+resource_module_parse_config(const char* path, size_t path_size,
+                             const char* buffer, size_t size,
                              const json_token_t* tokens, size_t num_tokens) {
 	FOUNDATION_UNUSED(size);
+	char pathbuf[BUILD_MAX_PATHLEN];
 
 	for (size_t tok = num_tokens ? tokens[0].child : 0; tok &&
 	        tok < num_tokens; tok = tokens[tok].sibling) {
@@ -140,13 +142,23 @@ resource_module_parse_config(const char* buffer, size_t size,
 				if (tokens[restok].type == JSON_STRING) {
 					string_const_t value = json_token_value(buffer, tokens + restok);
 					hash_t idhash = hash(STRING_ARGS(resid));
+					string_const_t sourcedir = path_directory_name(path, path_size);
+
+					string_t fullpath;
+					if (!path_is_absolute(STRING_ARGS(value))) {
+						fullpath = path_concat(pathbuf, sizeof(pathbuf), STRING_ARGS(sourcedir), STRING_ARGS(value));
+						fullpath = path_absolute(STRING_ARGS(fullpath), sizeof(pathbuf));
+					}
+					else {
+						fullpath = string_copy(pathbuf, sizeof(pathbuf), STRING_ARGS(value));
+					}
 
 					if (idhash == HASH_LOCAL_PATH)
-						resource_local_add_path(STRING_ARGS(value));
+						resource_local_add_path(STRING_ARGS(fullpath));
 					else if (idhash == HASH_SOURCE_PATH)
-						resource_source_set_path(STRING_ARGS(value));
+						resource_source_set_path(STRING_ARGS(fullpath));
 					else if (idhash == HASH_AUTOIMPORT)
-						resource_autoimport_watch(STRING_ARGS(value));
+						resource_autoimport_watch(STRING_ARGS(fullpath));
 				}
 			}
 		}

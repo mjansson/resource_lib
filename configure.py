@@ -9,7 +9,7 @@ sys.path.insert( 0, os.path.join( 'build', 'ninja' ) )
 
 import generator
 
-dependlibs = [ 'foundation' ]
+dependlibs = [ 'network', 'foundation' ]
 
 generator = generator.Generator( project = 'resource', dependlibs = dependlibs, variables = [ ( 'bundleidentifier', 'com.rampantpixels.resource.$(binname)' ) ] )
 target = generator.target
@@ -23,6 +23,7 @@ if not target.is_ios() and not target.is_android() and not target.is_tizen():
   configs = [ config for config in toolchain.configs if config not in [ 'profile', 'deploy' ] ]
   if not configs == []:
     generator.bin( 'resource', [ 'main.c' ], 'resource', basepath = 'tools', implicit_deps = [ resource_lib ], libs = [ 'resource', 'foundation' ], configs = configs )
+    generator.bin( 'importd', [ 'main.c' ], 'importd', basepath = 'tools', implicit_deps = [ resource_lib ], libs = [ 'network', 'resource', 'foundation' ], configs = configs )
 
 includepaths = generator.test_includepaths()
 
