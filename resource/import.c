@@ -17,6 +17,7 @@
  */
 
 #include <resource/import.h>
+#include <resource/event.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -402,7 +403,22 @@ resource_autoimport_clear(void) {
 
 void
 resource_autoimport_event_handle(event_t* event) {
-	//... implement ...
+	if (event->id != FOUNDATIONEVENT_FILE_MODIFIED)
+		return;
+
+	const string_const_t path = fs_event_path(event);
+
+	for (size_t ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
+		if (path_subpath(STRING_ARGS(path), STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
+			const resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
+			if (!uuid_is_null(sig.uuid)) {
+				const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
+				log_infof(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s)"),
+				          STRING_FORMAT(path), STRING_FORMAT(uuidstr));
+				resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid);
+			}
+		}
+	}
 }
 
 #else

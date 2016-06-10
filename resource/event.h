@@ -31,5 +31,8 @@ resource_event_post(resource_event_id id, uuid_t uuid);
 RESOURCE_API event_stream_t*
 resource_event_stream(void);
 
+/*! Handle foundation events. No other event types should be
+passed to this function.
+\param event Foundation event */
 RESOURCE_API void
 resource_event_handle(event_t* event);

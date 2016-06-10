@@ -26,8 +26,10 @@
 #define RESOURCE_PLATFORM_ALL ((uint64_t)-1)
 
 typedef enum resource_event_id {
-	RESOURCEEVENT_UPDATE_STATIC = 0,
-	RESOURCEEVENT_UPDATE_DYNAMIC
+	RESOURCEEVENT_CREATE = 0,
+	RESOURCEEVENT_MODIFY,
+	RESOURCEEVENT_DELETE,
+	RESOURCEEVENT_LAST_RESERVED = 32
 } resource_event_id;
 
 #define RESOURCE_SOURCEFLAG_UNSET 0
@@ -36,7 +38,6 @@ typedef enum resource_event_id {
 
 typedef struct resource_base_t              resource_base_t;
 typedef struct resource_config_t            resource_config_t;
-typedef struct resource_event_t             resource_event_t;
 typedef struct resource_change_t            resource_change_t;
 typedef struct resource_change_data_t       resource_change_data_t;
 typedef struct resource_change_data_fixed_t resource_change_data_fixed_t;
@@ -74,14 +75,6 @@ struct resource_platform_t {
 	int  quality_level;
 	//! Custom identifier, 8 bits, [0,255)
 	int  custom;
-};
-
-#define RESOURCE_DECLARE_EVENT   \
-	FOUNDATION_DECLARE_EVENT;    \
-	uuid_t uuid
-
-struct resource_event_t {
-	RESOURCE_DECLARE_EVENT;
 };
 
 #define RESOURCE_DECLARE_OBJECT   \

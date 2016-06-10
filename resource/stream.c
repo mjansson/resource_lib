@@ -26,13 +26,15 @@ resource_stream_open_static(const uuid_t res, uint64_t platform) {
 
 	if (resource_autoimport_need_update(res)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
-		log_infof(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s"), STRING_FORMAT(uuidstr));
+		log_infof(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (open static)"),
+		          STRING_FORMAT(uuidstr));
 		resource_autoimport(res);
 	}
 
 	if (resource_compile_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
-		log_infof(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s"), STRING_FORMAT(uuidstr));
+		log_infof(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s (open static)"),
+		          STRING_FORMAT(uuidstr));
 		resource_compile(res, platform);
 	}
 
@@ -56,9 +58,17 @@ stream_t*
 resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
+	if (resource_autoimport_need_update(res)) {
+		string_const_t uuidstr = string_from_uuid_static(res);
+		log_infof(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (open dynamic)"),
+		          STRING_FORMAT(uuidstr));
+		resource_autoimport(res);
+	}
+
 	if (resource_compile_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
-		log_infof(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s"), STRING_FORMAT(uuidstr));
+		log_infof(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s (open dynamic)"),
+		          STRING_FORMAT(uuidstr));
 		resource_compile(res, platform);
 	}
 

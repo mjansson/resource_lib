@@ -27,12 +27,12 @@ event_stream_t* _resource_event_stream = 0;
 
 uuid_t
 resource_event_uuid(const event_t* event) {
-	return ((const resource_event_t*)event)->uuid;
+	return *((const uuid_t*)event->payload);
 }
 
 void
 resource_event_post(resource_event_id id, uuid_t uuid) {
-	event_post(_resource_event_stream, id, sizeof(uuid_t), 0, &uuid, 0);
+	event_post(_resource_event_stream, id, 0, 0, &uuid, sizeof(uuid));
 }
 
 event_stream_t*

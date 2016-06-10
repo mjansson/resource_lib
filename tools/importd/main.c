@@ -91,7 +91,30 @@ main_run(void* main_arg) {
 		goto exit;
 	}
 
+	//Find all import maps in autoimport paths and load into memory DB
+	//  if no import maps, create default maps
+
 	//Run daemon
+
+	//Requests handled (B = broadcast)
+	
+	// --> lookup <path>   
+	// <-- <uuid>
+	
+	// --> reverse <uuid>
+	// <-- <path>
+
+	// --> import <path>|<uuid>
+	// <-- <uuid> <flags>
+	// <B- <notify-create> <uuid> (if new)
+	// <B- <notify-change> <uuid> (if reimported)
+
+	// file change and autoimport performed
+	// <B- <notify-change> <uuid>
+
+	// --> delete <uuid>
+	// <-- <result>
+	// <B- <notify-delete> <uuid>
 
 exit:
 
