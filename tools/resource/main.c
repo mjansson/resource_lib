@@ -119,43 +119,27 @@ main_run(void* main_arg) {
 	if (input.source_path.length)
 		resource_source_set_path(STRING_ARGS(input.source_path));
 
-	if (!resource_source_path().length) {
+	bool lookup_done = false;
+	if (uuid_is_null(input.uuid) && input.lookup_path.length) {
+		resource_signature_t sig = resource_lookup(input.lookup_path);
+		input.uuid = sig.uuid;
+		lookup_done = true;
+	}
+
+	bool need_source = true;
+	if (lookup_done)
+		need_source = false;
+	if (array_size(input.op) || input.collapse || input.clearblobs)
+		need_source = true;
+
+	bool already_help = input.display_help;
+	if (!already_help && need_source && !resource_source_path().length) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input.display_help = true;
 	}
-	else {
-		bool lookup_done = false;
-		if (uuid_is_null(input.uuid) && input.lookup_path.length) {
-			resource_signature_t sig = resource_lookup(input.lookup_path);
-			input.uuid = sig.uuid;
-			lookup_done = true;
-		}
-
-		bool need_source = true;
-		if (lookup_done)
-			need_source = false;
-		if (array_size(input.op) || input.collapse || input.clearblobs)
-			need_source = true;
-
-		bool already_help = input.display_help;
-		if (!already_help && !input.source_path.length && need_source) {
-			log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
-			input.display_help = true;
-		}
-		if (!already_help && uuid_is_null(input.uuid) && !lookup_done) {
-			log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
-			input.display_help = true;
-		}
-
-		if (lookup_done && !need_source) {
-			string_const_t lookupstr;
-			const error_level_t saved_level = log_suppress(HASH_RESOURCE);
-
-			lookupstr = string_from_uuid_static(input.uuid);
-			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
-			log_infof(HASH_RESOURCE, STRING_CONST("%.*s"), STRING_FORMAT(lookupstr));
-			log_set_suppress(HASH_RESOURCE, saved_level);
-		}
+	if (!already_help && !lookup_done && uuid_is_null(input.uuid)) {
+		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
+		input.display_help = true;
 	}
 
 	if (input.display_help) {
