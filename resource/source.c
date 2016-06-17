@@ -77,6 +77,19 @@ resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
 }
 
 static stream_t*
+resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
+	                                          STRING_ARGS(_resource_source_path), uuid);
+	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".deps"));
+	if (mode & STREAM_OUT) {
+		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
+		fs_make_directory(STRING_ARGS(dir_path));
+	}
+	return stream_open(STRING_ARGS(path), mode);
+}
+
+static stream_t*
 resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform,
                           hash_t checksum, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
@@ -581,7 +594,7 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 }
 
 uint256_t
-resource_source_read_hash(const uuid_t uuid) {
+resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
 	uint256_t hash = uint256_null();
 	stream_t* stream = resource_source_open_hash(uuid, STREAM_IN);
 	if (stream) {
@@ -590,6 +603,9 @@ resource_source_read_hash(const uuid_t uuid) {
 		hash = string_to_uint256(STRING_ARGS(value));
 	}
 	stream_deallocate(stream);
+
+	//TODO: Implement adding dependency resource hashes based on platform
+
 	return hash;
 }
 
@@ -643,6 +659,67 @@ resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
 	size_t written = stream_write(stream, data, size);
 	stream_deallocate(stream);
 	return written == size;
+}
+
+size_t
+resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
+	return resource_source_dependencies(uuid, platform, nullptr, 0);
+}
+
+size_t
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+	size_t numdeps = 0;
+	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN);
+	while (stream && !stream_eos(stream)) {
+		unsigned int numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		for (unsigned int idep = 0; idep < numdeps; ++idep) {
+			uuid_t depuuid = stream_read_uuid(stream);
+			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
+				if (numdeps < capacity)
+					deps[numdeps] = depuuid;
+				++numdeps;
+			}
+		}
+	}
+	stream_deallocate(stream);
+	return numdeps;
+}
+
+void
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps,
+                                 size_t num) {
+	size_t numdeps = 0;
+	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
+	size_t size = stream_size(stream);
+	while (!stream_eos(stream)) {
+		ssize_t startofs = stream_tell(stream);
+		unsigned int numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		for (unsigned int idep = 0; idep < numdeps; ++idep)
+			stream_read_uuid(stream);
+		stream_skip_whitespace(stream);
+		ssize_t endofs = stream_tell(stream);
+		if (platform == depplatform) {
+			//Replace line with new line at end
+			size_t toread = size - endofs;
+			char* remain = memory_allocate(HASH_RESOURCE, toread, 0, MEMORY_PERSISTENT);
+			size_t read = stream_read(stream, remain, toread);
+			stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+			stream_write(stream, remain, read);
+			break;
+		}
+	}
+	stream_write_uint32(stream, (uint32_t)num);
+	stream_write_separator(stream);
+	stream_write_uint64(stream, platform);
+	for (unsigned int idep = 0; idep < num; ++idep) {
+		stream_write_separator(stream);
+		stream_write_uuid(stream, deps[idep]);
+	}
+	stream_write_endl(stream);
+	stream_truncate(stream, stream_tell(stream));
+	stream_deallocate(stream);
 }
 
 #endif

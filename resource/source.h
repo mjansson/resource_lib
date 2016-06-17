@@ -31,7 +31,7 @@ RESOURCE_API bool
 resource_source_set_path(const char* path, size_t length);
 
 RESOURCE_API uint256_t
-resource_source_read_hash(const uuid_t uuid);
+resource_source_read_hash(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API resource_source_t*
 resource_source_allocate(void);
@@ -107,6 +107,15 @@ be called for a map not reduced with #resource_source_map_reduce.
 RESOURCE_API void
 resource_source_map_clear(hashmap_t* map);
 
+RESOURCE_API size_t
+resource_source_num_dependencies(const uuid_t uuid, uint64_t platform);
+
+RESOURCE_API size_t
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+
+RESOURCE_API void
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num);
+
 #else
 
 #define resource_source_set_path(...) false
@@ -115,6 +124,7 @@ resource_source_map_clear(hashmap_t* map);
 #define resource_source_deallocate(source) memory_deallocate(source)
 #define resource_source_initialize(source) ((void)sizeof(source))
 #define resource_source_finalize(source) ((void)sizeof(source))
+#define resource_source_read_hash(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), uint256_null()
 #define resource_source_set(source, timestamp, key, platform, ...) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
 #define resource_source_unset(source, timestamp, key, platform) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
 #define resource_source_read(source, uuid) (((void)sizeof(source)), ((void)sizeof(uuid)), false)
@@ -127,5 +137,8 @@ resource_source_map_clear(hashmap_t* map);
 #define resource_source_map(source, platform, map) ((void)sizeof(source)), ((void)sizeof(platform)), ((void)sizeof(map))
 #define resource_source_map_all(source, map, all_platforms) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(all_platforms))
 #define resource_source_map_reduce(source, map, data, reduce) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
+#define resource_source_num_dependencies(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
+#define resource_source_dependencies(uuid, platform, deps, capacity) ((void)sizeof(uuid)), ((void)sizeof(platform)), ((void)sizeof(deps)), ((void)sizeof(capacity)), 0
+#define resource_source_set_dependencies(uuid, platform, deps, num) ((void)sizeof(uuid)), ((void)sizeof(platform)), ((void)sizeof(deps)), ((void)sizeof(num))
 
 #endif

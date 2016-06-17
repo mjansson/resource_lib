@@ -17,6 +17,7 @@
  */
 
 #include <resource/import.h>
+#include <resource/source.h>
 #include <resource/event.h>
 #include <resource/internal.h>
 
@@ -46,6 +47,11 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 
 void
 resource_import_register(resource_import_fn importer) {
+	size_t iimp, isize;
+	for (iimp = 0, isize = array_size(_resource_importers); iimp != isize; ++iimp) {
+		if (_resource_importers[iimp] == importer)
+			return;
+	}
 	array_push(_resource_importers, importer);
 }
 
@@ -294,9 +300,8 @@ resource_autoimport(const uuid_t uuid) {
 }
 
 bool
-resource_autoimport_need_update(const uuid_t uuid) {
-	FOUNDATION_UNUSED(uuid);
-	char buffer[BUILD_MAX_PATHLEN];
+resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
+	char FOUNDATION_ALIGN(16) buffer[BUILD_MAX_PATHLEN];
 	string_t path;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
@@ -310,7 +315,29 @@ resource_autoimport_need_update(const uuid_t uuid) {
 		stream_t* stream = stream_open(STRING_ARGS(path), STREAM_IN);
 		uint256_t newhash = stream_sha256(stream);
 		stream_deallocate(stream);
-		return !uint256_equal(sig.hash, newhash);
+		if (!uint256_equal(sig.hash, newhash))
+			return true;
+
+		uuid_t* localdeps = (uuid_t*)buffer;
+		size_t capacity = sizeof(buffer) / sizeof(uuid_t);
+		size_t numdeps = resource_source_num_dependencies(uuid, platform);
+		if (numdeps) {
+			bool need_import = false;
+			uuid_t* deps = localdeps;
+			if (numdeps > capacity)
+				deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
+			resource_source_dependencies(uuid, platform, deps, numdeps);
+			for (size_t idep = 0; idep < numdeps; ++idep) {
+				if (resource_autoimport_need_update(deps[idep], platform)) {
+					need_import = true;
+					break;
+				}
+			}
+			if (deps != localdeps)
+				memory_deallocate(deps);
+			if (need_import)
+				return true;
+		}
 	}
 	return false;
 }
@@ -478,8 +505,9 @@ resource_autoimport(const uuid_t uuid) {
 }
 
 bool
-resource_autoimport_need_update(const uuid_t uuid) {
+resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
 	return false;
 }
 

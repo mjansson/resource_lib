@@ -38,7 +38,7 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	if (!_resource_config.enable_local_source)
 		return false;
 
-	source_hash = resource_source_read_hash(uuid);
+	source_hash = resource_source_read_hash(uuid, platform);
 	if (uint256_is_null(source_hash))
 		return true;
 
@@ -70,16 +70,37 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	if (!_resource_config.enable_local_source)
 		return false;
 
+	uuid_t localdeps[4];
+	size_t depscapacity = sizeof(localdeps) / sizeof(uuid_t);
+	size_t numdeps = resource_source_num_dependencies(uuid, platform);
+	if (numdeps) {
+		bool success = true;
+		uuid_t* deps = localdeps;
+		if (numdeps > depscapacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, numdeps);
+		for (size_t idep = 0; idep < numdeps; ++idep) {
+			if (resource_compile_need_update(deps[idep], platform)) {
+				if (!resource_compile(deps[idep], platform))
+					success = false;
+			}
+		}
+		if (deps != localdeps)
+			memory_deallocate(deps);
+		if (!success)
+			return false;
+	}
+
 	resource_source_initialize(&source);
 	if (resource_source_read(&source, uuid)) {
 		uint256_t source_hash;
 		resource_change_t* change;
 
-		source_hash = resource_source_read_hash(uuid);
+		source_hash = resource_source_read_hash(uuid, platform);
 		if (uint256_is_null(source_hash)) {
 			//Recreate source hash data
 			resource_source_write(&source, uuid, source.read_binary);
-			source_hash = resource_source_read_hash(uuid);
+			source_hash = resource_source_read_hash(uuid, platform);
 		}
 
 		resource_source_collapse_history(&source);
@@ -100,6 +121,11 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 
 void
 resource_compile_register(resource_compile_fn compiler) {
+	size_t icmp, isize;
+	for (icmp = 0, isize = array_size(_resource_compilers); icmp != isize; ++icmp) {
+		if (_resource_compilers[icmp] == compiler)
+			return;
+	}
 	array_push(_resource_compilers, compiler);
 }
 

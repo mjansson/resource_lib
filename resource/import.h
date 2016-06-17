@@ -45,7 +45,7 @@ RESOURCE_API bool
 resource_autoimport(const uuid_t uuid);
 
 RESOURCE_API bool
-resource_autoimport_need_update(const uuid_t uuid);
+resource_autoimport_need_update(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API void
 resource_autoimport_watch(const char* path, size_t length);

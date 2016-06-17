@@ -24,7 +24,7 @@ stream_t*
 resource_stream_open_static(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_autoimport_need_update(res)) {
+	if (resource_autoimport_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (open static)"),
 		           STRING_FORMAT(uuidstr));
@@ -58,7 +58,7 @@ stream_t*
 resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
-	if (resource_autoimport_need_update(res)) {
+	if (resource_autoimport_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (open dynamic)"),
 		           STRING_FORMAT(uuidstr));
