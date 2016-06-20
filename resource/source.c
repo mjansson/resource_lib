@@ -520,7 +520,6 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 
 bool
 resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary) {
-	const char separator = ' ';
 	const char op_set = '=';
 	const char op_unset = '-';
 	const char op_blob = '#';
@@ -538,42 +537,41 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
 			stream_write_int64(stream, change->timestamp);
-			sha256_digest(&sha, &change->timestamp, sizeof(change->timestamp));
-			if (!binary)
-				stream_write(stream, &separator, 1);
+			stream_write_separator(stream);
 			stream_write_uint64(stream, change->hash);
-			sha256_digest(&sha, &change->hash, sizeof(change->hash));
-			if (!binary)
-				stream_write(stream, &separator, 1);
+			stream_write_separator(stream);
 			stream_write_uint64(stream, change->platform);
+			stream_write_separator(stream);
+
+			sha256_digest(&sha, &change->timestamp, sizeof(change->timestamp));
+			sha256_digest(&sha, &change->hash, sizeof(change->hash));
 			sha256_digest(&sha, &change->platform, sizeof(change->platform));
-			if (!binary)
-				stream_write(stream, &separator, 1);
-			if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+
+			if (change->flags == RESOURCE_SOURCEFLAG_UNSET) {
 				stream_write(stream, &op_unset, 1);
+			}
 			else {
 				if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
 					stream_write(stream, &op_blob, 1);
-					if (!binary)
-						stream_write(stream, &separator, 1);
+					stream_write_separator(stream);
 					stream_write_uint64(stream, change->value.blob.checksum);
-					sha256_digest(&sha, &change->value.blob.checksum, sizeof(change->value.blob.checksum));
-					if (!binary)
-						stream_write(stream, &separator, 1);
+					stream_write_separator(stream);
 					stream_write_uint64(stream, change->value.blob.size);
+
+					sha256_digest(&sha, &change->value.blob.checksum, sizeof(change->value.blob.checksum));
 					sha256_digest(&sha, &change->value.blob.size, sizeof(change->value.blob.size));
 				}
 				else {
 					stream_write(stream, &op_set, 1);
-					if (!binary)
-						stream_write(stream, &separator, 1);
+					stream_write_separator(stream);
 					stream_write_string(stream, STRING_ARGS(change->value.value));
+
 					sha256_digest(&sha, STRING_ARGS(change->value.value));
 				}
 			}
+			stream_write_endl(stream);
+
 			sha256_digest(&sha, &change->flags, sizeof(change->flags));
-			if (!binary)
-				stream_write_endl(stream);
 		}
 		block = block->next;
 	}
@@ -605,6 +603,25 @@ resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
 	stream_deallocate(stream);
 
 	//TODO: Implement adding dependency resource hashes based on platform
+	uuid_t localdeps[16];
+	size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
+	size_t numdeps = resource_source_num_dependencies(uuid, platform);
+	if (numdeps) {
+		bool need_import = false;
+		uuid_t* deps = localdeps;
+		if (numdeps > capacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, numdeps);
+		for (size_t idep = 0; idep < numdeps; ++idep) {
+			uint256_t dephash = resource_source_read_hash(deps[idep], platform);
+			hash.word[0] ^= dephash.word[0];
+			hash.word[1] ^= dephash.word[1];
+			hash.word[2] ^= dephash.word[2];
+			hash.word[3] ^= dephash.word[3];
+		}
+		if (deps != localdeps)
+			memory_deallocate(deps);
+	}
 
 	return hash;
 }
@@ -671,14 +688,13 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 	size_t numdeps = 0;
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN);
 	while (stream && !stream_eos(stream)) {
-		unsigned int numdeps = stream_read_uint32(stream);
+		numdeps = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		for (unsigned int idep = 0; idep < numdeps; ++idep) {
+		for (size_t idep = 0; idep < numdeps; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
-				if (numdeps < capacity)
-					deps[numdeps] = depuuid;
-				++numdeps;
+				if (idep < capacity)
+					deps[idep] = depuuid;
 			}
 		}
 	}

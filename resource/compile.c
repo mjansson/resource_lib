@@ -38,20 +38,25 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	if (!_resource_config.enable_local_source)
 		return false;
 
+	string_const_t uuidstr = string_from_uuid_static(uuid);
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s"), STRING_FORMAT(uuidstr));
+
 	source_hash = resource_source_read_hash(uuid, platform);
-	if (uint256_is_null(source_hash))
+	if (uint256_is_null(source_hash)) {
+		log_debug(HASH_RESOURCE, STRING_CONST("  no source hash"));
 		return true;
+	}
 
 	stream = resource_local_open_static(uuid, platform);
-	if (!stream)
+	if (!stream) {
+		log_debug(HASH_RESOURCE, STRING_CONST("  no source static stream"));
 		return true;
+	}
 
 	header = resource_stream_read_header(stream);
 
 	stream_deallocate(stream);
 
-	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Check compilation for resource %.*s"), STRING_FORMAT(uuidstr));
 	string_const_t hashstr = string_from_uint256_static(source_hash);
 	log_debugf(HASH_RESOURCE, STRING_CONST("  source: %.*s"), STRING_FORMAT(hashstr));
 	hashstr = string_from_uint256_static(header.source_hash);
@@ -70,12 +75,17 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	if (!_resource_config.enable_local_source)
 		return false;
 
+	string_const_t uuidstr = string_from_uuid_static(uuid);
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s"), STRING_FORMAT(uuidstr));
+
 	uuid_t localdeps[4];
 	size_t depscapacity = sizeof(localdeps) / sizeof(uuid_t);
 	size_t numdeps = resource_source_num_dependencies(uuid, platform);
 	if (numdeps) {
 		bool success = true;
 		uuid_t* deps = localdeps;
+		uuidstr = string_from_uuid_static(uuid);
+		log_debugf(HASH_RESOURCE, STRING_CONST("Dependency compile check: %.*s"), STRING_FORMAT(uuidstr));
 		if (numdeps > depscapacity)
 			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
 		resource_source_dependencies(uuid, platform, deps, numdeps);

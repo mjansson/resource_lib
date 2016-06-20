@@ -101,10 +101,7 @@ void
 resource_stream_write_header(stream_t* stream, const resource_header_t header) {
 	stream_write_uint64(stream, header.type);
 	stream_write_uint32(stream, header.version);
-	stream_write_uint64(stream, header.source_hash.word[0]);
-	stream_write_uint64(stream, header.source_hash.word[1]);
-	stream_write_uint64(stream, header.source_hash.word[2]);
-	stream_write_uint64(stream, header.source_hash.word[3]);
+	stream_write_uint256(stream, header.source_hash);
 }
 
 resource_header_t
@@ -112,9 +109,6 @@ resource_stream_read_header(stream_t* stream) {
 	resource_header_t header;
 	header.type = stream_read_uint64(stream);
 	header.version = stream_read_uint32(stream);
-	header.source_hash.word[0] = stream_read_uint64(stream);
-	header.source_hash.word[1] = stream_read_uint64(stream);
-	header.source_hash.word[2] = stream_read_uint64(stream);
-	header.source_hash.word[3] = stream_read_uint64(stream);
+	header.source_hash = stream_read_uint256(stream);
 	return header;
 }

@@ -315,8 +315,12 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		stream_t* stream = stream_open(STRING_ARGS(path), STREAM_IN);
 		uint256_t newhash = stream_sha256(stream);
 		stream_deallocate(stream);
-		if (!uint256_equal(sig.hash, newhash))
+		if (!uint256_equal(sig.hash, newhash)) {
+			uuidstr = string_from_uuid_static(uuid);
+			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, source hash changed: %.*s"),
+			           STRING_FORMAT(uuidstr));
 			return true;
+		}
 
 		uuid_t* localdeps = (uuid_t*)buffer;
 		size_t capacity = sizeof(buffer) / sizeof(uuid_t);
@@ -324,12 +328,17 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		if (numdeps) {
 			bool need_import = false;
 			uuid_t* deps = localdeps;
+			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, %" PRIsize " source dependency checks: %.*s"),
+			           numdeps, STRING_FORMAT(uuidstr));
 			if (numdeps > capacity)
 				deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
 			resource_source_dependencies(uuid, platform, deps, numdeps);
 			for (size_t idep = 0; idep < numdeps; ++idep) {
 				if (resource_autoimport_need_update(deps[idep], platform)) {
 					need_import = true;
+					uuidstr = string_from_uuid_static(uuid);
+					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, source dependency changed: %.*s"),
+					           STRING_FORMAT(uuidstr));
 					break;
 				}
 			}

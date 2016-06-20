@@ -103,7 +103,7 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 	//not exist, retry and create a new file at the most specified level
 	//in the first local path that succeeds.
 	mode &= ~STREAM_CREATE;
-	while (true) {
+	while (!stream) {
 retry:
 		for (ipath = 0, pathsize = array_size(_resource_local_paths); !stream &&
 		        (ipath < pathsize); ++ipath) {
