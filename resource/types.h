@@ -36,7 +36,6 @@ typedef enum resource_event_id {
 #define RESOURCE_SOURCEFLAG_VALUE 1
 #define RESOURCE_SOURCEFLAG_BLOB  2
 
-typedef struct resource_base_t              resource_base_t;
 typedef struct resource_config_t            resource_config_t;
 typedef struct resource_change_t            resource_change_t;
 typedef struct resource_change_data_t       resource_change_data_t;
@@ -75,14 +74,6 @@ struct resource_platform_t {
 	int  quality_level;
 	//! Custom identifier, 8 bits, [0,255)
 	int  custom;
-};
-
-#define RESOURCE_DECLARE_OBJECT   \
-	FOUNDATION_DECLARE_OBJECT;    \
-	uuid_t uuid
-
-FOUNDATION_ALIGNED_STRUCT(resource_base_t, 8) {
-	RESOURCE_DECLARE_OBJECT;
 };
 
 /*! Representation of metadata for a binary data blob */
@@ -176,3 +167,13 @@ struct resource_signature_t {
 	/*! Source file hash */
 	uint256_t hash;
 };
+
+static FOUNDATION_FORCEINLINE hash_t
+resource_uuid_hash(const uuid_t uuid);
+
+// Implementation
+
+static FOUNDATION_FORCEINLINE hash_t
+resource_uuid_hash(const uuid_t uuid) {
+	return uuid.word[0] ^ uuid.word[1];
+}
