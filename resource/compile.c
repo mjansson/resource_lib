@@ -71,20 +71,24 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	size_t icmp, isize;
 	resource_source_t source;
 	string_const_t type;
-	bool success = false;
+	bool success = true;
 	if (!_resource_config.enable_local_source)
 		return false;
 
-	string_const_t uuidstr = string_from_uuid_static(uuid);
+#if BUILD_ENABLE_DEBUG_LOG || BUILD_ENABLE_ERROR_CONTEXT
+	char uuidbuf[40];
+	const string_t uuidstr = string_from_uuid(uuidbuf, sizeof(uuidbuf), uuid);
+	error_context_push(STRING_CONST("compiling resource"), STRING_ARGS(uuidstr));
+#else
+	const string_t uuidstr = {0};
+#endif
 	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s"), STRING_FORMAT(uuidstr));
 
 	uuid_t localdeps[4];
 	size_t depscapacity = sizeof(localdeps) / sizeof(uuid_t);
 	size_t numdeps = resource_source_num_dependencies(uuid, platform);
 	if (numdeps) {
-		bool success = true;
 		uuid_t* deps = localdeps;
-		uuidstr = string_from_uuid_static(uuid);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Dependency compile check: %.*s"), STRING_FORMAT(uuidstr));
 		if (numdeps > depscapacity)
 			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
@@ -97,8 +101,11 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		}
 		if (deps != localdeps)
 			memory_deallocate(deps);
-		if (!success)
+
+		if (!success) {
+			error_context_pop();
 			return false;
+		}
 	}
 
 	resource_source_initialize(&source);
@@ -120,11 +127,14 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 			type = change->value.value;
 		}
 
+		success = false;
 		for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize); ++icmp)
 			success = (_resource_compilers[icmp](uuid, platform, &source, source_hash, STRING_ARGS(type)) == 0);
 	}
 
 	resource_source_finalize(&source);
+
+	error_context_pop();
 
 	return success;
 }
