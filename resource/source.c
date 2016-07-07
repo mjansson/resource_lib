@@ -16,10 +16,7 @@
  *
  */
 
-#include <resource/source.h>
-#include <resource/change.h>
-#include <resource/stream.h>
-#include <resource/platform.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -35,7 +32,7 @@ resource_source_change_platform_compare(resource_change_t* change, resource_chan
 
 bool
 resource_source_set_path(const char* path, size_t length) {
-	if (!_resource_config.enable_local_source)
+	if (!resource_module_config().enable_local_source)
 		return false;
 	_resource_source_path = string_copy(_resource_source_path_buffer,
 	                                    sizeof(_resource_source_path_buffer), path, length);
@@ -607,7 +604,6 @@ resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
 	size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
 	size_t numdeps = resource_source_num_dependencies(uuid, platform);
 	if (numdeps) {
-		bool need_import = false;
 		uuid_t* deps = localdeps;
 		if (numdeps > capacity)
 			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
@@ -705,17 +701,16 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 void
 resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps,
                                  size_t num) {
-	size_t numdeps = 0;
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
 	while (!stream_eos(stream)) {
-		ssize_t startofs = stream_tell(stream);
+		ssize_t startofs = (ssize_t)stream_tell(stream);
 		unsigned int numdeps = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
 		for (unsigned int idep = 0; idep < numdeps; ++idep)
 			stream_read_uuid(stream);
 		stream_skip_whitespace(stream);
-		ssize_t endofs = stream_tell(stream);
+		size_t endofs = stream_tell(stream);
 		if (platform == depplatform) {
 			//Replace line with new line at end
 			size_t toread = size - endofs;

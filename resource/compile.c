@@ -16,11 +16,7 @@
  *
  */
 
-#include <resource/compile.h>
-#include <resource/source.h>
-#include <resource/change.h>
-#include <resource/stream.h>
-#include <resource/local.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -35,7 +31,7 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	stream_t* stream;
 	resource_header_t header;
 
-	if (!_resource_config.enable_local_source)
+	if (!resource_module_config().enable_local_source)
 		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
@@ -72,7 +68,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	resource_source_t source;
 	string_const_t type;
 	bool success = true;
-	if (!_resource_config.enable_local_source)
+	if (!resource_module_config().enable_local_source)
 		return false;
 
 #if BUILD_ENABLE_DEBUG_LOG || BUILD_ENABLE_ERROR_CONTEXT
@@ -80,7 +76,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	const string_t uuidstr = string_from_uuid(uuidbuf, sizeof(uuidbuf), uuid);
 	error_context_push(STRING_CONST("compiling resource"), STRING_ARGS(uuidstr));
 #else
-	const string_t uuidstr = {0};
+	const string_t uuidstr = {0, 0};
 #endif
 	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s"), STRING_FORMAT(uuidstr));
 
@@ -160,5 +156,30 @@ resource_compile_unregister(resource_compile_fn compiler) {
 	}
 }
 
+#else
+
+bool
+resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return false;
+}
+
+bool
+resource_compile(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return true;
+}
+
+void
+resource_compile_register(resource_compile_fn compiler) {
+	FOUNDATION_UNUSED(compiler);
+}
+
+void
+resource_compile_unregister(resource_compile_fn compiler) {
+	FOUNDATION_UNUSED(compiler);
+}
 
 #endif

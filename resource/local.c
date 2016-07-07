@@ -16,9 +16,7 @@
  *
  */
 
-#include <resource/local.h>
-#include <resource/stream.h>
-#include <resource/platform.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -95,7 +93,7 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 	bool try_create = (mode & STREAM_CREATE);
 	bool tried_create = false;
 
-	if (!_resource_config.enable_local_cache)
+	if (!resource_module_config().enable_local_cache)
 		return nullptr;
 
 	//If stream is to be created, first iterate all local paths to find

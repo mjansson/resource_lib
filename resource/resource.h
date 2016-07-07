@@ -47,6 +47,9 @@ resource_module_is_initialized(void);
 RESOURCE_API version_t
 resource_module_version(void);
 
+RESOURCE_API resource_config_t
+resource_module_config(void);
+
 RESOURCE_API void
 resource_module_parse_config(const char* path, size_t path_size,
                              const char* buffer, size_t size,

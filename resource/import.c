@@ -135,7 +135,7 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 		if (!uint256_is_null(update_hash) && !uint256_equal(sig.hash, update_hash)) {
 			if (map->mode & STREAM_OUT) {
 				string_const_t token = string_from_uint256_static(update_hash);
-				stream_seek(map, streampos + 54, STREAM_SEEK_BEGIN);
+				stream_seek(map, (ssize_t)streampos + 54, STREAM_SEEK_BEGIN);
 				stream_write(map, STRING_ARGS(token));
 				sig.hash = update_hash;
 			}
@@ -216,8 +216,8 @@ resource_import_map_purge(const char* path, size_t length) {
 	return false;
 }
 
-mutex_t* _resource_autoimport_lock;
-string_t* _resource_autoimport_dir;
+static mutex_t* _resource_autoimport_lock;
+static string_t* _resource_autoimport_dir;
 
 int
 resource_autoimport_initialize(void) {
@@ -301,14 +301,17 @@ resource_autoimport(const uuid_t uuid) {
 
 bool
 resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
-	char FOUNDATION_ALIGN(16) buffer[BUILD_MAX_PATHLEN];
+	union {
+		char path[BUILD_MAX_PATHLEN];
+		uuid_t deps[BUILD_MAX_PATHLEN/16];
+	} buffer;
 	string_t path;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
 	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s"), STRING_FORMAT(uuidstr));
 
 	mutex_lock(_resource_autoimport_lock);
-	path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	path = resource_autoimport_reverse_lookup(uuid, buffer.path, sizeof(buffer.path));
 	mutex_unlock(_resource_autoimport_lock);
 	if (path.length) {
 		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
@@ -322,8 +325,8 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 			return true;
 		}
 
-		uuid_t* localdeps = (uuid_t*)buffer;
-		size_t capacity = sizeof(buffer) / sizeof(uuid_t);
+		uuid_t* localdeps = buffer.deps;
+		size_t capacity = sizeof(buffer.deps) / sizeof(uuid_t);
 		size_t numdeps = resource_source_num_dependencies(uuid, platform);
 		if (numdeps) {
 			bool need_import = false;
@@ -468,10 +471,12 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 
 void
 resource_import_register(resource_import_fn importer) {
+	FOUNDATION_UNUSED(importer);
 }
 
 void
 resource_import_unregister(resource_import_fn importer) {
+	FOUNDATION_UNUSED(importer);
 }
 
 resource_signature_t
@@ -538,6 +543,7 @@ resource_autoimport_clear(void) {
 
 void
 resource_autoimport_event_handle(event_t* event) {
+	FOUNDATION_UNUSED(event);
 }
 
 #endif

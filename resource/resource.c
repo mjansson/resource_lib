@@ -21,7 +21,7 @@
 
 #include <foundation/foundation.h>
 
-resource_config_t _resource_config;
+static resource_config_t _resource_config;
 static bool _resource_module_initialized;
 
 static void
@@ -163,4 +163,9 @@ resource_module_parse_config(const char* path, size_t path_size,
 			}
 		}
 	}
+}
+
+resource_config_t
+resource_module_config(void) {
+	return _resource_config;
 }

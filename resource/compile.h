@@ -22,25 +22,14 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
-
-RESOURCE_API void
-resource_compile_register(resource_compile_fn compiler);
-
-RESOURCE_API void
-resource_compile_unregister(resource_compile_fn compiler);
-
 RESOURCE_API bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API bool
 resource_compile(const uuid_t uuid, uint64_t platform);
 
-#else
+RESOURCE_API void
+resource_compile_register(resource_compile_fn compiler);
 
-#define resource_compile_register(compiler)
-#define resource_compile_unregister(compiler)
-#define resource_compile_need_update(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), false
-#define resource_compile(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
-
-#endif
+RESOURCE_API void
+resource_compile_unregister(resource_compile_fn compiler);
