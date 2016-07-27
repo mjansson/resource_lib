@@ -18,24 +18,27 @@
 
 #include <foundation/foundation.h>
 #include <resource/resource.h>
+#include <network/network.h>
+
+#include "server.h"
 
 typedef struct {
 	bool              display_help;
 	string_const_t    source_path;
 	string_const_t*   config_files;
-	int               port;
-} importd_input_t;
+	unsigned int      port;
+} sourced_input_t;
 
-static importd_input_t
-importd_parse_command_line(const string_const_t* cmdline);
+static sourced_input_t
+sourced_parse_command_line(const string_const_t* cmdline);
 
 static void
-importd_parse_config(const char* path, size_t path_size,
+sourced_parse_config(const char* path, size_t path_size,
                      const char* buffer, size_t size,
                      const json_token_t* tokens, size_t numtokens);
 
 static void
-importd_print_usage(void);
+sourced_print_usage(void);
 
 int
 main_initialize(void) {
@@ -49,20 +52,22 @@ main_initialize(void) {
 
 	resource_config.enable_local_source = true;
 	resource_config.enable_local_cache = true;
-	resource_config.enable_remote_cache = true;
 
 	memset(&application, 0, sizeof(application));
-	application.name = string_const(STRING_CONST("importd"));
-	application.short_name = string_const(STRING_CONST("importd"));
+	application.name = string_const(STRING_CONST("sourced"));
+	application.short_name = string_const(STRING_CONST("sourced"));
 	application.company = string_const(STRING_CONST("Rampant Pixels"));
 	application.flags = APPLICATION_DAEMON;
 
 	log_enable_prefix(true);
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
-	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
 
 	if ((ret = foundation_initialize(memory_system_malloc(), application, foundation_config)) < 0)
 		return ret;
+
+	log_set_suppress(HASH_NETWORK, ERRORLEVEL_INFO);
+	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
+
 	if ((ret = resource_module_initialize(resource_config)) < 0)
 		return ret;
 
@@ -73,10 +78,10 @@ int
 main_run(void* main_arg) {
 	FOUNDATION_UNUSED(main_arg);
 
-	importd_input_t input = importd_parse_command_line(environment_command_line());
+	sourced_input_t input = sourced_parse_command_line(environment_command_line());
 
 	for (size_t cfgfile = 0, fsize = array_size(input.config_files); cfgfile < fsize; ++cfgfile)
-		sjson_parse_path(STRING_ARGS(input.config_files[cfgfile]), importd_parse_config);
+		sjson_parse_path(STRING_ARGS(input.config_files[cfgfile]), sourced_parse_config);
 
 	if (input.source_path.length)
 		resource_source_set_path(STRING_ARGS(input.source_path));
@@ -87,34 +92,16 @@ main_run(void* main_arg) {
 	}
 
 	if (input.display_help) {
-		importd_print_usage();
+		sourced_print_usage();
 		goto exit;
 	}
 
-	//Find all import maps in autoimport paths and load into memory DB
-	//  if no import maps, create default maps
+	//TODO: Find all import maps in autoimport paths and load into memory DB
+	//TODO:   if no import maps, create default maps
 
-	//Run daemon
+	//TODO: Run as daemon
 
-	//Requests handled (B = broadcast)
-	
-	// --> lookup <path>   
-	// <-- <uuid>
-	
-	// --> reverse <uuid>
-	// <-- <path>
-
-	// --> import <path>|<uuid>
-	// <-- <uuid> <flags>
-	// <B- <notify-create> <uuid> (if new)
-	// <B- <notify-change> <uuid> (if reimported)
-
-	// file change and autoimport performed
-	// <B- <notify-change> <uuid>
-
-	// --> delete <uuid>
-	// <-- <result>
-	// <B- <notify-delete> <uuid>
+	server_run(input.port);
 
 exit:
 
@@ -130,15 +117,15 @@ main_finalize(void) {
 }
 
 static void
-importd_parse_config(const char* path, size_t path_size,
+sourced_parse_config(const char* path, size_t path_size,
                      const char* buffer, size_t size,
                      const json_token_t* tokens, size_t numtokens) {
 	resource_module_parse_config(path, path_size, buffer, size, tokens, numtokens);
 }
 
-static importd_input_t
-importd_parse_command_line(const string_const_t* cmdline) {
-	importd_input_t input;
+static sourced_input_t
+sourced_parse_command_line(const string_const_t* cmdline) {
+	sourced_input_t input;
 	size_t arg, asize;
 
 	error_context_push(STRING_CONST("parse command line"), STRING_CONST(""));
@@ -157,6 +144,7 @@ importd_parse_command_line(const string_const_t* cmdline) {
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
+			log_set_suppress(HASH_NETWORK, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_NONE);
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
@@ -168,13 +156,13 @@ importd_parse_command_line(const string_const_t* cmdline) {
 }
 
 static void
-importd_print_usage(void) {
+sourced_print_usage(void) {
 	const error_level_t saved_level = log_suppress(0);
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_enable_prefix(false);
 	log_info(0, STRING_CONST(
-	             "importd usage:\n"
-	             "  importd [--source <path>] [--config <path>]\n"
+	             "sourced usage:\n"
+	             "  sourced [--source <path>] [--config <path>]\n"
 	             "          [--debug] [--help] ... [--]\n"
 	             "    Optional arguments:\n"
 	             "      --source <path>              Operate on resource file source structure given by <path>\n"

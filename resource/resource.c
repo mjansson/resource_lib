@@ -33,8 +33,11 @@ resource_module_initialize_config(const resource_config_t config) {
 #if !RESOURCE_ENABLE_LOCAL_CACHE
 	_resource_config.enable_local_cache = false;
 #endif
-#if !RESOURCE_ENABLE_REMOTE_CACHE
-	_resource_config.enable_remote_cache = false;
+#if !RESOURCE_ENABLE_REMOTE_SOURCED
+	_resource_config.enable_remote_sourced = false;
+#endif
+#if !RESOURCE_ENABLE_REMOTE_COMPILED
+	_resource_config.enable_remote_compiled = false;
 #endif
 }
 
@@ -50,10 +53,15 @@ resource_module_initialize(const resource_config_t config) {
 	size_t iarg, argsize, ipath;
 	const string_const_t* cmdline = environment_command_line();
 	for (iarg = 0, argsize = array_size(cmdline); iarg < argsize; ++iarg) {
-		if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-url")) &&
+		if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-sourced")) &&
 		        (iarg < (argsize - 1))) {
 			++iarg;
-			resource_remote_set_url(STRING_ARGS(cmdline[iarg]));
+			resource_remote_set_sourced(STRING_ARGS(cmdline[iarg]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-compiled")) &&
+		        (iarg < (argsize - 1))) {
+			++iarg;
+			resource_remote_set_compiled(STRING_ARGS(cmdline[iarg]));
 		}
 		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-source")) &&
 		         (iarg < (argsize - 1))) {
@@ -83,7 +91,7 @@ resource_module_initialize(const resource_config_t config) {
 	//Make sure we have at least one way of loading resources
 	if (!_resource_config.enable_local_cache &&
 	        !_resource_config.enable_local_source &&
-	        !_resource_config.enable_remote_cache) {
+	        !_resource_config.enable_remote_compiled) {
 		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE,
 		          STRING_CONST("Invalid config, no way of loading resources"));
 		return -1;
@@ -159,6 +167,10 @@ resource_module_parse_config(const char* path, size_t path_size,
 						resource_source_set_path(STRING_ARGS(fullpath));
 					else if (idhash == HASH_AUTOIMPORT)
 						resource_autoimport_watch(STRING_ARGS(fullpath));
+					else if (idhash == HASH_REMOTE_SOURCED)
+						resource_remote_set_sourced(STRING_ARGS(value));
+					else if (idhash == HASH_REMOTE_COMPILED)
+						resource_remote_set_compiled(STRING_ARGS(value));
 				}
 			}
 		}

@@ -9,8 +9,8 @@
 \brief Enable local source cache
 \details Setting this flag to 1 will enable resource sources to be cached and compiled locally. Enabled by default except in deploy builds and on console/mobile platforms.
 
-\def RESOURCE_ENABLE_REMOTE_CACHE
-\brief Enable remote resource servers
+\def RESOURCE_ENABLE_REMOTE_COMPILED
+\brief Enable remote server for compiled resoures
 \details Setting this flag to 1 will enable resource loading from remote resource servers. Enabled by default except in deploy builds.
 
 */

@@ -55,12 +55,16 @@ typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*,
 
 /*! Resource library configuration */
 struct resource_config_t {
-	/*! Enable use of locally stored compiled resources and bundles */
-	bool enable_local_cache;
+	/*! Enable use of in-process auto import of raw assets to resource source files */
+	bool enable_local_autoimport;
+	/*! Enable use of remote source daemon for managing imports and resource source files */
+	bool enable_remote_sourced;
 	/*! Enable use of locally stored resource source files */
 	bool enable_local_source;
-	/*! Enable use of remotely stored compiler resource files */
-	bool enable_remote_cache;
+	/*! Enable use of locally stored compiled resources and bundles */
+	bool enable_local_cache;
+	/*! Enable use of remote compile daemon for managing compiled resources and bundles */
+	bool enable_remote_compiled;
 };
 
 struct resource_platform_t {

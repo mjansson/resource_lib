@@ -22,13 +22,28 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_REMOTE_CACHE
+#if RESOURCE_ENABLE_REMOTE_SOURCED
 
 RESOURCE_API string_const_t
-resource_remote_url(void);
+resource_remote_sourced(void);
 
 RESOURCE_API void
-resource_remote_set_url(const char* url, size_t length);
+resource_remote_set_sourced(const char* url, size_t length);
+
+#else
+
+#define resource_remote_sourced() string_empty()
+#define resource_remote_set_sourced(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
+
+RESOURCE_API string_const_t
+resource_remote_compiled(void);
+
+RESOURCE_API void
+resource_remote_set_compiled(const char* url, size_t length);
 
 RESOURCE_API stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform);
@@ -38,8 +53,8 @@ resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform);
 
 #else
 
-#define resource_remote_url() string_empty()
-#define resource_remote_set_url(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+#define resource_remote_compiled() string_empty()
+#define resource_remote_set_compiled(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
 #define resource_remote_open_static(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
 #define resource_remote_open_dynamic(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
 

@@ -20,19 +20,36 @@
 
 #include <foundation/foundation.h>
 
-#if RESOURCE_ENABLE_REMOTE_CACHE
+#if RESOURCE_ENABLE_REMOTE_SOURCED
 
-static string_t _remote_url;
+static string_t _remote_sourced;
 
 string_const_t
-resource_remote_url(void) {
-	return string_const(STRING_ARGS(_remote_url));
+resource_remote_sourced(void) {
+	return string_const(STRING_ARGS(_remote_sourced));
 }
 
 void
-resource_remote_set_url(const char* url, size_t length) {
-	string_deallocate(_remote_url.str);
-	_remote_url = string_clone(url, length);
+resource_remote_set_sourced(const char* url, size_t length) {
+	string_deallocate(_remote_sourced.str);
+	_remote_sourced = string_clone(url, length);
+}
+
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
+
+static string_t _remote_compiled;
+
+string_const_t
+resource_remote_compiled(void) {
+	return string_const(STRING_ARGS(_remote_compiled));
+}
+
+void
+resource_remote_set_compiled(const char* url, size_t length) {
+	string_deallocate(_remote_compiled.str);
+	_remote_compiled = string_clone(url, length);
 }
 
 stream_t*

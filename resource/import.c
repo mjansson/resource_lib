@@ -16,9 +16,7 @@
  *
  */
 
-#include <resource/import.h>
-#include <resource/source.h>
-#include <resource/event.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -285,14 +283,15 @@ resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capac
 
 bool
 resource_autoimport(const uuid_t uuid) {
-	char buffer[BUILD_MAX_PATHLEN];
-	string_t path;
+	if (!resource_module_config().enable_local_autoimport)
+		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
 	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s"), STRING_FORMAT(uuidstr));
 
 	mutex_lock(_resource_autoimport_lock);
-	path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
 	mutex_unlock(_resource_autoimport_lock);
 	if (path.length)
 		return resource_import(STRING_ARGS(path), uuid);
@@ -303,15 +302,17 @@ bool
 resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	union {
 		char path[BUILD_MAX_PATHLEN];
-		uuid_t deps[BUILD_MAX_PATHLEN/16];
+		uuid_t deps[BUILD_MAX_PATHLEN/sizeof(uuid_t)];
 	} buffer;
-	string_t path;
+
+	if (!resource_module_config().enable_local_autoimport)
+		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
 	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s"), STRING_FORMAT(uuidstr));
 
 	mutex_lock(_resource_autoimport_lock);
-	path = resource_autoimport_reverse_lookup(uuid, buffer.path, sizeof(buffer.path));
+	string_t path = resource_autoimport_reverse_lookup(uuid, buffer.path, sizeof(buffer.path));
 	mutex_unlock(_resource_autoimport_lock);
 	if (path.length) {
 		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));

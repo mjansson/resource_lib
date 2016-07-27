@@ -23,11 +23,6 @@
 
 bool
 resource_bundle_load(const uuid_t bundle) {
-#if RESOURCE_ENABLE_REMOTE_CACHE
-	if (resource_module_config().enable_remote_cache) {
-	}
-#endif
-
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 	if (resource_module_config().enable_local_source) {
 	}
@@ -35,6 +30,11 @@ resource_bundle_load(const uuid_t bundle) {
 
 #if RESOURCE_ENABLE_LOCAL_CACHE
 	if (resource_module_config().enable_local_cache) {
+	}
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
+	if (resource_module_config().enable_remote_compiled) {
 	}
 #endif
 
@@ -45,11 +45,6 @@ resource_bundle_load(const uuid_t bundle) {
 
 stream_t*
 resource_bundle_stream(const uuid_t bundle) {
-#if RESOURCE_ENABLE_REMOTE_CACHE
-	if (resource_module_config().enable_remote_cache) {
-	}
-#endif
-
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 	if (resource_module_config().enable_local_source) {
 	}
@@ -57,6 +52,11 @@ resource_bundle_stream(const uuid_t bundle) {
 
 #if RESOURCE_ENABLE_LOCAL_CACHE
 	if (resource_module_config().enable_local_cache) {
+	}
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
+	if (resource_module_config().enable_remote_compiled) {
 	}
 #endif
 
