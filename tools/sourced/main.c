@@ -45,9 +45,11 @@ main_initialize(void) {
 	int ret = 0;
 	application_t application;
 	foundation_config_t foundation_config;
+	network_config_t network_config;
 	resource_config_t resource_config;
 
 	memset(&foundation_config, 0, sizeof(foundation_config));
+	memset(&network_config, 0, sizeof(network_config));
 	memset(&resource_config, 0, sizeof(resource_config));
 
 	resource_config.enable_local_source = true;
@@ -63,6 +65,9 @@ main_initialize(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 
 	if ((ret = foundation_initialize(memory_system_malloc(), application, foundation_config)) < 0)
+		return ret;
+
+	if ((ret = network_module_initialize(network_config)) < 0)
 		return ret;
 
 	log_set_suppress(HASH_NETWORK, ERRORLEVEL_INFO);

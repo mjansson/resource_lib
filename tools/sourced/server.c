@@ -22,57 +22,87 @@
 
 #include "server.h"
 
+#define SERVER_MESSAGE_TERMINATE 0
+#define SERVER_MESSAGE_CONNECTION 1
+
+struct server_message_t {
+	int message;
+	void* data;
+};
+
+typedef struct server_message_t server_message_t;
+
+static void*
+server_serve(void* arg);
+
+static int
+server_handle(socket_t* sock, char* buffer, size_t size);
+
 void
 server_run(unsigned int port) {
 	int slot;
 	beacon_t beacon;
-	socket_t* sock_ipv4 = nullptr;
-	socket_t* sock_ipv6 = nullptr;
+	socket_t* sock[2] = { nullptr, nullptr };
+	size_t sockets = 0;
 	bool terminate = false;
+	server_message_t message;
+	socket_t local_socket[2];
+	thread_t network_thread;
 
 	beacon_initialize(&beacon);
 	event_stream_set_beacon(system_event_stream(), &beacon);
 
+	network_address_t** localaddr = network_address_local();
+	udp_socket_initialize(&local_socket[0]);
+	udp_socket_initialize(&local_socket[1]);
+	socket_bind(&local_socket[0], localaddr[0]);
+	socket_bind(&local_socket[1], localaddr[0]);
+
+	thread_initialize(&network_thread, server_serve, &local_socket[1], STRING_CONST("serve"), THREAD_PRIORITY_NORMAL, 0);
+
 	/*if (network_supports_ipv4())*/ {
 		network_address_t* address = network_address_ipv4_any();
 		network_address_ip_set_port(address, port);
-		sock_ipv4 = tcp_socket_allocate();
-		if (!socket_bind(sock_ipv4, address) ||
-			!tcp_socket_listen(sock_ipv4)) {
+		sock[sockets] = tcp_socket_allocate();
+		socket_set_beacon(sock[sockets], &beacon);
+		if (!socket_bind(sock[sockets], address) ||
+			!tcp_socket_listen(sock[sockets])) {
 			log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Unable to bind IPv4 socket"));
-			socket_deallocate(sock_ipv4);
-			sock_ipv4 = nullptr;
+			socket_deallocate(sock[sockets]);
+			sock[sockets] = nullptr;
 		}
 		else {
 			log_infof(HASH_RESOURCE, STRING_CONST("Listening to IPv4 port %u"),
-				network_address_ip_port(socket_address_local(sock_ipv4)));
+				network_address_ip_port(socket_address_local(sock[sockets])));
+			++sockets;
 		}
 		memory_deallocate(address);
 	}
 	if (network_supports_ipv6()) {
 		network_address_t* address = network_address_ipv6_any();
 		network_address_ip_set_port(address, port);
-		sock_ipv6 = tcp_socket_allocate();
-		if (!socket_bind(sock_ipv6, address) ||
-			!tcp_socket_listen(sock_ipv6)) {
+		sock[sockets] = tcp_socket_allocate();
+		socket_set_beacon(sock[sockets], &beacon);
+		if (!socket_bind(sock[sockets], address) ||
+			!tcp_socket_listen(sock[sockets])) {
 			log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Unable to bind IPv6 socket"));
-			socket_deallocate(sock_ipv6);
-			sock_ipv6 = nullptr;
+			socket_deallocate(sock[sockets]);
+			sock[sockets] = nullptr;
 		}
 		else {
 			log_infof(HASH_RESOURCE, STRING_CONST("Listening to IPv6 port %u"),
-				network_address_ip_port(socket_address_local(sock_ipv6)));
+				network_address_ip_port(socket_address_local(sock[sockets])));
+			++sockets;
 		}
 		memory_deallocate(address);
 	}
 	
-	if (sock_ipv4)
-		beacon_add(&beacon, socket_fd(sock_ipv4));
-	if (sock_ipv6)
-		beacon_add(&beacon, socket_fd(sock_ipv6));
-	if (!sock_ipv4 && !sock_ipv6) {
+	if (!sockets) {
 		log_warn(HASH_RESOURCE, WARNING_UNSUPPORTED, STRING_CONST("No IPv4/IPv6 network connection"));
 		terminate = true;
+	}
+	else {
+		thread_start(&network_thread);
 	}
 
 	while (!terminate && ((slot = beacon_wait(&beacon)) >= 0)) {
@@ -91,19 +121,91 @@ server_run(unsigned int port) {
 				}
 			}
 		}
-		else if ((slot == 1) && sock_ipv4) {
-
-		}
 		else {
-
+			socket_t* listener = sock[slot - 1];
+			socket_t* accepted = tcp_socket_accept(listener, 0);
+			if (accepted) {
+				message.message = SERVER_MESSAGE_CONNECTION;
+				message.data = accepted;
+				udp_socket_sendto(&local_socket[0], &message, sizeof(message), socket_address_local(&local_socket[1]));
+			}
 		}
 	}
 
+	message.message = SERVER_MESSAGE_TERMINATE;
+	udp_socket_sendto(&local_socket[0], &message, sizeof(message), socket_address_local(&local_socket[1]));
+
+	thread_finalize(&network_thread);
+	socket_finalize(&local_socket[0]);
+	socket_finalize(&local_socket[1]);
+
+	if (sock[0])
+		socket_deallocate(sock[0]);
+	if (sock[1])
+		socket_deallocate(sock[1]);
+
+	beacon_finalize(&beacon);
+}
+
+void*
+server_serve(void* arg) {
+	bool terminate = false;
+	server_message_t message;
+	socket_t* local_socket = (socket_t*)arg;
+	network_poll_event_t events[64];
+	network_poll_t* poll = network_poll_allocate(512);
+	const size_t capacity = 4096;
+	char* buffer = memory_allocate(HASH_NETWORK, capacity, 0, MEMORY_PERSISTENT);
+
+	network_poll_add_socket(poll, local_socket);
+
+	while (!terminate) {
+		size_t ievt;
+		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]), 1000);
+		if (!count)
+			continue;
+
+		for (ievt = 0; ievt < count; ++ievt) {
+			if (events[ievt].socket == local_socket) {
+				network_address_t* addr;
+				if (udp_socket_recvfrom(local_socket, &message, sizeof(message), &addr) != sizeof(message)) {
+					terminate = true;
+					break;
+				}
+				if (message.message == SERVER_MESSAGE_TERMINATE) {
+					terminate = true;
+					break;
+				}
+				if (message.message == SERVER_MESSAGE_CONNECTION) {
+					socket_t* sock = message.data;
+					socket_set_blocking(sock, false);
+					network_poll_add_socket(poll, sock);
+				}
+			}
+			else {
+				socket_t* sock = events[ievt].socket;
+				size_t size = socket_read(sock, buffer, capacity);
+				if (!size || (server_handle(sock, buffer, size) < 0)) {
+					network_poll_remove_socket(poll, sock);
+					socket_deallocate(sock);
+				}
+			}
+		}
+	}
+
+	memory_deallocate(buffer);
+	network_poll_deallocate(poll);
+
+	return 0;
+}
+
+int
+server_handle(socket_t* sock, char* buffer, size_t size) {
 	//Requests handled (B = broadcast)
-	
+
 	// --> lookup <path>   
 	// <-- <uuid>
-	
+
 	// --> reverse <uuid>
 	// <-- <path>
 
@@ -121,8 +223,7 @@ server_run(unsigned int port) {
 	// --> delete <uuid>
 	// <-- <result>
 	// <B- <notify-delete> <uuid>
+	socket_write(sock, STRING_CONST("Not implemented\n"));
 
-	socket_deallocate(sock_ipv4);
-	socket_deallocate(sock_ipv6);
-	beacon_finalize(&beacon);
+	return 0;
 }
