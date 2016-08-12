@@ -1,4 +1,4 @@
-/* server.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* server.c  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -21,6 +21,7 @@
 #include <network/network.h>
 
 #include "server.h"
+#include "protocol.h"
 
 #define SERVER_MESSAGE_TERMINATE 0
 #define SERVER_MESSAGE_CONNECTION 1
@@ -36,7 +37,10 @@ static void*
 server_serve(void* arg);
 
 static int
-server_handle(socket_t* sock, char* buffer, size_t size);
+server_handle(socket_t* sock);
+
+static int
+server_handle_lookup(socket_t* sock, size_t msgsize);
 
 void
 server_run(unsigned int port) {
@@ -58,7 +62,7 @@ server_run(unsigned int port) {
 	socket_bind(&local_socket[0], localaddr[0]);
 	socket_bind(&local_socket[1], localaddr[0]);
 
-	thread_initialize(&network_thread, server_serve, &local_socket[1], STRING_CONST("serve"), THREAD_PRIORITY_NORMAL, 0);
+	thread_initialize(&network_thread, server_serve, local_socket, STRING_CONST("serve"), THREAD_PRIORITY_NORMAL, 0);
 
 	/*if (network_supports_ipv4())*/ {
 		network_address_t* address = network_address_ipv4_any();
@@ -151,27 +155,29 @@ void*
 server_serve(void* arg) {
 	bool terminate = false;
 	server_message_t message;
-	socket_t* local_socket = (socket_t*)arg;
+	socket_t* local_sockets = (socket_t*)arg;
+	socket_t* control_source = local_sockets;
+	socket_t* control_socket = local_sockets + 1;
+	const network_address_t* local_addr;
 	network_poll_event_t events[64];
 	network_poll_t* poll = network_poll_allocate(512);
-	const size_t capacity = 4096;
-	char* buffer = memory_allocate(HASH_NETWORK, capacity, 0, MEMORY_PERSISTENT);
 
-	network_poll_add_socket(poll, local_socket);
+	local_addr = socket_address_local(control_source);
+	network_poll_add_socket(poll, control_socket);
 
 	while (!terminate) {
 		size_t ievt;
-		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]), 1000);
+		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]), NETWORK_TIMEOUT_INFINITE);
 		if (!count)
 			continue;
 
 		for (ievt = 0; ievt < count; ++ievt) {
-			if (events[ievt].socket == local_socket) {
+			if (events[ievt].socket == control_socket) {
 				network_address_t* addr;
-				if (udp_socket_recvfrom(local_socket, &message, sizeof(message), &addr) != sizeof(message)) {
-					terminate = true;
-					break;
-				}
+				if (udp_socket_recvfrom(control_socket, &message, sizeof(message), &addr) != sizeof(message))
+					continue;
+				if (!network_address_equal(addr, local_addr))
+					continue;
 				if (message.message == SERVER_MESSAGE_TERMINATE) {
 					terminate = true;
 					break;
@@ -184,8 +190,7 @@ server_serve(void* arg) {
 			}
 			else {
 				socket_t* sock = events[ievt].socket;
-				size_t size = socket_read(sock, buffer, capacity);
-				if (!size || (server_handle(sock, buffer, size) < 0)) {
+				if (server_handle(sock) < 0) {
 					network_poll_remove_socket(poll, sock);
 					socket_deallocate(sock);
 				}
@@ -193,37 +198,61 @@ server_serve(void* arg) {
 		}
 	}
 
-	memory_deallocate(buffer);
 	network_poll_deallocate(poll);
 
 	return 0;
 }
 
 int
-server_handle(socket_t* sock, char* buffer, size_t size) {
-	//Requests handled (B = broadcast)
+server_handle(socket_t* sock) {
+	sourced_message_t msg;
 
-	// --> lookup <path>   
-	// <-- <uuid>
+	size_t size = socket_read(sock, &msg, sizeof(msg));
+	if (size != sizeof(msg))
+		return -1;
 
-	// --> reverse <uuid>
-	// <-- <path>
+	switch (msg.id) {
+		case SOURCED_LOOKUP:
+			return server_handle_lookup(sock, msg.size);
 
-	// --> import <path>|<uuid>
-	// <-- <uuid> <flags>
-	// <B- <notify-create> <uuid> (if new)
-	// <B- <notify-change> <uuid> (if reimported)
+		case SOURCED_REVERSE_LOOKUP:
 
-	// file change and autoimport performed
-	// <B- <notify-change> <uuid>
+		case SOURCED_IMPORT:
 
-	// --> set <uuid> <key> <value>
-	// <B- <notify-change> <uuid>
+		case SOURCED_SET:
 
-	// --> delete <uuid>
-	// <-- <result>
-	// <B- <notify-delete> <uuid>
-	socket_write(sock, STRING_CONST("Not implemented\n"));
+		case SOURCED_UNSET:
 
-	return 0;
+		case SOURCED_DELETE:
+
+		case SOURCED_LOOKUP_RESULT:
+		case SOURCED_REVERSE_LOOKUP_RESULT:
+		case SOURCED_IMPORT_RESULT:
+		case SOURCED_SET_RESULT:
+		case SOURCED_UNSET_RESULT:
+		case SOURCED_DELETE_RESULT:
+		case SOURCED_NOTIFY_CREATE:
+		case SOURCED_NOTIFY_CHANGE:
+		case SOURCED_NOTIFY_DELETE:
+		default:
+			break;
+	}
+
+	return -1;
+}
+
+int
+server_handle_lookup(socket_t* sock, size_t msgsize) {
+
+	if (msgsize > BUILD_MAX_PATHLEN)
+		return -1;
+
+	char buffer[BUILD_MAX_PATHLEN];
+	size_t length = socket_read(sock, buffer, sizeof(buffer));
+	if (!length || (length > sizeof(buffer)))
+		return -1;
+
+	resource_signature_t sig = resource_import_map_lookup(buffer, length);
+
+	return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
 }

@@ -1,4 +1,4 @@
-/* server.h  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
+/* protocol.c  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -16,7 +16,18 @@
  *
  */
 
-#pragma once
+#include "protocol.h"
 
-void
-server_run(unsigned int port);
+#include <foundation/uuid.h>
+#include <network/socket.h>
+
+int
+sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash) {
+	sourced_lookup_result_t reply = {
+		SOURCED_LOOKUP_RESULT,
+		sizeof(uint32_t) + sizeof(uuid_t) + sizeof(uint256_t),
+		!uuid_is_null(uuid) ? SOURCED_OK : SOURCED_FAILED,
+		uuid,
+		hash};
+	return socket_write(sock, &reply, sizeof(reply)) == sizeof(reply) ? 0 : -1;
+}
