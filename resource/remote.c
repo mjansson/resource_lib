@@ -35,6 +35,12 @@ resource_remote_set_sourced(const char* url, size_t length) {
 	_remote_sourced = string_clone(url, length);
 }
 
+resource_signature_t
+resource_remote_sourced_lookup(const char* path, size_t length) {
+	resource_signature_t sig = {uuid_null(), uint256_null()};
+	return sig;
+}
+
 #endif
 
 #if RESOURCE_ENABLE_REMOTE_COMPILED

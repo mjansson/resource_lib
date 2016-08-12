@@ -30,6 +30,9 @@ resource_remote_sourced(void);
 RESOURCE_API void
 resource_remote_set_sourced(const char* url, size_t length);
 
+RESOURCE_API resource_signature_t
+resource_remote_sourced_lookup(const char* path, size_t length);
+
 #else
 
 #define resource_remote_sourced() string_empty()

@@ -146,7 +146,11 @@ resource_signature_t
 resource_import_map_lookup(const char* path, size_t length) {
 	string_const_t subpath;
 	hash_t pathhash;
-	resource_signature_t sig = {uuid_null(), uint256_null()};
+	resource_signature_t sig = resource_remote_sourced_lookup(path, length);
+	if (!uuid_is_null(sig.uuid)) {
+		resource_import_map_store(path, length, sig.uuid, sig.hash);
+		return sig;
+	}
 
 	stream_t* map = resource_import_open_map(path, length, false);
 	if (!map)
