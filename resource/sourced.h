@@ -1,4 +1,4 @@
-/* protocol.h  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
+/* sourced.h  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -74,7 +74,6 @@ enum sourced_result_id {
 	uint32_t size
 
 #define SOURCED_DECLARE_REPLY \
-	SOURCED_DECLARE_MESSAGE; \
 	uint32_t result
 
 struct sourced_message_t {
@@ -161,6 +160,11 @@ struct sourced_notify_delete_t {
 	uuid_t uuid;
 };
 
+int
+sourced_write_lookup(socket_t* sock, const char* path, size_t length);
 
 int
 sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash);
+
+int
+sourced_read_lookup_reply(socket_t* sock, sourced_lookup_result_t* result);

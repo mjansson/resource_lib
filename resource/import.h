@@ -22,6 +22,12 @@
 
 #include <resource/types.h>
 
+RESOURCE_API string_const_t
+resource_import_base_path(void);
+
+RESOURCE_API void
+resource_import_set_base_path(const char* path, size_t length);
+
 RESOURCE_API bool
 resource_import(const char* path, size_t length, const uuid_t uuid);
 

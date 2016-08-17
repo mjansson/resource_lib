@@ -28,17 +28,21 @@ RESOURCE_API string_const_t
 resource_remote_sourced(void);
 
 RESOURCE_API void
-resource_remote_set_sourced(const char* url, size_t length);
+resource_remote_sourced_connect(const char* url, size_t length);
 
-RESOURCE_API resource_signature_t
-resource_remote_sourced_lookup(const char* path, size_t length);
+RESOURCE_API void
+resource_remote_sourced_disconnect(void);
 
 #else
 
 #define resource_remote_sourced() string_empty()
-#define resource_remote_set_sourced(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+#define resource_remote_sourced_connect(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+#define resource_remote_sourced_disconnect()
 
 #endif
+
+RESOURCE_API resource_signature_t
+resource_remote_sourced_lookup(const char* path, size_t length);
 
 #if RESOURCE_ENABLE_REMOTE_COMPILED
 
@@ -46,7 +50,10 @@ RESOURCE_API string_const_t
 resource_remote_compiled(void);
 
 RESOURCE_API void
-resource_remote_set_compiled(const char* url, size_t length);
+resource_remote_compiled_connect(const char* url, size_t length);
+
+RESOURCE_API void
+resource_remote_compiled_disconnect(void);
 
 RESOURCE_API stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform);
@@ -57,7 +64,8 @@ resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform);
 #else
 
 #define resource_remote_compiled() string_empty()
-#define resource_remote_set_compiled(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+#define resource_remote_compiled_connect(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
+#define resource_remote_compiled_disconnect() 
 #define resource_remote_open_static(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
 #define resource_remote_open_dynamic(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
 

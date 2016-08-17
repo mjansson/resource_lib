@@ -56,12 +56,12 @@ resource_module_initialize(const resource_config_t config) {
 		if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-sourced")) &&
 		        (iarg < (argsize - 1))) {
 			++iarg;
-			resource_remote_set_sourced(STRING_ARGS(cmdline[iarg]));
+			resource_remote_sourced_connect(STRING_ARGS(cmdline[iarg]));
 		}
 		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-compiled")) &&
 		        (iarg < (argsize - 1))) {
 			++iarg;
-			resource_remote_set_compiled(STRING_ARGS(cmdline[iarg]));
+			resource_remote_compiled_connect(STRING_ARGS(cmdline[iarg]));
 		}
 		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-source")) &&
 		         (iarg < (argsize - 1))) {
@@ -77,7 +77,12 @@ resource_module_initialize(const resource_config_t config) {
 			for (ipath = 0; ipath < numpaths; ++ipath)
 				resource_local_add_path(STRING_ARGS(paths[ipath]));
 		}
-		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-autoimport")) &&
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-base-path")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			resource_import_set_base_path(STRING_ARGS(cmdline[iarg]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-autoimport-path")) &&
 		         (iarg < (argsize - 1))) {
 			++iarg;
 			string_const_t paths[32];
@@ -97,7 +102,16 @@ resource_module_initialize(const resource_config_t config) {
 		return -1;
 	}
 
+	if (resource_import_initialize() < 0)
+		return -1;
+
+	if (resource_compile_initialize() < 0)
+		return -1;
+
 	if (resource_autoimport_initialize() < 0)
+		return -1;
+
+	if (resource_remote_initialize() < 0)
 		return -1;
 
 	_resource_module_initialized = true;
@@ -110,17 +124,15 @@ resource_module_finalize(void) {
 	if (!_resource_module_initialized)
 		return;
 
-	array_deallocate(_resource_importers);
-	array_deallocate(_resource_compilers);
-
 	resource_local_clear_paths();
 
+	resource_remote_finalize();
 	resource_autoimport_finalize();
+	resource_import_finalize();
+	resource_compile_finalize();
 
 	event_stream_deallocate(_resource_event_stream);
 
-	_resource_importers = 0;
-	_resource_compilers = 0;
 	_resource_event_stream = 0;
 	_resource_module_initialized = false;
 }
@@ -165,12 +177,14 @@ resource_module_parse_config(const char* path, size_t path_size,
 						resource_local_add_path(STRING_ARGS(fullpath));
 					else if (idhash == HASH_SOURCE_PATH)
 						resource_source_set_path(STRING_ARGS(fullpath));
-					else if (idhash == HASH_AUTOIMPORT)
+					else if (idhash == HASH_BASE_PATH)
+						resource_import_set_base_path(STRING_ARGS(fullpath));
+					else if (idhash == HASH_AUTOIMPORT_PATH)
 						resource_autoimport_watch(STRING_ARGS(fullpath));
 					else if (idhash == HASH_REMOTE_SOURCED)
-						resource_remote_set_sourced(STRING_ARGS(value));
+						resource_remote_sourced_connect(STRING_ARGS(value));
 					else if (idhash == HASH_REMOTE_COMPILED)
-						resource_remote_set_compiled(STRING_ARGS(value));
+						resource_remote_compiled_connect(STRING_ARGS(value));
 				}
 			}
 		}

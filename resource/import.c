@@ -21,7 +21,34 @@
 
 #include <foundation/foundation.h>
 
-resource_import_fn* _resource_importers;
+static resource_import_fn* _resource_importers;
+static string_t _resource_import_base_path;
+
+int
+resource_import_initialize(void) {
+	return 0;
+}
+
+void
+resource_import_finalize(void) {
+	array_deallocate(_resource_importers);
+	string_deallocate(_resource_import_base_path.str);
+
+	_resource_importers = 0;
+	_resource_import_base_path = string(0, 0);
+}
+
+string_const_t
+resource_import_base_path(void) {
+	return string_to_const(_resource_import_base_path);
+}
+
+void
+resource_import_set_base_path(const char* path, size_t length) {
+	if (_resource_import_base_path.str)
+		string_deallocate(_resource_import_base_path.str);
+	_resource_import_base_path = length ? string_clone(path, length) : string(0, 0);
+}
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
@@ -146,11 +173,7 @@ resource_signature_t
 resource_import_map_lookup(const char* path, size_t length) {
 	string_const_t subpath;
 	hash_t pathhash;
-	resource_signature_t sig = resource_remote_sourced_lookup(path, length);
-	if (!uuid_is_null(sig.uuid)) {
-		resource_import_map_store(path, length, sig.uuid, sig.hash);
-		return sig;
-	}
+	resource_signature_t sig = {uuid_null(), uint256_null()};
 
 	stream_t* map = resource_import_open_map(path, length, false);
 	if (!map)

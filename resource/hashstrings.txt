@@ -5,4 +5,6 @@ HASH_REMOTE_COMPILED                       remote_compiled
 HASH_SOURCE_PATH                           source_path
 HASH_LOCAL_PATH                            local_path
 HASH_RESOURCE_TYPE                         resource_type
+HASH_BASE_PATH                             base_path
 HASH_AUTOIMPORT                            autoimport
+HASH_AUTOIMPORT_PATH                       autoimport_path

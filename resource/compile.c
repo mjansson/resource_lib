@@ -21,7 +21,19 @@
 
 #include <foundation/foundation.h>
 
-resource_compile_fn* _resource_compilers;
+static resource_compile_fn* _resource_compilers;
+
+int
+resource_compile_initialize(void) {
+	return 0;
+}
+
+void
+resource_compile_finalize(void) {
+	array_deallocate(_resource_compilers);
+
+	_resource_compilers = 0;
+}
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
 

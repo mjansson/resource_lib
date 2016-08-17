@@ -70,11 +70,11 @@ main_initialize(void) {
 	if ((ret = network_module_initialize(network_config)) < 0)
 		return ret;
 
-	log_set_suppress(HASH_NETWORK, ERRORLEVEL_INFO);
-	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
-
 	if ((ret = resource_module_initialize(resource_config)) < 0)
 		return ret;
+
+	log_set_suppress(HASH_NETWORK, ERRORLEVEL_INFO);
+	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
 
 	return 0;
 }
@@ -147,6 +147,12 @@ sourced_parse_command_line(const string_const_t* cmdline) {
 			if (arg < asize - 1)
 				array_push(input.config_files, cmdline[++arg]);
 		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--port"))) {
+			if (arg < asize - 1) {
+				string_const_t portstr = cmdline[++arg];
+				input.port = string_to_uint(STRING_ARGS(portstr), false);
+			}
+		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_NETWORK, ERRORLEVEL_NONE);
@@ -173,6 +179,7 @@ sourced_print_usage(void) {
 	             "      --source <path>              Operate on resource file source structure given by <path>\n"
 	             "      --config <path>              Read and parse config file given by <path>\n"
 	             "                                   Loads all .json/.sjson files in <path> if it is a directory\n"
+	             "      --port <port>                Network port to use\n"
 	             "      --debug                      Enable debug output\n"
 	             "      --help                       Display this help message\n"
 	             "      --                           Stop processing command line arguments"

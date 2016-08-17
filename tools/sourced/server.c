@@ -18,10 +18,10 @@
 
 #include <foundation/foundation.h>
 #include <resource/resource.h>
+#include <resource/sourced.h>
 #include <network/network.h>
 
 #include "server.h"
-#include "protocol.h"
 
 #define SERVER_MESSAGE_TERMINATE 0
 #define SERVER_MESSAGE_CONNECTION 1
@@ -160,6 +160,10 @@ server_serve(void* arg) {
 	socket_t* control_socket = local_sockets + 1;
 	const network_address_t* local_addr;
 	network_poll_event_t events[64];
+
+	if (socket_fd(control_socket) == NETWORK_SOCKET_INVALID)
+		return nullptr;
+
 	network_poll_t* poll = network_poll_allocate(512);
 
 	local_addr = socket_address_local(control_source);
@@ -200,16 +204,23 @@ server_serve(void* arg) {
 
 	network_poll_deallocate(poll);
 
-	return 0;
+	return nullptr;
 }
 
 int
 server_handle(socket_t* sock) {
-	sourced_message_t msg;
+	sourced_message_t msg = {
+		(uint32_t)sock->data.header.id,
+		(uint32_t)sock->data.header.size
+	};
 
-	size_t size = socket_read(sock, &msg, sizeof(msg));
-	if (size != sizeof(msg))
-		return -1;
+	sock->data.header.id = 0;
+
+	if (!msg.id) {
+		size_t read = socket_read(sock, &msg, sizeof(msg));
+		if (read != sizeof(msg))
+			return -1;
+	}
 
 	switch (msg.id) {
 		case SOURCED_LOOKUP:
@@ -248,11 +259,24 @@ server_handle_lookup(socket_t* sock, size_t msgsize) {
 		return -1;
 
 	char buffer[BUILD_MAX_PATHLEN];
-	size_t length = socket_read(sock, buffer, sizeof(buffer));
-	if (!length || (length > sizeof(buffer)))
+	size_t read = socket_read(sock, buffer, msgsize);
+	if (read == msgsize) {
+		string_t path = path_clean(buffer, msgsize, BUILD_MAX_PATHLEN);
+		if (!path_is_absolute(buffer, msgsize)) {
+			string_const_t base_path = resource_import_base_path();
+			path = path_prepend(STRING_ARGS(path), BUILD_MAX_PATHLEN, STRING_ARGS(base_path));
+			path = path_absolute(STRING_ARGS(path), BUILD_MAX_PATHLEN);
+		}
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform lookup of resource: %.*s"),
+		          STRING_FORMAT(path));
+		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
+		return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
+	}
+
+	if (read != 0)
 		return -1;
 
-	resource_signature_t sig = resource_import_map_lookup(buffer, length);
-
-	return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
+	sock->data.header.id = SOURCED_LOOKUP;
+	sock->data.header.size = msgsize;
+	return 0;
 }
