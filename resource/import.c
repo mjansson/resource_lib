@@ -169,25 +169,6 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 	return sig;
 }
 
-resource_signature_t
-resource_import_map_lookup(const char* path, size_t length) {
-	string_const_t subpath;
-	hash_t pathhash;
-	resource_signature_t sig = {uuid_null(), uint256_null()};
-
-	stream_t* map = resource_import_open_map(path, length, false);
-	if (!map)
-		return sig;
-
-	subpath = resource_import_map_subpath(map, path, length);
-	pathhash = hash(STRING_ARGS(subpath));
-	sig = resource_import_map_read_and_update(map, pathhash, STRING_ARGS(subpath), uint256_null());
-
-	stream_deallocate(map);
-
-	return sig;
-}
-
 uuid_t
 resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash) {
 	string_const_t subpath;
@@ -239,6 +220,44 @@ resource_import_map_purge(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	return false;
+}
+
+static resource_signature_t
+resource_import_map_lookup(const char* path, size_t length) {
+	resource_signature_t sig = {uuid_null(), uint256_null()};
+	char buffer[BUILD_MAX_PATHLEN];
+
+	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
+	pathstr = path_absolute(STRING_ARGS(pathstr), sizeof(buffer));
+
+	stream_t* map = resource_import_open_map(STRING_ARGS(pathstr), false);
+	if (!map)
+		return sig;
+
+	string_const_t subpath = resource_import_map_subpath(map, STRING_ARGS(pathstr));
+	hash_t pathhash = hash(STRING_ARGS(subpath));
+	sig = resource_import_map_read_and_update(map, pathhash, STRING_ARGS(subpath), uint256_null());
+
+	stream_deallocate(map);
+
+	return sig;
+}
+
+resource_signature_t
+resource_import_lookup(const char* path, size_t length) {
+	if (resource_remote_sourced_is_connected()) {
+		string_const_t base_path = resource_import_base_path();
+		string_const_t subpath = string_null();
+		if (path_is_absolute(path, length) && base_path.length)
+			subpath = path_subpath(path, length, STRING_ARGS(base_path));
+		if (!subpath.length)
+			subpath = string_const(path, length);
+		resource_signature_t sig = resource_remote_sourced_lookup(STRING_ARGS(subpath));
+		if (!uuid_is_null(sig.uuid))
+			return sig;
+	}
+
+	return resource_import_map_lookup(path, length);
 }
 
 static mutex_t* _resource_autoimport_lock;

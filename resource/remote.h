@@ -33,11 +33,15 @@ resource_remote_sourced_connect(const char* url, size_t length);
 RESOURCE_API void
 resource_remote_sourced_disconnect(void);
 
+RESOURCE_API bool
+resource_remote_sourced_is_connected(void);
+
 #else
 
 #define resource_remote_sourced() string_empty()
 #define resource_remote_sourced_connect(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
 #define resource_remote_sourced_disconnect()
+#define resource_remote_sourced_is_connected() false
 
 #endif
 

@@ -36,7 +36,7 @@ typedef struct {
 	string_const_t    remote_sourced;
 	uuid_t            uuid;
 	uint256_t         hash;
-	string_const_t    lookup_path;
+	string_t          lookup_path;
 	uint64_t          platform;
 	resource_op_t*    op;
 	bool              collapse;
@@ -52,9 +52,6 @@ resource_print_usage(void);
 
 static void*
 resource_run(void* arg);
-
-static resource_signature_t
-resource_lookup(const char* path, size_t length);
 
 static void*
 resource_read_file(const char* path, size_t length, resource_blob_t* blob) {
@@ -160,6 +157,8 @@ main_run(void* main_arg) {
 
 	beacon_finalize(&beacon);
 
+	string_deallocate(input.lookup_path.str);
+
 	return result;
 }
 
@@ -182,7 +181,7 @@ resource_run(void* arg) {
 
 	bool lookup_done = false;
 	if (uuid_is_null(input->uuid) && input->lookup_path.length) {
-		resource_signature_t sig = resource_lookup(STRING_ARGS(input->lookup_path));
+		resource_signature_t sig = resource_import_lookup(STRING_ARGS(input->lookup_path));
 		input->uuid = sig.uuid;
 		input->hash = sig.hash;
 		lookup_done = true;
@@ -277,14 +276,6 @@ exit:
 	return (void*)(intptr_t)result;
 }
 
-static resource_signature_t
-resource_lookup(const char* path, size_t length) {
-	char buffer[BUILD_MAX_PATHLEN];
-	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
-	pathstr = path_absolute(STRING_ARGS(pathstr), sizeof(buffer));
-	return resource_import_map_lookup(STRING_ARGS(pathstr));
-}
-
 static resource_input_t
 resource_parse_command_line(const string_const_t* cmdline) {
 	resource_input_t input;
@@ -318,8 +309,13 @@ resource_parse_command_line(const string_const_t* cmdline) {
 			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--lookup"))) {
-			if (arg < asize - 1)
-				input.lookup_path = cmdline[++arg];
+			if (arg < asize - 1) {
+				char buffer[BUILD_MAX_PATHLEN];
+				++arg;
+				string_t cleanpath = string_copy(buffer, sizeof(buffer), STRING_ARGS(cmdline[arg]));
+				cleanpath = path_clean(STRING_ARGS(cleanpath), sizeof(buffer));
+				input.lookup_path = string_clone(STRING_ARGS(cleanpath));
+			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--platform"))) {
 			if (arg < asize - 1) {

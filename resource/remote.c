@@ -346,6 +346,11 @@ resource_remote_sourced_disconnect(void) {
 	resource_remote_sourced_finalize();
 }
 
+bool
+resource_remote_sourced_is_connected(void) {
+	return _sourced_url.length > 0;
+}
+
 resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length) {
 	resource_signature_t sig = {uuid_null(), uint256_null()};

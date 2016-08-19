@@ -269,7 +269,7 @@ server_handle_lookup(socket_t* sock, size_t msgsize) {
 		}
 		log_infof(HASH_RESOURCE, STRING_CONST("Perform lookup of resource: %.*s"),
 		          STRING_FORMAT(path));
-		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
+		resource_signature_t sig = resource_import_lookup(STRING_ARGS(path));
 		return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
 	}
 
