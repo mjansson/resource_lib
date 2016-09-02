@@ -26,6 +26,10 @@
 typedef enum sourced_message_id sourced_message_id;
 typedef enum sourced_result_id sourced_result_id;
 
+typedef struct sourced_string_t sourced_string_t;
+typedef struct sourced_blob_t sourced_blob_t;
+typedef struct sourced_change_t sourced_change_t;
+
 typedef struct sourced_message_t sourced_message_t;
 typedef struct sourced_lookup_t sourced_lookup_t;
 typedef struct sourced_lookup_result_t sourced_lookup_result_t;
@@ -33,6 +37,10 @@ typedef struct sourced_reverse_lookup_t sourced_reverse_lookup_t;
 typedef struct sourced_reverse_lookup_result_t sourced_reverse_lookup_result_t;
 typedef struct sourced_import_t sourced_import_t;
 typedef struct sourced_import_result_t sourced_import_result_t;
+typedef struct sourced_read_t sourced_read_t;
+typedef struct sourced_read_result_t sourced_read_result_t;
+typedef struct sourced_get_t sourced_get_t;
+typedef struct sourced_get_result_t sourced_get_result_t;
 typedef struct sourced_set_t sourced_set_t;
 typedef struct sourced_set_result_t sourced_set_result_t;
 typedef struct sourced_delete_t sourced_delete_t;
@@ -50,6 +58,11 @@ enum sourced_message_id {
 
 	SOURCED_IMPORT,
 	SOURCED_IMPORT_RESULT,
+
+	SOURCED_GET,
+	SOURCED_GET_RESULT,
+	SOURCED_READ,
+	SOURCED_READ_RESULT,
 
 	SOURCED_SET,
 	SOURCED_SET_RESULT,
@@ -113,6 +126,62 @@ struct sourced_import_result_t {
 	uint32_t flags;
 };
 
+struct sourced_get_t {
+	SOURCED_DECLARE_MESSAGE;
+	uuid_t uuid;
+	uint64_t platform;
+	hash_t key;
+};
+
+struct sourced_blob_t {
+	/*! Checksum */
+	hash_t checksum;
+	/*! Data size */
+	uint64_t size;
+};
+
+struct sourced_string_t {
+	uint64_t offset;
+	uint64_t length;
+};
+
+struct sourced_change_t {
+	/*! Change timestamp */
+	tick_t timestamp;
+	/*! Key hash */
+	hash_t hash;
+	/*! Platform */
+	uint64_t platform;
+	/*! FLags */
+	uint32_t flags;
+	/*! Value union */
+	union {
+		/*! String value */
+		sourced_string_t value;
+		/*! Blob value */
+		sourced_blob_t blob;
+	} value;
+};
+
+struct sourced_get_result_t {
+	SOURCED_DECLARE_REPLY;
+	sourced_change_t change;
+	char payload[];
+};
+
+struct sourced_read_t {
+	SOURCED_DECLARE_MESSAGE;
+	uuid_t uuid;
+	uint64_t platform;
+};
+
+struct sourced_read_result_t {
+	SOURCED_DECLARE_REPLY;
+	uint256_t hash;
+	uint32_t num_changes;
+	char payload[FOUNDATION_FLEXIBLE_ARRAY];
+};
+
 struct sourced_set_t {
 	SOURCED_DECLARE_MESSAGE;
 	uuid_t uuid;
@@ -168,3 +237,12 @@ sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash);
 
 int
 sourced_read_lookup_reply(socket_t* sock, sourced_lookup_result_t* result);
+
+int
+sourced_write_read(socket_t* sock, uuid_t uuid);
+
+int
+sourced_write_read_reply(socket_t* sock, resource_source_t* source, uint256_t hash);
+
+int
+sourced_read_read_reply(socket_t* sock, sourced_read_result_t* result, size_t size);

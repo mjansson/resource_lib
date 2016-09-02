@@ -37,13 +37,17 @@ static socket_t _sourced_control[2];
 #define REMOTE_MESSAGE_NONE 0
 #define REMOTE_MESSAGE_TERMINATE 1
 #define REMOTE_MESSAGE_LOOKUP 2
+#define REMOTE_MESSAGE_READ 3
 
 #define REMOTE_REPLY_LOOKUP 2
+#define REMOTE_REPLY_READ 3
 
 struct remote_message_t {
 	int message;
 	const void* data;
 	size_t size;
+	uuid_t uuid;
+	void* store;
 };
 
 struct remote_poll_t {
@@ -112,7 +116,7 @@ resource_remote_comm(void* arg) {
 					terminate = true;
 					break;
 				}
-				else if (message.message == REMOTE_MESSAGE_LOOKUP) {
+				else {
 					pending = message;
 				}
 			}
@@ -148,8 +152,6 @@ resource_remote_comm(void* arg) {
 						          STRING_FORMAT(addrstr));
 					}
 
-					if (waiting.message)
-						pending = waiting;
 					connected = false;
 					reconnect = true;
 				}
@@ -158,10 +160,11 @@ resource_remote_comm(void* arg) {
 						(uint32_t)remote.data.header.id,
 						(uint32_t)remote.data.header.size
 					};
+					bool had_header = (msg.id != 0);
 
 					remote.data.header.id = 0;
 
-					if (!msg.id) {
+					if (!had_header) {
 						size_t read = socket_read(&remote, &msg, sizeof(msg));
 						if (read != sizeof(msg)) {
 							socket_close(&remote);
@@ -172,26 +175,72 @@ resource_remote_comm(void* arg) {
 					}
 					
 					switch (msg.id) {
-						case SOURCED_LOOKUP_RESULT:
-							{
-								sourced_lookup_result_t reply;
-								log_info(HASH_RESOURCE, STRING_CONST("Read lookup result from remote sourced service"));
-								if (sourced_read_lookup_reply(&remote, &reply) < 0) {
+					case SOURCED_LOOKUP_RESULT: {
+							sourced_lookup_result_t reply;
+							log_info(HASH_RESOURCE, STRING_CONST("Read lookup result from remote sourced service"));
+							if (sourced_read_lookup_reply(&remote, &reply) < 0) {
+								if (had_header) {
+									log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Failed to read lookup reply"));
 									socket_close(&remote);
 									network_poll_update_socket(poll, &remote);
 									connected = false;
 									reconnect = true;
 								}
-								else if (waiting.message == REMOTE_MESSAGE_LOOKUP) {
-									resource_signature_t sig = {reply.uuid, reply.hash};
-									udp_socket_sendto(control_socket, &sig, sizeof(sig), socket_address_local(control_source));
-									waiting.message = REMOTE_MESSAGE_NONE;
+								else {
+									remote.data.header.id = msg.id;
+									remote.data.header.size = msg.size;
 								}
 							}
-							break;
+							else if (waiting.message == REMOTE_MESSAGE_LOOKUP) {
+								resource_signature_t sig = {reply.uuid, reply.hash};
+								udp_socket_sendto(control_socket, &sig, sizeof(sig), socket_address_local(control_source));
+								waiting.message = REMOTE_MESSAGE_NONE;
+							}
+						}
+						break;
 
-						default:
-							break;
+					case SOURCED_READ_RESULT: {
+							sourced_read_result_t* reply = memory_allocate(HASH_RESOURCE, msg.size, 0, MEMORY_PERSISTENT);
+							log_info(HASH_RESOURCE, STRING_CONST("Read read result from remote sourced service"));
+							if (sourced_read_read_reply(&remote, reply, msg.size) < 0) {
+								if (had_header) {
+									log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Failed to read read reply"));
+									socket_close(&remote);
+									network_poll_update_socket(poll, &remote);
+									connected = false;
+									reconnect = true;
+								}
+								else {
+									remote.data.header.id = msg.id;
+									remote.data.header.size = msg.size;
+								}
+							}
+							else if (waiting.message == REMOTE_MESSAGE_READ) {
+								uint32_t status = 1;
+								sourced_change_t* change = (sourced_change_t*)reply->payload;
+								resource_source_t* source = waiting.store;
+								for (uint32_t ich = 0; ich < reply->num_changes; ++ich, ++change) {
+									if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
+										resource_source_set_blob(source, change->timestamp, change->hash, change->platform,
+										                         change->value.blob.checksum, change->value.blob.size);
+									else if (change->flags & RESOURCE_SOURCEFLAG_VALUE)
+										resource_source_set(source, change->timestamp, change->hash, change->platform,
+										                    pointer_offset(reply->payload, change->value.value.offset),
+										                    change->value.value.length);
+									else
+										resource_source_unset(source, change->timestamp, change->hash, change->platform);
+								}
+								udp_socket_sendto(control_socket, &status, sizeof(status), socket_address_local(control_source));
+								waiting.message = REMOTE_MESSAGE_NONE;
+							}
+							memory_deallocate(reply);
+						}
+						break;
+
+						break;
+
+					default:
+						break;
 					}
 				}
 			}
@@ -207,7 +256,14 @@ resource_remote_comm(void* arg) {
 				if (sourced_write_lookup(&remote, waiting.data, waiting.size) < 0) {
 					resource_signature_t sig = {uuid_null(), uint256_null()};
 					udp_socket_sendto(control_socket, &sig, sizeof(sig), socket_address_local(control_source));
-					waiting.message = REMOTE_MESSAGE_NONE;
+				}
+				break;
+
+			case REMOTE_MESSAGE_READ:
+				log_info(HASH_RESOURCE, STRING_CONST("Write read message to remote sourced service"));
+				if (sourced_write_read(&remote, waiting.uuid) < 0) {
+					uint32_t status = 0;
+					udp_socket_sendto(control_socket, &status, sizeof(status), socket_address_local(control_source));
 				}
 				break;
 
@@ -217,6 +273,10 @@ resource_remote_comm(void* arg) {
 		}
 
 		if (reconnect) {
+			if (waiting.message)
+				pending = waiting;
+			waiting.message = REMOTE_MESSAGE_NONE;
+
 			if (time_system() > next_reconnect) {
 				if (!backoff)
 					backoff = REMOTE_CONNECT_BACKOFF_MIN + random32_range(0, 1000);
@@ -264,22 +324,30 @@ resource_remote_comm(void* arg) {
 		}
 	}
 
-	if (pending.message) {
-		switch (pending.message) {
-		case REMOTE_MESSAGE_LOOKUP:
-			{
+	if (waiting.message) {
+		switch (waiting.message) {
+		case REMOTE_MESSAGE_LOOKUP: {
 				resource_signature_t sig = {uuid_null(), uint256_null()};
 				udp_socket_sendto(control_socket, &sig, sizeof(sig), socket_address_local(control_source));
 			}
 			break;
+		case REMOTE_MESSAGE_READ: {
+				uint32_t status = 0;
+				udp_socket_sendto(control_socket, &status, sizeof(status), socket_address_local(control_source));
+			}
+			break;
 		}
 	}
-	if (waiting.message) {
-		switch (waiting.message) {
-		case REMOTE_MESSAGE_LOOKUP:
-			{
+	if (pending.message) {
+		switch (pending.message) {
+		case REMOTE_MESSAGE_LOOKUP: {
 				resource_signature_t sig = {uuid_null(), uint256_null()};
 				udp_socket_sendto(control_socket, &sig, sizeof(sig), socket_address_local(control_source));
+			}
+			break;
+		case REMOTE_MESSAGE_READ: {
+				uint32_t status = 0;
+				udp_socket_sendto(control_socket, &status, sizeof(status), socket_address_local(control_source));
 			}
 			break;
 		}
@@ -372,12 +440,42 @@ resource_remote_sourced_lookup(const char* path, size_t length) {
 	return sig;
 }
 
+bool
+resource_remote_sourced_read(resource_source_t* source, uuid_t uuid) {
+	if (!_sourced_initialized)
+		return false;
+
+	remote_message_t message;
+	message.message = REMOTE_MESSAGE_READ;
+	message.store = source;
+	message.uuid = uuid;
+	if ((udp_socket_sendto(&_sourced_control[0], &message, sizeof(message),
+	                       socket_address_local(&_sourced_control[1])) != sizeof(message)) ||
+	        !_sourced_initialized)
+		return false;
+
+	uint32_t status = 0;
+	network_address_t* addr;
+	udp_socket_recvfrom(&_sourced_control[0], &status, sizeof(status), &addr);
+
+	return status > 0;
+}
+
 #else
 
 resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
 	resource_signature_t sig = {uuid_null(), uint256_null()};
 	return sig;
+}
+
+bool
+resource_remote_sourced_read(resource_source_t* source, uuid_t uuid) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+	return false;
 }
 
 #endif
@@ -400,7 +498,7 @@ resource_remote_compiled_connect(const char* url, size_t length) {
 void
 resource_remote_compiled_disconnect(void) {
 	string_deallocate(_remote_compiled.str);
-	_remote_compiled = (string_t){0, 0};
+	_remote_compiled = (string_t) {0, 0};
 }
 
 stream_t*

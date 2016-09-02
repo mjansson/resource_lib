@@ -48,6 +48,9 @@ resource_remote_sourced_is_connected(void);
 RESOURCE_API resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length);
 
+RESOURCE_API bool
+resource_remote_sourced_read(resource_source_t* source, uuid_t uuid);
+
 #if RESOURCE_ENABLE_REMOTE_COMPILED
 
 RESOURCE_API string_const_t

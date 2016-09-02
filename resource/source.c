@@ -296,6 +296,42 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 }
 
 void
+resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* data,
+                            resource_source_map_iterate_fn iterate) {
+	size_t ibucket, bsize;
+	FOUNDATION_UNUSED(source);
+	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+		size_t inode, nsize;
+		hashmap_node_t* bucket = map->bucket[ibucket];
+		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
+			resource_change_t* change = 0;
+			void* stored = bucket[inode].value;
+			if (!stored)
+				continue;
+			else if ((uintptr_t)stored & 1) {
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
+				size_t imap, msize;
+				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
+					change = maparr[imap];
+					if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+						continue;
+					if (iterate(change, data) < 0)
+						return;
+				}
+				array_deallocate(maparr);
+			}
+			else {
+				change = stored;
+				if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+					continue;
+				if (iterate(change, data) < 0)
+					return;
+			}
+		}
+	}
+}
+
+void
 resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
                            resource_source_map_reduce_fn reduce) {
 	size_t ibucket, bsize;
@@ -470,8 +506,8 @@ resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid)
 	hashmap_finalize(map);
 }
 
-bool
-resource_source_read(resource_source_t* source, const uuid_t uuid) {
+static bool
+resource_source_read_local(resource_source_t* source, const uuid_t uuid) {
 	const char op_set = '=';
 	const char op_unset = '-';
 	const char op_blob = '#';
@@ -513,6 +549,15 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 	stream_deallocate(stream);
 
 	return true;
+}
+
+bool
+resource_source_read(resource_source_t* source, const uuid_t uuid) {
+	if (resource_remote_sourced_is_connected() &&
+	        resource_remote_sourced_read(source, uuid))
+		return true;
+
+	return resource_source_read_local(source, uuid);
 }
 
 bool

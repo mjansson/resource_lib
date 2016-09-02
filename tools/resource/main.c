@@ -53,6 +53,9 @@ resource_print_usage(void);
 static void*
 resource_run(void* arg);
 
+static void
+resource_dump(resource_source_t* source);
+
 static void*
 resource_read_file(const char* path, size_t length, resource_blob_t* blob) {
 	stream_t* stream = stream_open(path, length, STREAM_IN | STREAM_BINARY);
@@ -256,6 +259,8 @@ resource_run(void* arg) {
 		resource_source_collapse_history(&source);
 	if (input->clearblobs)
 		resource_source_clear_blob_history(&source, input->uuid);
+	if (input->dump)
+		resource_dump(&source);
 	if (array_size(input->op) || input->collapse || input->clearblobs) {
 		if (!resource_source_write(&source, input->uuid, input->binary)) {
 			log_warn(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to write output file"));
@@ -274,6 +279,33 @@ exit:
 	system_post_event(FOUNDATIONEVENT_TERMINATE);
 
 	return (void*)(intptr_t)result;
+}
+
+static resource_change_t* 
+resource_dump_fn(resource_change_t* change, resource_change_t* best, void* data) {
+	if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
+		log_infof(HASH_RESOURCE, STRING_CONST("BLOB %" PRItick " %" PRIhash " %" PRIx64 " : %" PRIhash " (%" PRIsize ")"),
+		          change->timestamp, change->hash, change->platform, change->value.blob.checksum, change->value.blob.size);
+	else if (change->flags & RESOURCE_SOURCEFLAG_VALUE)
+		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64 " : %.*s"),
+		          change->timestamp, change->hash, change->platform, STRING_FORMAT(change->value.value));
+	else
+		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64),
+		          change->timestamp, change->hash, change->platform);
+	return change;
+}
+
+static void
+resource_dump(resource_source_t* source) {
+	hashmap_fixed_t fixedmap;
+	hashmap_t* map = (hashmap_t*)&fixedmap;
+	const error_level_t saved_level = log_suppress(HASH_RESOURCE);
+	hashmap_initialize(map, sizeof(fixedmap.bucket)/sizeof(fixedmap.bucket[0]), 0);
+	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
+	resource_source_map_all(source, map, true);
+	resource_source_map_reduce(source, map, nullptr, resource_dump_fn);
+	log_set_suppress(HASH_RESOURCE, saved_level);
+	hashmap_finalize(map);
 }
 
 static resource_input_t

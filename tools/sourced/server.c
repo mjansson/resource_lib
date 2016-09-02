@@ -42,6 +42,9 @@ server_handle(socket_t* sock);
 static int
 server_handle_lookup(socket_t* sock, size_t msgsize);
 
+static int
+server_handle_read(socket_t* sock, size_t msgsize);
+
 void
 server_run(unsigned int port) {
 	int slot;
@@ -194,7 +197,20 @@ server_serve(void* arg) {
 			}
 			else {
 				socket_t* sock = events[ievt].socket;
-				if (server_handle(sock) < 0) {
+				bool disconnect = false;
+				if (events[ievt].event == NETWORKEVENT_DATAIN) {
+					if (server_handle(sock) < 0)
+						disconnect = true;
+				}
+				else if (events[ievt].event == NETWORKEVENT_ERROR) {
+					log_info(HASH_RESOURCE, STRING_CONST("Socket error, closing connection"));
+					disconnect = true;
+				}
+				else if (events[ievt].event == NETWORKEVENT_HANGUP) {
+					log_info(HASH_RESOURCE, STRING_CONST("Socket disconnected"));
+					disconnect = true;
+				}
+				if (disconnect) {
 					network_poll_remove_socket(poll, sock);
 					socket_deallocate(sock);
 				}
@@ -218,18 +234,26 @@ server_handle(socket_t* sock) {
 
 	if (!msg.id) {
 		size_t read = socket_read(sock, &msg, sizeof(msg));
-		if (read != sizeof(msg))
+		if (!read)
 			return -1;
+		if (read != sizeof(msg)) {
+			log_infof(HASH_RESOURCE, STRING_CONST("Read partial message header: %" PRIsize " of %" PRIsize), read, sizeof(msg));
+			return -1;
+		}
 	}
 
 	switch (msg.id) {
 		case SOURCED_LOOKUP:
 			return server_handle_lookup(sock, msg.size);
 
+		case SOURCED_READ:
+			return server_handle_read(sock, msg.size);
+
 		case SOURCED_REVERSE_LOOKUP:
 
 		case SOURCED_IMPORT:
 
+		case SOURCED_GET:
 		case SOURCED_SET:
 
 		case SOURCED_UNSET:
@@ -239,6 +263,8 @@ server_handle(socket_t* sock) {
 		case SOURCED_LOOKUP_RESULT:
 		case SOURCED_REVERSE_LOOKUP_RESULT:
 		case SOURCED_IMPORT_RESULT:
+		case SOURCED_READ_RESULT:
+		case SOURCED_GET_RESULT:
 		case SOURCED_SET_RESULT:
 		case SOURCED_UNSET_RESULT:
 		case SOURCED_DELETE_RESULT:
@@ -252,7 +278,7 @@ server_handle(socket_t* sock) {
 	return -1;
 }
 
-int
+static int
 server_handle_lookup(socket_t* sock, size_t msgsize) {
 
 	if (msgsize > BUILD_MAX_PATHLEN)
@@ -272,11 +298,45 @@ server_handle_lookup(socket_t* sock, size_t msgsize) {
 		resource_signature_t sig = resource_import_lookup(STRING_ARGS(path));
 		return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
 	}
-
-	if (read != 0)
+	if (read != 0) {
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial lookup message: %" PRIsize " of %" PRIsize), read, msgsize);
 		return -1;
+	}
 
 	sock->data.header.id = SOURCED_LOOKUP;
+	sock->data.header.size = msgsize;
+	return 0;
+}
+
+static int
+server_handle_read(socket_t* sock, size_t msgsize) {
+
+	size_t expected_size = sizeof(uuid_t) + sizeof(uint64_t);
+	if (msgsize != expected_size)
+		return -1;
+
+	sourced_read_t readmsg;
+	size_t read = socket_read(sock, &readmsg.uuid, expected_size);
+	if (read == expected_size) {
+		int ret;
+		resource_source_t source;
+		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
+		resource_source_initialize(&source);
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of resource: %.*s"),
+		          STRING_FORMAT(uuidstr));
+		if (resource_source_read(&source, readmsg.uuid))
+			ret = sourced_write_read_reply(sock, &source, resource_source_read_hash(readmsg.uuid, readmsg.platform));
+		else
+			ret = sourced_write_read_reply(sock, nullptr, uint256_null());
+		resource_source_finalize(&source);
+		return ret;
+	}
+	if (read != 0) {
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial read message: %" PRIsize " of %" PRIsize), read, msgsize);
+		return -1;
+	}
+
+	sock->data.header.id = SOURCED_READ;
 	sock->data.header.size = msgsize;
 	return 0;
 }

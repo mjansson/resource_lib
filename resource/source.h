@@ -94,9 +94,15 @@ resource_change_t* data for inspection. Clears the map before storing data.
 RESOURCE_API void
 resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_timestamps);
 
-/*! Iterate of a map of source key-value to perform operations on each change and optionally
-selecting the best change. The iteration can be aborted by the reduce function returning
-a marker value of -1 */
+/*! Iterate of a map of source key-value to perform operations on each change.
+The iteration can be aborted by the reduce function returning a marker value of -1 */
+RESOURCE_API void
+resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* data,
+                            resource_source_map_iterate_fn iterate);
+
+/*! Iterate of a map of source key-value to perform operations on each change and
+selecting the best change, thus reducing the map to one change per key/platform.
+The iteration can be aborted by the reduce function returning a marker value of -1 */
 RESOURCE_API void
 resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
                            resource_source_map_reduce_fn reduce);
@@ -136,7 +142,9 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 #define resource_source_clear_blob_history(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)) 
 #define resource_source_map(source, platform, map) ((void)sizeof(source)), ((void)sizeof(platform)), ((void)sizeof(map))
 #define resource_source_map_all(source, map, all_platforms) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(all_platforms))
+#define resource_source_map_iterate(source, map, data, iterate) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
 #define resource_source_map_reduce(source, map, data, reduce) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
+#define resource_source_map_clear(map) ((void)sizeof(map))
 #define resource_source_num_dependencies(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
 #define resource_source_dependencies(uuid, platform, deps, capacity) ((void)sizeof(uuid)), ((void)sizeof(platform)), ((void)sizeof(deps)), ((void)sizeof(capacity)), 0
 #define resource_source_set_dependencies(uuid, platform, deps, num) ((void)sizeof(uuid)), ((void)sizeof(platform)), ((void)sizeof(deps)), ((void)sizeof(num))

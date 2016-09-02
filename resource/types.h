@@ -37,6 +37,7 @@ typedef enum resource_event_id {
 #define RESOURCE_SOURCEFLAG_BLOB  2
 
 typedef struct resource_config_t            resource_config_t;
+typedef union  resource_change_value_t      resource_change_value_t;
 typedef struct resource_change_t            resource_change_t;
 typedef struct resource_change_data_t       resource_change_data_t;
 typedef struct resource_change_data_fixed_t resource_change_data_fixed_t;
@@ -52,6 +53,7 @@ typedef int (* resource_import_fn)(stream_t*, const uuid_t);
 typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t, const char*, size_t);
 typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
         void*);
+typedef int (* resource_source_map_iterate_fn)(resource_change_t*, void*);
 
 /*! Resource library configuration */
 struct resource_config_t {
@@ -88,6 +90,14 @@ struct resource_blob_t {
 	size_t size;
 };
 
+/*! Value union */
+union resource_change_value_t {
+	/*! String value */
+	string_const_t value;
+	/*! Blob value */
+	resource_blob_t blob;
+};
+
 /*! Representation of a single change of a key-value
 pair in a resource object */
 struct resource_change_t {
@@ -100,12 +110,7 @@ struct resource_change_t {
 	/*! FLags */
 	unsigned int flags;
 	/*! Value union */
-	union {
-		/*! String value */
-		string_const_t value;
-		/*! Blob value */
-		resource_blob_t blob;
-	} value;
+	resource_change_value_t value;
 };
 
 /*! Representation of a block of memory storing change data */
