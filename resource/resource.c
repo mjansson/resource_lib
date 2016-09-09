@@ -93,6 +93,12 @@ resource_module_initialize(const resource_config_t config) {
 			for (ipath = 0; ipath < numpaths; ++ipath)
 				resource_autoimport_watch(STRING_ARGS(paths[ipath]));
 		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-tool-path")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			resource_import_register_path(STRING_ARGS(cmdline[iarg]));
+			resource_compile_register_path(STRING_ARGS(cmdline[iarg]));
+		}
 	}
 
 	//Make sure we have at least one way of loading resources
@@ -186,6 +192,10 @@ resource_module_parse_config(const char* path, size_t path_size,
 						resource_remote_sourced_connect(STRING_ARGS(value));
 					else if (idhash == HASH_REMOTE_COMPILED)
 						resource_remote_compiled_connect(STRING_ARGS(value));
+					else if (idhash == HASH_TOOL_PATH) {
+						resource_import_register_path(STRING_ARGS(fullpath));
+						resource_compile_register_path(STRING_ARGS(fullpath));
+					}
 				}
 			}
 		}

@@ -32,4 +32,10 @@ RESOURCE_API void
 resource_compile_register(resource_compile_fn compiler);
 
 RESOURCE_API void
+resource_compile_register_path(const char* path, size_t length);
+
+RESOURCE_API void
 resource_compile_unregister(resource_compile_fn compiler);
+
+RESOURCE_API void
+resource_compile_unregister_path(const char* path, size_t length);

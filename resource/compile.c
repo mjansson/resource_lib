@@ -159,6 +159,12 @@ resource_compile_register(resource_compile_fn compiler) {
 }
 
 void
+resource_compile_register_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
 resource_compile_unregister(resource_compile_fn compiler) {
 	size_t icmp, isize;
 	for (icmp = 0, isize = array_size(_resource_compilers); icmp != isize; ++icmp) {
@@ -167,6 +173,12 @@ resource_compile_unregister(resource_compile_fn compiler) {
 			return;
 		}
 	}
+}
+
+void
+resource_compile_unregister_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
 }
 
 #else
@@ -191,8 +203,20 @@ resource_compile_register(resource_compile_fn compiler) {
 }
 
 void
+resource_compile_register_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
 resource_compile_unregister(resource_compile_fn compiler) {
 	FOUNDATION_UNUSED(compiler);
+}
+
+void
+resource_compile_unregister_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
 }
 
 #endif

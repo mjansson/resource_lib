@@ -21,8 +21,15 @@
 
 #include <foundation/foundation.h>
 
+#if FOUNDATION_PLATFORM_WINDOWS
+#  define RESOURCE_IMPORTER_PATTERN "^.*import\\.exe$"
+#else
+#  define RESOURCE_IMPORTER_PATTERN "^.*import$"
+#endif
+
 static resource_import_fn* _resource_importers;
 static string_t _resource_import_base_path;
+static string_t* _resource_import_tool_path;
 
 int
 resource_import_initialize(void) {
@@ -33,6 +40,7 @@ void
 resource_import_finalize(void) {
 	array_deallocate(_resource_importers);
 	string_deallocate(_resource_import_base_path.str);
+	string_array_deallocate(_resource_import_tool_path);
 
 	_resource_importers = 0;
 	_resource_import_base_path = string(0, 0);
@@ -67,11 +75,60 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		was_imported |= (_resource_importers[iimp](stream, uuid) == 0);
 	}
 	stream_deallocate(stream);
-	if (!was_imported)
+
+	//Try external tools
+	for (size_t ipath = 0, psize = array_size(_resource_import_tool_path); !was_imported &&
+	        (ipath != psize); ++ipath) {
+		string_t* tools = fs_matching_files(STRING_ARGS(_resource_import_tool_path[ipath]),
+		                                    STRING_CONST(RESOURCE_IMPORTER_PATTERN), true);
+		for (size_t itool = 0, tsize = array_size(tools); !was_imported && (itool != tsize); ++itool) {
+			char buffer[BUILD_MAX_PATHLEN];
+			string_t fullpath = path_concat(buffer, sizeof(buffer),
+			                                STRING_ARGS(_resource_import_tool_path[ipath]),
+			                                STRING_ARGS(tools[itool]));
+
+			process_t proc;
+			process_initialize(&proc);
+
+			string_const_t wd = environment_current_working_directory();
+			process_set_working_directory(&proc, STRING_ARGS(wd));
+			process_set_executable_path(&proc, STRING_ARGS(fullpath));
+
+			string_const_t local_source = resource_source_path();
+			string_const_t args[] = {
+				string_const(STRING_CONST("--debug")),
+				string_const(path, length),
+				string_const(STRING_CONST("--")),
+				string_const(STRING_CONST("--resource-local-source")),
+				local_source
+			};
+			process_set_arguments(&proc, args, sizeof(args) / sizeof(args[0]));
+			process_set_flags(&proc, PROCESS_STDSTREAMS);
+
+			if (process_spawn(&proc) == 0) {
+				stream_t* out = process_stdout(&proc);
+				while (!stream_eos(out)) {
+					string_t line = stream_read_line_buffer(out, buffer, sizeof(buffer), '\n');
+					log_infof(HASH_RESOURCE, STRING_CONST("Importer: %.*s"), STRING_FORMAT(line));
+				}
+				stream_deallocate(out);
+				int res = process_wait(&proc);
+				if (res == 0)
+					was_imported = true;
+			}
+
+			process_finalize(&proc);
+		}
+		string_array_deallocate(tools);
+	}
+
+	if (!was_imported) {
 		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-			STRING_CONST("Unable to import: %.*s"), (int)length, path);
-	else
+		          STRING_CONST("Unable to import: %.*s"), (int)length, path);
+	}
+	else {
 		log_infof(HASH_RESOURCE, STRING_CONST("Imported: %.*s"), (int)length, path);
+	}
 	return was_imported;
 }
 
@@ -86,12 +143,41 @@ resource_import_register(resource_import_fn importer) {
 }
 
 void
+resource_import_register_path(const char* path, size_t length) {
+	size_t iimp, isize;
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
+	pathstr = path_clean(STRING_ARGS(pathstr), sizeof(buffer));
+	for (iimp = 0, isize = array_size(_resource_import_tool_path); iimp != isize; ++iimp) {
+		if (string_equal(STRING_ARGS(_resource_import_tool_path[iimp]), STRING_ARGS(pathstr)))
+			return;
+	}
+	pathstr = string_clone(STRING_ARGS(pathstr));
+	array_push(_resource_import_tool_path, pathstr);
+}
+
+void
 resource_import_unregister(resource_import_fn importer) {
 	size_t iimp, isize;
 	for (iimp = 0, isize = array_size(_resource_importers); iimp != isize; ++iimp) {
 		if (_resource_importers[iimp] == importer) {
 			array_erase(_resource_importers, iimp);
 			return;
+		}
+	}
+}
+
+void
+resource_import_unregister_path(const char* path, size_t length) {
+	size_t iimp, isize;
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
+	pathstr = path_clean(STRING_ARGS(pathstr), sizeof(buffer));
+	for (iimp = 0, isize = array_size(_resource_import_tool_path); iimp != isize; ++iimp) {
+		if (string_equal(STRING_ARGS(_resource_import_tool_path[iimp]), STRING_ARGS(pathstr))) {
+			string_deallocate(_resource_import_tool_path[iimp].str);
+			array_erase(_resource_import_tool_path, iimp);
+			break;
 		}
 	}
 }
@@ -383,7 +469,8 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		if (numdeps) {
 			bool need_import = false;
 			uuid_t* deps = localdeps;
-			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, %" PRIsize " source dependency checks: %.*s"),
+			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, %" PRIsize
+			                                       " source dependency checks: %.*s"),
 			           numdeps, STRING_FORMAT(uuidstr));
 			if (numdeps > capacity)
 				deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
@@ -534,8 +621,20 @@ resource_import_register(resource_import_fn importer) {
 }
 
 void
+resource_import_register_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
 resource_import_unregister(resource_import_fn importer) {
 	FOUNDATION_UNUSED(importer);
+}
+
+void
+resource_import_unregister_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
 }
 
 resource_signature_t

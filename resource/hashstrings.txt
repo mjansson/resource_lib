@@ -8,3 +8,4 @@ HASH_RESOURCE_TYPE                         resource_type
 HASH_BASE_PATH                             base_path
 HASH_AUTOIMPORT                            autoimport
 HASH_AUTOIMPORT_PATH                       autoimport_path
+HASH_TOOL_PATH                             tool_path
