@@ -39,6 +39,8 @@ resource_module_initialize_config(const resource_config_t config) {
 #if !RESOURCE_ENABLE_REMOTE_COMPILED
 	_resource_config.enable_remote_compiled = false;
 #endif
+	if (!_resource_config.enable_local_source)
+		_resource_config.enable_local_autoimport = false;
 }
 
 int
@@ -95,10 +97,9 @@ resource_module_initialize(const resource_config_t config) {
 
 	//Make sure we have at least one way of loading resources
 	if (!_resource_config.enable_local_cache &&
-	        !_resource_config.enable_local_source &&
 	        !_resource_config.enable_remote_compiled) {
 		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE,
-		          STRING_CONST("Invalid config, no way of loading resources"));
+		          STRING_CONST("Invalid config, no way of loading compiled resources"));
 		return -1;
 	}
 

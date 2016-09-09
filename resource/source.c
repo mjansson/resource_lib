@@ -636,6 +636,13 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 uint256_t
 resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
 	uint256_t hash = uint256_null();
+
+	if (resource_remote_sourced_is_connected()) {
+		hash = resource_remote_sourced_hash(uuid, platform);
+		if (!uint256_is_null(hash))
+			return hash;
+	}
+
 	stream_t* stream = resource_source_open_hash(uuid, STREAM_IN);
 	if (stream) {
 		char buffer[65];
@@ -727,6 +734,10 @@ resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
 size_t
 resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
 	size_t numdeps = 0;
+
+	if (resource_remote_sourced_is_connected())
+		return resource_remote_sourced_dependencies(uuid, platform, deps, capacity);
+
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN);
 	while (stream && !stream_eos(stream)) {
 		numdeps = stream_read_uint32(stream);

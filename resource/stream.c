@@ -24,6 +24,10 @@ stream_t*
 resource_stream_open_static(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
 
+	stream = resource_remote_open_static(res, platform);
+	if (stream)
+		return stream;
+
 	if (resource_autoimport_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (open static)"),
@@ -42,10 +46,6 @@ resource_stream_open_static(const uuid_t res, uint64_t platform) {
 	if (stream)
 		return stream;
 
-	stream = resource_remote_open_static(res, platform);
-	if (stream)
-		return stream;
-
 	string_const_t uuidstr = string_from_uuid_static(res);
 	log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
 	          STRING_CONST("Unable to open static stream for resource: %.*s"),
@@ -57,6 +57,10 @@ resource_stream_open_static(const uuid_t res, uint64_t platform) {
 stream_t*
 resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	stream_t* stream;
+
+	stream = resource_remote_open_dynamic(res, platform);
+	if (stream)
+		return stream;
 
 	if (resource_autoimport_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
@@ -73,10 +77,6 @@ resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	}
 
 	stream = resource_local_open_dynamic(res, platform);
-	if (stream)
-		return stream;
-
-	stream = resource_remote_open_dynamic(res, platform);
 	if (stream)
 		return stream;
 

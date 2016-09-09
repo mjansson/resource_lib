@@ -67,6 +67,11 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		was_imported |= (_resource_importers[iimp](stream, uuid) == 0);
 	}
 	stream_deallocate(stream);
+	if (!was_imported)
+		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+			STRING_CONST("Unable to import: %.*s"), (int)length, path);
+	else
+		log_infof(HASH_RESOURCE, STRING_CONST("Imported: %.*s"), (int)length, path);
 	return was_imported;
 }
 
@@ -446,6 +451,8 @@ resource_autoimport_watch_dir(const char* path, size_t length) {
 
 void
 resource_autoimport_watch(const char* path, size_t length) {
+	if (!resource_module_config().enable_local_autoimport)
+		return;
 	mutex_lock(_resource_autoimport_lock);
 	if (fs_is_directory(path, length)) {
 		resource_autoimport_watch_dir(path, length);
@@ -462,6 +469,8 @@ resource_autoimport_watch(const char* path, size_t length) {
 
 void
 resource_autoimport_unwatch(const char* path, size_t length) {
+	if (!resource_module_config().enable_local_autoimport)
+		return;
 	mutex_lock(_resource_autoimport_lock);
 	if (fs_is_directory(path, length)) {
 		resource_autoimport_unwatch_dir(path, length);
@@ -488,6 +497,9 @@ resource_autoimport_clear(void) {
 
 void
 resource_autoimport_event_handle(event_t* event) {
+	if (!resource_module_config().enable_local_autoimport)
+		return;
+
 	if (event->id != FOUNDATIONEVENT_FILE_MODIFIED)
 		return;
 

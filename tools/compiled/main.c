@@ -18,13 +18,19 @@
 
 #include <foundation/foundation.h>
 #include <resource/resource.h>
+#include <network/network.h>
+
+#include "server.h"
 
 typedef struct {
 	bool              display_help;
 	string_const_t    source_path;
 	string_const_t*   config_files;
+	string_const_t    remote_sourced;
 	int               port;
 } compiled_input_t;
+
+static compiled_input_t input;
 
 static compiled_input_t
 compiled_parse_command_line(const string_const_t* cmdline);
@@ -42,14 +48,12 @@ main_initialize(void) {
 	int ret = 0;
 	application_t application;
 	foundation_config_t foundation_config;
+	network_config_t network_config;
 	resource_config_t resource_config;
 
 	memset(&foundation_config, 0, sizeof(foundation_config));
+	memset(&network_config, 0, sizeof(network_config));
 	memset(&resource_config, 0, sizeof(resource_config));
-
-	resource_config.enable_local_source = true;
-	resource_config.enable_local_cache = true;
-	resource_config.enable_remote_compiled = true;
 
 	memset(&application, 0, sizeof(application));
 	application.name = string_const(STRING_CONST("compiled"));
@@ -59,10 +63,25 @@ main_initialize(void) {
 
 	log_enable_prefix(true);
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
-	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
 
 	if ((ret = foundation_initialize(memory_system_malloc(), application, foundation_config)) < 0)
 		return ret;
+
+	log_set_suppress(HASH_NETWORK, ERRORLEVEL_INFO);
+	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
+
+	if ((ret = network_module_initialize(network_config)) < 0)
+		return ret;
+
+	input = compiled_parse_command_line(environment_command_line());
+
+	if (input.remote_sourced.length)
+		resource_config.enable_local_source = false;
+	else
+		resource_config.enable_local_source = true;
+	resource_config.enable_remote_sourced = true;
+	resource_config.enable_local_cache = true;
+
 	if ((ret = resource_module_initialize(resource_config)) < 0)
 		return ret;
 
@@ -73,15 +92,15 @@ int
 main_run(void* main_arg) {
 	FOUNDATION_UNUSED(main_arg);
 
-	compiled_input_t input = compiled_parse_command_line(environment_command_line());
-
 	for (size_t cfgfile = 0, fsize = array_size(input.config_files); cfgfile < fsize; ++cfgfile)
 		sjson_parse_path(STRING_ARGS(input.config_files[cfgfile]), compiled_parse_config);
 
 	if (input.source_path.length)
 		resource_source_set_path(STRING_ARGS(input.source_path));
 
-	if (!resource_source_path().length) {
+	if (input.remote_sourced.length)
+		resource_remote_sourced_connect(STRING_ARGS(input.remote_sourced));
+	else if (!resource_source_path().length) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input.display_help = true;
 	}
@@ -91,32 +110,13 @@ main_run(void* main_arg) {
 		goto exit;
 	}
 
-	//Find all import maps in autoimport paths and load into memory DB
-	//  if no import maps, create default maps
+	//TODO: Run as daemon
 
-	//Run daemon
-
-	//Requests handled (B = broadcast)
-	
-	// --> lookup <path>   
-	// <-- <uuid>
-	
-	// --> reverse <uuid>
-	// <-- <path>
-
-	// --> import <path>|<uuid>
-	// <-- <uuid> <flags>
-	// <B- <notify-create> <uuid> (if new)
-	// <B- <notify-change> <uuid> (if reimported)
-
-	// file change and autoimport performed
-	// <B- <notify-change> <uuid>
-
-	// --> delete <uuid>
-	// <-- <result>
-	// <B- <notify-delete> <uuid>
+	server_run(input.port);
 
 exit:
+
+	resource_remote_sourced_disconnect();
 
 	array_deallocate(input.config_files);
 
@@ -126,6 +126,7 @@ exit:
 void
 main_finalize(void) {
 	resource_module_finalize();
+	network_module_finalize();
 	foundation_finalize();
 }
 
@@ -155,8 +156,19 @@ compiled_parse_command_line(const string_const_t* cmdline) {
 			if (arg < asize - 1)
 				array_push(input.config_files, cmdline[++arg]);
 		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--port"))) {
+			if (arg < asize - 1) {
+				string_const_t portstr = cmdline[++arg];
+				input.port = string_to_uint(STRING_ARGS(portstr), false);
+			}
+		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--remote"))) {
+			if (arg < asize - 1)
+				input.remote_sourced = cmdline[++arg];
+		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
+			log_set_suppress(HASH_NETWORK, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_NONE);
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
@@ -174,12 +186,14 @@ compiled_print_usage(void) {
 	log_enable_prefix(false);
 	log_info(0, STRING_CONST(
 	             "compiled usage:\n"
-	             "  compiled [--source <path>] [--config <path>]\n"
-	             "          [--debug] [--help] ... [--]\n"
+	             "  compiled [--source <path>] [--config <path>] [--port <port>]\n"
+	             "           [--remote <url>] [--debug] [--help] ... [--]\n"
 	             "    Optional arguments:\n"
 	             "      --source <path>              Operate on resource file source structure given by <path>\n"
 	             "      --config <path>              Read and parse config file given by <path>\n"
 	             "                                   Loads all .json/.sjson files in <path> if it is a directory\n"
+	             "      --port <port>                Network port to use\n"
+	             "      --remote <url>               Connect to remote sourced service specified by <url>\n"
 	             "      --debug                      Enable debug output\n"
 	             "      --help                       Display this help message\n"
 	             "      --                           Stop processing command line arguments"

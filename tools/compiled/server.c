@@ -19,6 +19,7 @@
 #include <foundation/foundation.h>
 #include <resource/resource.h>
 #include <resource/sourced.h>
+#include <resource/compiled.h>
 #include <network/network.h>
 
 #include "server.h"
@@ -40,16 +41,13 @@ static int
 server_handle(socket_t* sock);
 
 static int
-server_handle_lookup(socket_t* sock, size_t msgsize);
+server_handle_open_static(socket_t* sock, size_t msgsize);
 
 static int
-server_handle_read(socket_t* sock, size_t msgsize);
+server_handle_open_dynamic(socket_t* sock, size_t msgsize);
 
 static int
-server_handle_hash(socket_t* sock, size_t msgsize);
-
-static int
-server_handle_dependencies(socket_t* sock, size_t msgsize);
+server_write_stream_to_socket(stream_t* stream, socket_t* sock);
 
 void
 server_run(unsigned int port) {
@@ -142,11 +140,8 @@ server_run(unsigned int port) {
 			while ((event = event_next(block, event))) {
 				switch (event->id) {
 				case RESOURCEEVENT_CREATE:
-					//SOURCED_NOTIFY_CREATE
 				case RESOURCEEVENT_MODIFY:
-					//SOURCED_NOTIFY_CHANGE
 				case RESOURCEEVENT_DELETE:
-					//SOURCED_NOTIFY_DELETE
 					break;
 
 				default:
@@ -249,9 +244,9 @@ server_serve(void* arg) {
 	return nullptr;
 }
 
-int
+static int
 server_handle(socket_t* sock) {
-	sourced_message_t msg = {
+	compiled_message_t msg = {
 		(uint32_t)sock->data.header.id,
 		(uint32_t)sock->data.header.size
 	};
@@ -269,42 +264,13 @@ server_handle(socket_t* sock) {
 	}
 
 	switch (msg.id) {
-		case SOURCED_LOOKUP:
-			return server_handle_lookup(sock, msg.size);
+		case COMPILED_OPEN_STATIC:
+			return server_handle_open_static(sock, msg.size);
+		case COMPILED_OPEN_DYNAMIC:
+			return server_handle_open_dynamic(sock, msg.size);
 
-		case SOURCED_READ:
-			return server_handle_read(sock, msg.size);
-
-		case SOURCED_HASH:
-			return server_handle_hash(sock, msg.size);
-
-		case SOURCED_DEPENDENCIES:
-			return server_handle_dependencies(sock, msg.size);
-
-		case SOURCED_REVERSE_LOOKUP:
-
-		case SOURCED_IMPORT:
-
-		case SOURCED_GET:
-		case SOURCED_SET:
-
-		case SOURCED_UNSET:
-
-		case SOURCED_DELETE:
-
-		case SOURCED_LOOKUP_RESULT:
-		case SOURCED_REVERSE_LOOKUP_RESULT:
-		case SOURCED_IMPORT_RESULT:
-		case SOURCED_READ_RESULT:
-		case SOURCED_GET_RESULT:
-		case SOURCED_SET_RESULT:
-		case SOURCED_UNSET_RESULT:
-		case SOURCED_DELETE_RESULT:
-		case SOURCED_HASH_RESULT:
-		case SOURCED_DEPENDENCIES_RESULT:
-		case SOURCED_NOTIFY_CREATE:
-		case SOURCED_NOTIFY_CHANGE:
-		case SOURCED_NOTIFY_DELETE:
+		case COMPILED_OPEN_STATIC_RESULT:
+		case COMPILED_OPEN_DYNAMIC_RESULT:
 		default:
 			break;
 	}
@@ -313,125 +279,102 @@ server_handle(socket_t* sock) {
 }
 
 static int
-server_handle_lookup(socket_t* sock, size_t msgsize) {
-	if (msgsize > BUILD_MAX_PATHLEN)
-		return -1;
-
-	char buffer[BUILD_MAX_PATHLEN];
-	size_t read = socket_read(sock, buffer, msgsize);
-	if (read == msgsize) {
-		string_t path = path_clean(buffer, msgsize, BUILD_MAX_PATHLEN);
-		if (!path_is_absolute(buffer, msgsize)) {
-			string_const_t base_path = resource_import_base_path();
-			path = path_prepend(STRING_ARGS(path), BUILD_MAX_PATHLEN, STRING_ARGS(base_path));
-			path = path_absolute(STRING_ARGS(path), BUILD_MAX_PATHLEN);
-		}
-		log_infof(HASH_RESOURCE, STRING_CONST("Perform lookup of resource: %.*s"),
-		          STRING_FORMAT(path));
-		resource_signature_t sig = resource_import_lookup(STRING_ARGS(path));
-		return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
-	}
-	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial lookup message: %" PRIsize " of %" PRIsize), read, msgsize);
-		return -1;
-	}
-
-	sock->data.header.id = SOURCED_LOOKUP;
-	sock->data.header.size = msgsize;
-	return 0;
-}
-
-static int
-server_handle_read(socket_t* sock, size_t msgsize) {
-	size_t expected_size = sizeof(uuid_t);
+server_handle_open_static(socket_t* sock, size_t msgsize) {
+	size_t expected_size = sizeof(uuid_t) + sizeof(uint64_t);
 	if (msgsize != expected_size)
 		return -1;
 
-	sourced_read_t readmsg;
+	compiled_open_static_t readmsg;
 	size_t read = socket_read(sock, &readmsg.uuid, expected_size);
 	if (read == expected_size) {
-		int ret;
-		resource_source_t source;
+		int ret = -1;
 		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
-		resource_source_initialize(&source);
-		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of resource: %.*s"),
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of static resource: %.*s"),
 		          STRING_FORMAT(uuidstr));
-		if (resource_source_read(&source, readmsg.uuid))
-			ret = sourced_write_read_reply(sock, &source, resource_source_read_hash(readmsg.uuid, 0));
-		else
-			ret = sourced_write_read_reply(sock, nullptr, uint256_null());
-		resource_source_finalize(&source);
+		stream_t* stream = resource_stream_open_static(readmsg.uuid, readmsg.platform);
+		if (stream) {
+			compiled_write_open_static_reply(sock, true, stream_size(stream));
+			ret = server_write_stream_to_socket(stream, sock);
+		}
+		else {
+			compiled_write_open_static_reply(sock, false, 0);
+		}
 		return ret;
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial read message: %" PRIsize " of %" PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial open static message: %" PRIsize " of %" PRIsize), read, msgsize);
 		return -1;
 	}
 
-	sock->data.header.id = SOURCED_READ;
+	sock->data.header.id = COMPILED_OPEN_STATIC;
 	sock->data.header.size = msgsize;
 	return 0;
 }
 
 static int
-server_handle_hash(socket_t* sock, size_t msgsize) {
+server_handle_open_dynamic(socket_t* sock, size_t msgsize) {
 	size_t expected_size = sizeof(uuid_t) + sizeof(uint64_t);
 	if (msgsize != expected_size)
 		return -1;
 
-	sourced_hash_t hashmsg;
-	size_t read = socket_read(sock, &hashmsg.uuid, expected_size);
+	compiled_open_static_t readmsg;
+	size_t read = socket_read(sock, &readmsg.uuid, expected_size);
 	if (read == expected_size) {
-		if (resource_autoimport_need_update(hashmsg.uuid, hashmsg.platform)) {
-			string_const_t uuidstr = string_from_uuid_static(hashmsg.uuid);
-			log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (read hash)"),
-			           STRING_FORMAT(uuidstr));
-			resource_autoimport(hashmsg.uuid);
+		int ret = -1;
+		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of dynamic resource: %.*s"),
+		          STRING_FORMAT(uuidstr));
+		stream_t* stream = resource_stream_open_dynamic(readmsg.uuid, readmsg.platform);
+		if (stream) {
+			compiled_write_open_dynamic_reply(sock, true, stream_size(stream));
+			ret = server_write_stream_to_socket(stream, sock);
 		}
-		uint256_t hash = resource_source_read_hash(hashmsg.uuid, hashmsg.platform);
-		return sourced_write_hash_reply(sock, hash);
+		else {
+			compiled_write_open_dynamic_reply(sock, false, 0);
+		}
+		return ret;
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial hash message: %" PRIsize " of %" PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial open dynamic message: %" PRIsize " of %" PRIsize), read, msgsize);
 		return -1;
 	}
 
-	sock->data.header.id = SOURCED_HASH;
+	sock->data.header.id = COMPILED_OPEN_DYNAMIC;
 	sock->data.header.size = msgsize;
 	return 0;
 }
 
 static int
-server_handle_dependencies(socket_t* sock, size_t msgsize) {
-	size_t expected_size = sizeof(uuid_t) + sizeof(uint64_t);
-	if (msgsize != expected_size)
-		return -1;
-
-	sourced_dependencies_t depmsg;
-	size_t read = socket_read(sock, &depmsg.uuid, expected_size);
-	if (read == expected_size) {
-		uuid_t localdeps[16];
-		uuid_t* deps = localdeps;
-		size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
-		size_t numdeps = resource_source_dependencies(depmsg.uuid, depmsg.platform, localdeps, capacity);
-		if (numdeps > capacity) {
-			capacity = numdeps;
-			deps = memory_allocate(HASH_RESOURCE, capacity * sizeof(uuid_t), 0, MEMORY_PERSISTENT);
-			numdeps = resource_source_dependencies(depmsg.uuid, depmsg.platform, deps, capacity);
+server_write_stream_to_socket(stream_t* stream, socket_t* sock) {
+	int ret = 0;
+	size_t written = 0;
+	const size_t capacity = 4096;
+	char* buffer = memory_allocate(HASH_RESOURCE, capacity, 0, MEMORY_PERSISTENT);
+	while (!stream_eos(stream)) {
+		size_t read = stream_read(stream, buffer, capacity);
+		if (read) {
+			size_t total = 0;
+			do {
+				size_t wrote = socket_write(sock, buffer, read);
+				if (wrote != read) {
+					if (socket_state(sock) != SOCKETSTATE_CONNECTED) {
+						ret = -1;
+						break;
+					}
+					thread_yield();
+				}
+				total += wrote;
+			} while (total != read);
+			
+			if (total == read)
+				ret = 0;
+			written += total;
 		}
-		int ret = sourced_write_dependencies_reply(sock, deps, numdeps);
-		if (deps != localdeps)
-			memory_deallocate(deps);
-		return ret;
 	}
-	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial dependencies message: %" PRIsize " of %" PRIsize), read, msgsize);
-		return -1;
-	}
+	memory_deallocate(buffer);
+	stream_deallocate(stream);
 
-	sock->data.header.id = SOURCED_DEPENDENCIES;
-	sock->data.header.size = msgsize;
-	return 0;
+	log_infof(HASH_RESOURCE, STRING_CONST("Wrote resource stream data: %" PRIsize " (%d)"), written, ret);
+
+	return ret;
 }
-
-

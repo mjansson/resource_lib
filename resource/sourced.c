@@ -39,10 +39,11 @@ int
 sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash) {
 	sourced_message_t msg = {
 		SOURCED_LOOKUP_RESULT,
-		sizeof(uint32_t) + sizeof(uuid_t) + sizeof(uint256_t)
+		(uint32_t)sizeof(sourced_lookup_result_t)
 	};
 	sourced_lookup_result_t reply = {
 		!uuid_is_null(uuid) ? SOURCED_OK : SOURCED_FAILED,
+		0,
 		uuid,
 		hash
 	};
@@ -54,13 +55,15 @@ sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash) {
 }
 
 int
-sourced_read_lookup_reply(socket_t* sock, sourced_lookup_result_t* result) {
-	size_t read = socket_read(sock, result, sizeof(sourced_lookup_result_t));
-	if (read == sizeof(sourced_lookup_result_t))
+sourced_read_lookup_reply(socket_t* sock, size_t size, sourced_lookup_result_t* result) {
+	if (size != sizeof(sourced_lookup_result_t))
+		return -1;
+	size_t read = socket_read(sock, result, size);
+	if (read == size)
 		return 0;
 	
 	log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial lookup reply: %" PRIsize " of %" PRIsize),
-	          read, sizeof(sourced_lookup_result_t));
+	          read, size);
 	return -1;
 }
 
@@ -68,9 +71,8 @@ int
 sourced_write_read(socket_t* sock, uuid_t uuid) {
 	sourced_read_t msg = {
 		SOURCED_READ,
-		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)),
-		uuid,
-		0
+		(uint32_t)(sizeof(uuid_t)),
+		uuid
 	};
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg))
 		return 0;
@@ -148,6 +150,7 @@ sourced_write_read_reply(socket_t* sock, resource_source_t* source, uint256_t ha
 		
 		sourced_read_result_t* result = memory_allocate(HASH_RESOURCE, size, 0, MEMORY_PERSISTENT);
 		result->result = SOURCED_OK;
+		result->flags = 0;
 		result->hash = hash;
 		result->num_changes = walker.count;
 
@@ -179,7 +182,7 @@ sourced_write_read_reply(socket_t* sock, resource_source_t* source, uint256_t ha
 }
 
 int
-sourced_read_read_reply(socket_t* sock, sourced_read_result_t* result, size_t size) {
+sourced_read_read_reply(socket_t* sock, size_t size, sourced_read_result_t* result) {
 	size_t read = socket_read(sock, result, size);
 	if (read == size)
 		return 0;
@@ -187,4 +190,119 @@ sourced_read_read_reply(socket_t* sock, sourced_read_result_t* result, size_t si
 	log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read reply: %" PRIsize " of %" PRIsize),
 	          read, size);
 	return -1;
+}
+
+int
+sourced_write_hash(socket_t* sock, uuid_t uuid, uint64_t platform) {
+	sourced_hash_t msg = {
+		SOURCED_HASH,
+		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)),
+		uuid,
+		platform
+	};
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg))
+		return 0;
+	return -1;
+}
+
+int
+sourced_read_hash_reply(socket_t* sock, size_t size, sourced_hash_result_t* result) {
+	size_t read = socket_read(sock, result, size);
+	if (read == size)
+		return 0;
+
+	log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial hash reply: %" PRIsize " of %" PRIsize),
+	          read, size);
+	return -1;
+}
+
+int
+sourced_write_hash_reply(socket_t* sock, uint256_t hash) {
+	sourced_message_t msg = {
+		SOURCED_HASH_RESULT,
+		(uint32_t)sizeof(sourced_hash_result_t)
+	};
+	sourced_hash_result_t reply = {
+		SOURCED_OK,
+		0,
+		hash
+	};
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
+		if (socket_write(sock, &reply, sizeof(reply)) == sizeof(reply))
+			return 0;
+	}
+	return -1;
+}
+
+int
+sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform) {
+	sourced_dependencies_t msg = {
+		SOURCED_DEPENDENCIES,
+		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)),
+		uuid,
+		platform
+	};
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg))
+		return 0;
+	return -1;
+}
+
+int
+sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
+	size_t reply_size = sizeof(sourced_dependencies_result_t) + sizeof(uuid_t) * numdeps;
+	sourced_message_t msg = {
+		SOURCED_DEPENDENCIES_RESULT,
+		(uint32_t)reply_size
+	};
+	sourced_dependencies_result_t* reply = memory_allocate(HASH_RESOURCE, reply_size, 0, MEMORY_PERSISTENT);
+	reply->result = SOURCED_OK;
+	reply->flags = 0;
+	reply->num_deps = numdeps;
+	memcpy(reply->deps, deps, sizeof(uuid_t) * numdeps);
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
+		if (socket_write(sock, &reply, reply_size) == sizeof(reply))
+			return 0;
+	}
+	return -1;
+}
+
+int
+sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+	sourced_reply_t header;
+	uint64_t pending = size / sizeof(uuid_t);
+	uint64_t limit = pending;
+	if (limit > capacity)
+		limit = capacity;
+	*count = limit;
+
+	size_t read = socket_read(sock, &header, sizeof(header));
+	if (read != sizeof(header)) {
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
+		          read, sizeof(header));
+		return -1;
+	}
+
+	size_t want_read = limit * sizeof(uuid_t);
+	read = socket_read(sock, deps, want_read);
+	if (read != want_read) {
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
+		          read, want_read);
+		return -1;
+	}
+
+	while (read < size) {
+		char buffer[256];
+		want_read = size - read;
+		if (want_read > sizeof(buffer))
+			want_read = sizeof(buffer);
+		size_t this_read = socket_read(sock, buffer, want_read);
+		if (this_read != want_read) {
+			log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
+			          read + this_read, size);
+			return -1;
+		}
+		read += this_read;
+	}
+
+	return 0;
 }

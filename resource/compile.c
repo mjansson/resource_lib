@@ -35,7 +35,7 @@ resource_compile_finalize(void) {
 	_resource_compilers = 0;
 }
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE && RESOURCE_ENABLE_LOCAL_CACHE
+#if (RESOURCE_ENABLE_LOCAL_SOURCE || RESOURCE_ENABLE_REMOTE_SOURCED) && RESOURCE_ENABLE_LOCAL_CACHE
 
 bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
@@ -43,7 +43,8 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	stream_t* stream;
 	resource_header_t header;
 
-	if (!resource_module_config().enable_local_source)
+	if (!resource_module_config().enable_local_source &&
+	        !resource_module_config().enable_remote_sourced)
 		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
@@ -78,9 +79,10 @@ bool
 resource_compile(const uuid_t uuid, uint64_t platform) {
 	size_t icmp, isize;
 	resource_source_t source;
-	string_const_t type;
-	bool success = true;
-	if (!resource_module_config().enable_local_source)
+	string_const_t type = string_null();
+	bool success = false;
+	if (!resource_module_config().enable_local_source &&
+	        !resource_module_config().enable_remote_sourced)
 		return false;
 
 #if BUILD_ENABLE_DEBUG_LOG || BUILD_ENABLE_ERROR_CONTEXT
@@ -96,6 +98,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	size_t depscapacity = sizeof(localdeps) / sizeof(uuid_t);
 	size_t numdeps = resource_source_num_dependencies(uuid, platform);
 	if (numdeps) {
+		bool depsuccess = true;
 		uuid_t* deps = localdeps;
 		log_debugf(HASH_RESOURCE, STRING_CONST("Dependency compile check: %.*s"), STRING_FORMAT(uuidstr));
 		if (numdeps > depscapacity)
@@ -104,13 +107,13 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		for (size_t idep = 0; idep < numdeps; ++idep) {
 			if (resource_compile_need_update(deps[idep], platform)) {
 				if (!resource_compile(deps[idep], platform))
-					success = false;
+					depsuccess = false;
 			}
 		}
 		if (deps != localdeps)
 			memory_deallocate(deps);
 
-		if (!success) {
+		if (!depsuccess) {
 			error_context_pop();
 			return false;
 		}
@@ -122,7 +125,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		resource_change_t* change;
 
 		source_hash = resource_source_read_hash(uuid, platform);
-		if (uint256_is_null(source_hash)) {
+		if (uint256_is_null(source_hash) && resource_module_config().enable_local_source) {
 			//Recreate source hash data
 			resource_source_write(&source, uuid, source.read_binary);
 			source_hash = resource_source_read_hash(uuid, platform);
@@ -135,11 +138,9 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 			type = change->value.value;
 		}
 
-		success = false;
 		for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize); ++icmp)
 			success = (_resource_compilers[icmp](uuid, platform, &source, source_hash, STRING_ARGS(type)) == 0);
 	}
-
 	resource_source_finalize(&source);
 
 	error_context_pop();

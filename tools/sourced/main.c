@@ -54,6 +54,7 @@ main_initialize(void) {
 
 	resource_config.enable_local_source = true;
 	resource_config.enable_local_cache = true;
+	resource_config.enable_local_autoimport = true;
 
 	memset(&application, 0, sizeof(application));
 	application.name = string_const(STRING_CONST("sourced"));
@@ -118,6 +119,7 @@ exit:
 void
 main_finalize(void) {
 	resource_module_finalize();
+	network_module_finalize();
 	foundation_finalize();
 }
 
@@ -173,7 +175,7 @@ sourced_print_usage(void) {
 	log_enable_prefix(false);
 	log_info(0, STRING_CONST(
 	             "sourced usage:\n"
-	             "  sourced [--source <path>] [--config <path>]\n"
+	             "  sourced [--source <path>] [--config <path>] [--port <port>]\n"
 	             "          [--debug] [--help] ... [--]\n"
 	             "    Optional arguments:\n"
 	             "      --source <path>              Operate on resource file source structure given by <path>\n"
