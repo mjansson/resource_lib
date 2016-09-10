@@ -119,7 +119,7 @@ resource_remote_comm(void* arg) {
 
 		for (ievt = 0; ievt < count; ++ievt) {
 			if (events[ievt].socket == context->control) {
-				network_address_t* addr;
+				const network_address_t* addr;
 				remote_message_t message;
 				if (udp_socket_recvfrom(context->control, &message, sizeof(message), &addr) != sizeof(message))
 					continue;
@@ -286,7 +286,6 @@ resource_remote_comm(void* arg) {
 #include <resource/sourced.h>
 
 static bool _sourced_initialized;
-static bool _sourced_connected;
 static string_t _sourced_url;
 static thread_t _sourced_thread;
 static socket_t _sourced_client;
@@ -496,7 +495,7 @@ resource_remote_sourced_lookup(const char* path, size_t length) {
 	                      socket_address_local(&_sourced_proxy)) != sizeof(message))
 		return sig;
 
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_sourced_client, &sig, sizeof(sig), &addr) == sizeof(sig))
 		return sig;
 
@@ -517,7 +516,7 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 	                      socket_address_local(&_sourced_proxy)) != sizeof(message))
 		return ret;
 
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
 		return ret;
 
@@ -540,7 +539,7 @@ resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* dep
 		return 0;
 
 	uint64_t ret;
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
 		return (size_t)ret;
 
@@ -561,7 +560,7 @@ resource_remote_sourced_read(resource_source_t* source, uuid_t uuid) {
 		return false;
 
 	uint32_t status = 0;
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_sourced_client, &status, sizeof(status), &addr) == sizeof(status))
 		return status > 0;
 
@@ -608,7 +607,6 @@ resource_remote_sourced_read(resource_source_t* source, uuid_t uuid) {
 #include <resource/compiled.h>
 
 static bool _compiled_initialized;
-static bool _compiled_connected;
 static string_t _compiled_url;
 static thread_t _compiled_thread;
 static socket_t _compiled_client;
@@ -864,7 +862,7 @@ resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
 		return nullptr;
 
 	uint64_t size = 0;
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
 			return resource_compiled_stream_allocate(_compiled_context.remote, size, _compiled_context.poll);
@@ -887,7 +885,7 @@ resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
 		return nullptr;
 
 	uint64_t size = 0;
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
 			return resource_compiled_stream_allocate(_compiled_context.remote, size, _compiled_context.poll);

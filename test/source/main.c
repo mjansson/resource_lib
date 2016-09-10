@@ -43,6 +43,7 @@ test_source_initialize(void) {
 	resource_config_t config;
 	memset(&config, 0, sizeof(config));
 	config.enable_local_source = true;
+	config.enable_local_cache = true;
 	return resource_module_initialize(config);
 }
 
