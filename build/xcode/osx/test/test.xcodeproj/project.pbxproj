@@ -1,0 +1,535 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CD5BC2A11D84096100899D05 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2A01D84096100899D05 /* main.c */; };
+		CD5BC2B21D84101400899D05 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2B11D84101400899D05 /* main.c */; };
+		CD5BC2B41D84104200899D05 /* libresource.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2B31D84104200899D05 /* libresource.a */; };
+		CD5BC2B71D84105200899D05 /* libresource.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2B31D84104200899D05 /* libresource.a */; };
+		CD5BC2BA1D8411E600899D05 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2B81D8411E600899D05 /* Cocoa.framework */; };
+		CD5BC2BB1D8411E600899D05 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2B91D8411E600899D05 /* CoreFoundation.framework */; };
+		CD5BC2BD1D84121100899D05 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2BC1D84121100899D05 /* Carbon.framework */; };
+		CD5BC2BF1D84125100899D05 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2BC1D84121100899D05 /* Carbon.framework */; };
+		CD5BC2C01D84125100899D05 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2B81D8411E600899D05 /* Cocoa.framework */; };
+		CD5BC2C11D84125100899D05 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CD5BC2B91D8411E600899D05 /* CoreFoundation.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CD5BC2B51D84104B00899D05 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CD5BC28A1D84089E00899D05 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CD5BC2A71D840FF100899D05;
+			remoteInfo = "test-source";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CD5BC2941D84093800899D05 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		CD5BC2A61D840FF100899D05 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		CD5BC2961D84093800899D05 /* test-all */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "test-all"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD5BC2A01D84096100899D05 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../../test/all/main.c; sourceTree = "<group>"; };
+		CD5BC2A81D840FF100899D05 /* test-source */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "test-source"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD5BC2B11D84101400899D05 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../../test/source/main.c; sourceTree = "<group>"; };
+		CD5BC2B31D84104200899D05 /* libresource.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresource.a; path = ../../../lib/macosx/debug/libresource.a; sourceTree = "<group>"; };
+		CD5BC2B81D8411E600899D05 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		CD5BC2B91D8411E600899D05 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		CD5BC2BC1D84121100899D05 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CD5BC2931D84093800899D05 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD5BC2BF1D84125100899D05 /* Carbon.framework in Frameworks */,
+				CD5BC2C01D84125100899D05 /* Cocoa.framework in Frameworks */,
+				CD5BC2C11D84125100899D05 /* CoreFoundation.framework in Frameworks */,
+				CD5BC2B41D84104200899D05 /* libresource.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CD5BC2A51D840FF100899D05 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD5BC2B71D84105200899D05 /* libresource.a in Frameworks */,
+				CD5BC2BD1D84121100899D05 /* Carbon.framework in Frameworks */,
+				CD5BC2BA1D8411E600899D05 /* Cocoa.framework in Frameworks */,
+				CD5BC2BB1D8411E600899D05 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		CD5BC2891D84089E00899D05 = {
+			isa = PBXGroup;
+			children = (
+				CD5BC2B31D84104200899D05 /* libresource.a */,
+				CD5BC2981D84093800899D05 /* all */,
+				CD5BC2A91D840FF100899D05 /* source */,
+				CD5BC2BE1D84122300899D05 /* framework */,
+				CD5BC2971D84093800899D05 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		CD5BC2971D84093800899D05 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CD5BC2961D84093800899D05 /* test-all */,
+				CD5BC2A81D840FF100899D05 /* test-source */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CD5BC2981D84093800899D05 /* all */ = {
+			isa = PBXGroup;
+			children = (
+				CD5BC2A01D84096100899D05 /* main.c */,
+			);
+			name = all;
+			path = "test-all";
+			sourceTree = "<group>";
+		};
+		CD5BC2A91D840FF100899D05 /* source */ = {
+			isa = PBXGroup;
+			children = (
+				CD5BC2B11D84101400899D05 /* main.c */,
+			);
+			name = source;
+			path = "test-source";
+			sourceTree = "<group>";
+		};
+		CD5BC2BE1D84122300899D05 /* framework */ = {
+			isa = PBXGroup;
+			children = (
+				CD5BC2BC1D84121100899D05 /* Carbon.framework */,
+				CD5BC2B81D8411E600899D05 /* Cocoa.framework */,
+				CD5BC2B91D8411E600899D05 /* CoreFoundation.framework */,
+			);
+			name = framework;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CD5BC2951D84093800899D05 /* test-all */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD5BC29B1D84093800899D05 /* Build configuration list for PBXNativeTarget "test-all" */;
+			buildPhases = (
+				CD5BC2921D84093800899D05 /* Sources */,
+				CD5BC2931D84093800899D05 /* Frameworks */,
+				CD5BC2941D84093800899D05 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CD5BC2B61D84104B00899D05 /* PBXTargetDependency */,
+			);
+			name = "test-all";
+			productName = "test-all";
+			productReference = CD5BC2961D84093800899D05 /* test-all */;
+			productType = "com.apple.product-type.tool";
+		};
+		CD5BC2A71D840FF100899D05 /* test-source */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD5BC2AC1D840FF100899D05 /* Build configuration list for PBXNativeTarget "test-source" */;
+			buildPhases = (
+				CD5BC2A41D840FF100899D05 /* Sources */,
+				CD5BC2A51D840FF100899D05 /* Frameworks */,
+				CD5BC2A61D840FF100899D05 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "test-source";
+			productName = "test-source";
+			productReference = CD5BC2A81D840FF100899D05 /* test-source */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CD5BC28A1D84089E00899D05 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0730;
+				TargetAttributes = {
+					CD5BC2951D84093800899D05 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					CD5BC2A71D840FF100899D05 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = CD5BC28D1D84089E00899D05 /* Build configuration list for PBXProject "test" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = CD5BC2891D84089E00899D05;
+			productRefGroup = CD5BC2971D84093800899D05 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CD5BC2951D84093800899D05 /* test-all */,
+				CD5BC2A71D840FF100899D05 /* test-source */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CD5BC2921D84093800899D05 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD5BC2A11D84096100899D05 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CD5BC2A41D840FF100899D05 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD5BC2B21D84101400899D05 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CD5BC2B61D84104B00899D05 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CD5BC2A71D840FF100899D05 /* test-source */;
+			targetProxy = CD5BC2B51D84104B00899D05 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		CD5BC28E1D84089E00899D05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/debug;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_FAST_MATH = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_DEBUG=1";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_UNROLL_LOOPS = NO;
+				GCC_WARN_PEDANTIC = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../../../foundation_lib,
+					../../../../foundation_lib/test,
+					../../../../network_lib,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../lib/macosx/debug,
+					../../../../foundation_lib/lib/macosx/debug,
+					../../../../network_lib/lib/macosx/debug,
+					"$(inherited)",
+				);
+				LLVM_LTO = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				OTHER_LDFLAGS = (
+					"-ltest",
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		CD5BC28F1D84089E00899D05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/release;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_FAST_MATH = YES;
+				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_RELEASE=1";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_UNROLL_LOOPS = YES;
+				GCC_WARN_PEDANTIC = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../../../foundation_lib,
+					../../../../foundation_lib/test,
+					../../../../network_lib,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../lib/macosx/release,
+					../../../../foundation_lib/lib/macosx/release,
+					../../../../network_lib/lib/macosx/release,
+					"$(inherited)",
+				);
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				OTHER_LDFLAGS = (
+					"-ltest",
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		CD5BC2901D8408B900899D05 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/profile;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_FAST_MATH = YES;
+				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_PROFILE=1";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_UNROLL_LOOPS = YES;
+				GCC_WARN_PEDANTIC = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../../../foundation_lib,
+					../../../../foundation_lib/test,
+					../../../../network_lib,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../lib/macosx/profile,
+					../../../../foundation_lib/lib/macosx/profile,
+					../../../../network_lib/lib/macosx/profile,
+					"$(inherited)",
+				);
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				OTHER_LDFLAGS = (
+					"-ltest",
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
+				SDKROOT = macosx;
+			};
+			name = Profile;
+		};
+		CD5BC2911D8408BF00899D05 /* Deploy */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_LINK_OBJC_RUNTIME = NO;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/deploy;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_FAST_MATH = YES;
+				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_DEPLOY=1";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_UNROLL_LOOPS = YES;
+				GCC_WARN_PEDANTIC = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../../../foundation_lib,
+					../../../../foundation_lib/test,
+					../../../../network_lib,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../lib/macosx/deploy,
+					../../../../foundation_lib/lib/macosx/deploy,
+					../../../../network_lib/lib/macosx/deploy,
+					"$(inherited)",
+				);
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				OTHER_LDFLAGS = (
+					"-ltest",
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
+				SDKROOT = macosx;
+			};
+			name = Deploy;
+		};
+		CD5BC29C1D84093800899D05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CD5BC29D1D84093800899D05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CD5BC29E1D84093800899D05 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Profile;
+		};
+		CD5BC29F1D84093800899D05 /* Deploy */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = (
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Deploy;
+		};
+		CD5BC2AD1D840FF100899D05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CD5BC2AE1D840FF100899D05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CD5BC2AF1D840FF100899D05 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Profile;
+		};
+		CD5BC2B01D840FF100899D05 /* Deploy */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Deploy;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		CD5BC28D1D84089E00899D05 /* Build configuration list for PBXProject "test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CD5BC28E1D84089E00899D05 /* Debug */,
+				CD5BC28F1D84089E00899D05 /* Release */,
+				CD5BC2901D8408B900899D05 /* Profile */,
+				CD5BC2911D8408BF00899D05 /* Deploy */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Deploy;
+		};
+		CD5BC29B1D84093800899D05 /* Build configuration list for PBXNativeTarget "test-all" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CD5BC29C1D84093800899D05 /* Debug */,
+				CD5BC29D1D84093800899D05 /* Release */,
+				CD5BC29E1D84093800899D05 /* Profile */,
+				CD5BC29F1D84093800899D05 /* Deploy */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		CD5BC2AC1D840FF100899D05 /* Build configuration list for PBXNativeTarget "test-source" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CD5BC2AD1D840FF100899D05 /* Debug */,
+				CD5BC2AE1D840FF100899D05 /* Release */,
+				CD5BC2AF1D840FF100899D05 /* Profile */,
+				CD5BC2B01D840FF100899D05 /* Deploy */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = CD5BC28A1D84089E00899D05 /* Project object */;
+}
