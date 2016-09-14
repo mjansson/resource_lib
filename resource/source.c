@@ -318,7 +318,6 @@ resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* dat
 					if (iterate(change, data) < 0)
 						return;
 				}
-				array_deallocate(maparr);
 			}
 			else {
 				change = stored;
@@ -705,6 +704,10 @@ resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map
 bool
 resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform,
                           hash_t checksum, void* data, size_t capacity) {
+	if (resource_remote_sourced_is_connected() &&
+	        resource_remote_sourced_read_blob(uuid, key, platform, checksum, data, capacity))
+		return true;
+
 	stream_t* stream = resource_source_open_blob(uuid, key, platform, checksum, STREAM_IN);
 	if (!stream)
 		return false;

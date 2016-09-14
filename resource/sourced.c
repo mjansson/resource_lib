@@ -260,7 +260,7 @@ sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
 	reply->num_deps = numdeps;
 	memcpy(reply->deps, deps, sizeof(uuid_t) * numdeps);
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
-		if (socket_write(sock, &reply, reply_size) == sizeof(reply))
+		if (socket_write(sock, &reply, reply_size) == reply_size)
 			return 0;
 	}
 	return -1;
@@ -269,18 +269,20 @@ sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
 int
 sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
 	sourced_reply_t header;
+	size_t read = socket_read(sock, &header, sizeof(header));
+	if (read != sizeof(header)) {
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
+		          read, sizeof(header));
+		*count = 0;
+		return -1;
+	}
+
+	size -= sizeof(header);
 	uint64_t pending = size / sizeof(uuid_t);
 	uint64_t limit = pending;
 	if (limit > capacity)
 		limit = capacity;
 	*count = limit;
-
-	size_t read = socket_read(sock, &header, sizeof(header));
-	if (read != sizeof(header)) {
-		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
-		          read, sizeof(header));
-		return -1;
-	}
 
 	size_t want_read = limit * sizeof(uuid_t);
 	read = socket_read(sock, deps, want_read);
@@ -293,6 +295,88 @@ sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_
 	while (read < size) {
 		char buffer[256];
 		want_read = size - read;
+		if (want_read > sizeof(buffer))
+			want_read = sizeof(buffer);
+		size_t this_read = socket_read(sock, buffer, want_read);
+		if (this_read != want_read) {
+			log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
+			          read + this_read, size);
+			return -1;
+		}
+		read += this_read;
+	}
+
+	return 0;
+}
+
+int
+sourced_write_read_blob(socket_t* sock, uuid_t uuid, uint64_t platform, hash_t key) {
+	sourced_read_blob_t msg = {
+		SOURCED_READ_BLOB,
+		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)*2),
+		uuid,
+		platform,
+		key
+	};
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg))
+		return 0;
+	return -1;
+}
+
+int 
+sourced_write_read_blob_reply(socket_t* sock, hash_t checksum, void* store, size_t size) {
+	size_t reply_size = sizeof(sourced_read_blob_reply_t) + size;
+	sourced_message_t msg = {
+		SOURCED_READ_BLOB_RESULT,
+		(uint32_t)reply_size
+	};
+	sourced_read_blob_reply_t reply = {
+		SOURCED_OK,
+		0,
+		checksum,
+		size
+	};
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
+		if (socket_write(sock, &reply, reply_size) == reply_size) {
+			if (socket_write(sock, store, size) == size)
+				return 0;
+		}
+	}
+	return -1;
+}
+
+int
+sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_reply_t* reply, void* store, size_t capacity) {
+	sourced_reply_t header;
+	size_t read = socket_read(sock, &header, sizeof(header));
+	if (read != sizeof(header)) {
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
+		          read, sizeof(header));
+		return -1;
+	}
+	size -= sizeof(header);
+
+	read = socket_read(sock, reply, sizeof(sourced_read_blob_reply_t));
+	if (read != sizeof(sourced_read_blob_reply_t)) {
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
+		          read, sizeof(sourced_read_blob_reply_t));
+		return -1;
+	}
+	size -= sizeof(header);
+
+	size_t limit = size;
+	if (limit > capacity)
+		limit = capacity;
+	read = socket_read(sock, store, limit);
+	if (read != limit) {
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
+		          read, limit);
+		return -1;
+	}
+
+	while (read < size) {
+		char buffer[256];
+		size_t want_read = size - read;
 		if (want_read > sizeof(buffer))
 			want_read = sizeof(buffer);
 		size_t this_read = socket_read(sock, buffer, want_read);

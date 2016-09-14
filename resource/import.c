@@ -63,6 +63,8 @@ resource_import_set_base_path(const char* path, size_t length) {
 bool
 resource_import(const char* path, size_t length, const uuid_t uuid) {
 	size_t iimp, isize;
+	size_t internal = 0;
+	size_t external = 0;
 	bool was_imported = false;
 	stream_t* stream = stream_open(path, length, STREAM_IN);
 	if (!stream) {
@@ -70,9 +72,10 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		          STRING_CONST("Unable to open input stream for importing: %.*s"), (int)length, path);
 		return false;
 	}
-	for (iimp = 0, isize = array_size(_resource_importers); iimp != isize; ++iimp) {
+	for (iimp = 0, isize = array_size(_resource_importers); !was_imported && (iimp != isize); ++iimp) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
 		was_imported |= (_resource_importers[iimp](stream, uuid) == 0);
+		++internal;
 	}
 	stream_deallocate(stream);
 
@@ -94,37 +97,49 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 			process_set_working_directory(&proc, STRING_ARGS(wd));
 			process_set_executable_path(&proc, STRING_ARGS(fullpath));
 
-			string_const_t local_source = resource_source_path();
-			string_const_t args[] = {
-				string_const(STRING_CONST("--debug")),
-				string_const(path, length),
-				string_const(STRING_CONST("--")),
-				string_const(STRING_CONST("--resource-local-source")),
-				local_source
-			};
-			process_set_arguments(&proc, args, sizeof(args) / sizeof(args[0]));
-			process_set_flags(&proc, PROCESS_STDSTREAMS);
+			string_const_t* args = nullptr;
+			array_push(args, string_const(path, length));
+			array_push(args, string_const(STRING_CONST("--")));
 
-			if (process_spawn(&proc) == 0) {
-				stream_t* out = process_stdout(&proc);
+			string_const_t local_source = resource_source_path();
+			if (local_source.length) {
+				array_push(args, string_const(STRING_CONST("--resource-local-source")));
+				array_push(args, local_source);
+			}
+			string_const_t base_path = resource_import_base_path();
+			if (base_path.length) {
+				array_push(args, string_const(STRING_CONST("--resource-base-path")));
+				array_push(args, base_path);
+			}
+
+			process_set_arguments(&proc, args, array_size(args));
+			process_set_flags(&proc, PROCESS_STDSTREAMS | PROCESS_DETACHED);
+
+			if (process_spawn(&proc) == PROCESS_STILL_ACTIVE) {
+				stream_t* out = process_stderr(&proc);
 				while (!stream_eos(out)) {
 					string_t line = stream_read_line_buffer(out, buffer, sizeof(buffer), '\n');
-					log_infof(HASH_RESOURCE, STRING_CONST("Importer: %.*s"), STRING_FORMAT(line));
+					if (line.length)
+						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
+					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 				}
-				stream_deallocate(out);
-				int res = process_wait(&proc);
-				if (res == 0)
+				if (process_wait(&proc) == 0)
 					was_imported = true;
 			}
 
 			process_finalize(&proc);
+			array_deallocate(args);
+
+			++external;
 		}
 		string_array_deallocate(tools);
 	}
 
 	if (!was_imported) {
 		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-		          STRING_CONST("Unable to import: %.*s"), (int)length, path);
+		          STRING_CONST("Unable to import: %.*s (%" PRIsize " internal, %" PRIsize " external)"),
+		          (int)length, path,
+		          internal, external);
 	}
 	else {
 		log_infof(HASH_RESOURCE, STRING_CONST("Imported: %.*s"), (int)length, path);

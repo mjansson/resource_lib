@@ -57,6 +57,10 @@ resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* dep
 RESOURCE_API bool
 resource_remote_sourced_read(resource_source_t* source, uuid_t uuid);
 
+RESOURCE_API bool
+resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platform,
+                                  hash_t checksum, void* data, size_t capacity);
+
 #if RESOURCE_ENABLE_REMOTE_COMPILED
 
 RESOURCE_API string_const_t

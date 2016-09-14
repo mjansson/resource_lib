@@ -51,6 +51,9 @@ server_handle_hash(socket_t* sock, size_t msgsize);
 static int
 server_handle_dependencies(socket_t* sock, size_t msgsize);
 
+static int
+server_handle_read_blob(socket_t* sock, size_t msgsize);
+
 void
 server_run(unsigned int port) {
 	int slot;
@@ -72,7 +75,8 @@ server_run(unsigned int port) {
 	socket_bind(&local_socket[0], localaddr[0]);
 	socket_bind(&local_socket[1], localaddr[0]);
 
-	thread_initialize(&network_thread, server_serve, local_socket, STRING_CONST("serve"), THREAD_PRIORITY_NORMAL, 0);
+	thread_initialize(&network_thread, server_serve, local_socket, STRING_CONST("serve"),
+	                  THREAD_PRIORITY_NORMAL, 0);
 
 	/*if (network_supports_ipv4())*/ {
 		network_address_t* address = network_address_ipv4_any();
@@ -80,14 +84,14 @@ server_run(unsigned int port) {
 		sock[sockets] = tcp_socket_allocate();
 		socket_set_beacon(sock[sockets], &beacon);
 		if (!socket_bind(sock[sockets], address) ||
-			!tcp_socket_listen(sock[sockets])) {
+		        !tcp_socket_listen(sock[sockets])) {
 			log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Unable to bind IPv4 socket"));
 			socket_deallocate(sock[sockets]);
 			sock[sockets] = nullptr;
 		}
 		else {
 			log_infof(HASH_RESOURCE, STRING_CONST("Listening to IPv4 port %u"),
-				network_address_ip_port(socket_address_local(sock[sockets])));
+			          network_address_ip_port(socket_address_local(sock[sockets])));
 			++sockets;
 		}
 		memory_deallocate(address);
@@ -98,19 +102,19 @@ server_run(unsigned int port) {
 		sock[sockets] = tcp_socket_allocate();
 		socket_set_beacon(sock[sockets], &beacon);
 		if (!socket_bind(sock[sockets], address) ||
-			!tcp_socket_listen(sock[sockets])) {
+		        !tcp_socket_listen(sock[sockets])) {
 			log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Unable to bind IPv6 socket"));
 			socket_deallocate(sock[sockets]);
 			sock[sockets] = nullptr;
 		}
 		else {
 			log_infof(HASH_RESOURCE, STRING_CONST("Listening to IPv6 port %u"),
-				network_address_ip_port(socket_address_local(sock[sockets])));
+			          network_address_ip_port(socket_address_local(sock[sockets])));
 			++sockets;
 		}
 		memory_deallocate(address);
 	}
-	
+
 	if (!sockets) {
 		log_warn(HASH_RESOURCE, WARNING_UNSUPPORTED, STRING_CONST("No IPv4/IPv6 network connection"));
 		terminate = true;
@@ -142,9 +146,9 @@ server_run(unsigned int port) {
 			while ((event = event_next(block, event))) {
 				switch (event->id) {
 				case RESOURCEEVENT_CREATE:
-					//SOURCED_NOTIFY_CREATE
+				//SOURCED_NOTIFY_CREATE
 				case RESOURCEEVENT_MODIFY:
-					//SOURCED_NOTIFY_CHANGE
+				//SOURCED_NOTIFY_CHANGE
 				case RESOURCEEVENT_DELETE:
 					//SOURCED_NOTIFY_DELETE
 					break;
@@ -160,13 +164,15 @@ server_run(unsigned int port) {
 			if (accepted) {
 				message.message = SERVER_MESSAGE_CONNECTION;
 				message.data = accepted;
-				udp_socket_sendto(&local_socket[0], &message, sizeof(message), socket_address_local(&local_socket[1]));
+				udp_socket_sendto(&local_socket[0], &message, sizeof(message),
+				                  socket_address_local(&local_socket[1]));
 			}
 		}
 	}
 
 	message.message = SERVER_MESSAGE_TERMINATE;
-	udp_socket_sendto(&local_socket[0], &message, sizeof(message), socket_address_local(&local_socket[1]));
+	udp_socket_sendto(&local_socket[0], &message, sizeof(message),
+	                  socket_address_local(&local_socket[1]));
 
 	thread_finalize(&network_thread);
 	socket_finalize(&local_socket[0]);
@@ -200,7 +206,8 @@ server_serve(void* arg) {
 
 	while (!terminate) {
 		size_t ievt;
-		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]), NETWORK_TIMEOUT_INFINITE);
+		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]),
+		                            NETWORK_TIMEOUT_INFINITE);
 		if (!count)
 			continue;
 
@@ -263,50 +270,55 @@ server_handle(socket_t* sock) {
 		if (!read)
 			return -1;
 		if (read != sizeof(msg)) {
-			log_infof(HASH_RESOURCE, STRING_CONST("Read partial message header: %" PRIsize " of %" PRIsize), read, sizeof(msg));
+			log_infof(HASH_RESOURCE, STRING_CONST("Read partial message header: %" PRIsize " of %" PRIsize),
+			          read, sizeof(msg));
 			return -1;
 		}
 	}
 
 	switch (msg.id) {
-		case SOURCED_LOOKUP:
-			return server_handle_lookup(sock, msg.size);
+	case SOURCED_LOOKUP:
+		return server_handle_lookup(sock, msg.size);
 
-		case SOURCED_READ:
-			return server_handle_read(sock, msg.size);
+	case SOURCED_READ:
+		return server_handle_read(sock, msg.size);
 
-		case SOURCED_HASH:
-			return server_handle_hash(sock, msg.size);
+	case SOURCED_HASH:
+		return server_handle_hash(sock, msg.size);
 
-		case SOURCED_DEPENDENCIES:
-			return server_handle_dependencies(sock, msg.size);
+	case SOURCED_DEPENDENCIES:
+		return server_handle_dependencies(sock, msg.size);
 
-		case SOURCED_REVERSE_LOOKUP:
+	case SOURCED_READ_BLOB:
+		return server_handle_read_blob(sock, msg.size);
 
-		case SOURCED_IMPORT:
+	case SOURCED_REVERSE_LOOKUP:
 
-		case SOURCED_GET:
-		case SOURCED_SET:
+	case SOURCED_IMPORT:
 
-		case SOURCED_UNSET:
+	case SOURCED_GET:
+	case SOURCED_SET:
 
-		case SOURCED_DELETE:
+	case SOURCED_UNSET:
 
-		case SOURCED_LOOKUP_RESULT:
-		case SOURCED_REVERSE_LOOKUP_RESULT:
-		case SOURCED_IMPORT_RESULT:
-		case SOURCED_READ_RESULT:
-		case SOURCED_GET_RESULT:
-		case SOURCED_SET_RESULT:
-		case SOURCED_UNSET_RESULT:
-		case SOURCED_DELETE_RESULT:
-		case SOURCED_HASH_RESULT:
-		case SOURCED_DEPENDENCIES_RESULT:
-		case SOURCED_NOTIFY_CREATE:
-		case SOURCED_NOTIFY_CHANGE:
-		case SOURCED_NOTIFY_DELETE:
-		default:
-			break;
+	case SOURCED_DELETE:
+
+	case SOURCED_LOOKUP_RESULT:
+	case SOURCED_REVERSE_LOOKUP_RESULT:
+	case SOURCED_IMPORT_RESULT:
+	case SOURCED_READ_RESULT:
+	case SOURCED_GET_RESULT:
+	case SOURCED_SET_RESULT:
+	case SOURCED_UNSET_RESULT:
+	case SOURCED_DELETE_RESULT:
+	case SOURCED_HASH_RESULT:
+	case SOURCED_DEPENDENCIES_RESULT:
+	case SOURCED_READ_BLOB_RESULT:
+	case SOURCED_NOTIFY_CREATE:
+	case SOURCED_NOTIFY_CHANGE:
+	case SOURCED_NOTIFY_DELETE:
+	default:
+		break;
 	}
 
 	return -1;
@@ -332,7 +344,8 @@ server_handle_lookup(socket_t* sock, size_t msgsize) {
 		return sourced_write_lookup_reply(sock, sig.uuid, sig.hash);
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial lookup message: %" PRIsize " of %" PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial lookup message: %" PRIsize " of %" PRIsize),
+		          read, msgsize);
 		return -1;
 	}
 
@@ -364,7 +377,8 @@ server_handle_read(socket_t* sock, size_t msgsize) {
 		return ret;
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial read message: %" PRIsize " of %" PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial read message: %" PRIsize " of %" PRIsize), read,
+		          msgsize);
 		return -1;
 	}
 
@@ -392,7 +406,8 @@ server_handle_hash(socket_t* sock, size_t msgsize) {
 		return sourced_write_hash_reply(sock, hash);
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial hash message: %" PRIsize " of %" PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial hash message: %" PRIsize " of %" PRIsize), read,
+		          msgsize);
 		return -1;
 	}
 
@@ -425,11 +440,56 @@ server_handle_dependencies(socket_t* sock, size_t msgsize) {
 		return ret;
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial dependencies message: %" PRIsize " of %" PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE,
+		          STRING_CONST("Read partial dependencies message: %" PRIsize " of %" PRIsize),
+		          read, msgsize);
 		return -1;
 	}
 
 	sock->data.header.id = SOURCED_DEPENDENCIES;
+	sock->data.header.size = msgsize;
+	return 0;
+}
+
+static int
+server_handle_read_blob(socket_t* sock, size_t msgsize) {
+	size_t expected_size = sizeof(uuid_t) + sizeof(uint64_t)*2;
+	if (msgsize != expected_size)
+		return -1;
+
+	sourced_read_blob_t readmsg;
+	size_t read = socket_read(sock, &readmsg.uuid, expected_size);
+	if (read == expected_size) {
+		int ret = -1;
+		resource_source_t source;
+		resource_source_initialize(&source);
+		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of resource blob: %.*s %" PRIx64),
+		          STRING_FORMAT(uuidstr), readmsg.key);
+		if (resource_source_read(&source, readmsg.uuid)) {
+			resource_change_t* blobchange = resource_source_get(&source, readmsg.key, readmsg.platform);
+			if (blobchange && (blobchange->flags & RESOURCE_SOURCEFLAG_BLOB)) {
+				size_t size = blobchange->value.blob.size;
+				void* blob = memory_allocate(HASH_RESOURCE, size, 0, MEMORY_PERSISTENT);
+				if (resource_source_read_blob(readmsg.uuid, readmsg.key, readmsg.platform,
+				                              blobchange->value.blob.checksum, blob, size))
+					ret = sourced_write_read_blob_reply(sock, blobchange->value.blob.checksum, blob, size);
+				else
+					ret = sourced_write_read_blob_reply(sock, 0, nullptr, 0);
+				memory_deallocate(blob);
+			}
+		}
+		resource_source_finalize(&source);
+		return ret;
+	}
+	if (read != 0) {
+		log_infof(HASH_RESOURCE,
+		          STRING_CONST("Read partial read blob message: %" PRIsize " of %" PRIsize),
+		          read, msgsize);
+		return -1;
+	}
+
+	sock->data.header.id = SOURCED_READ_BLOB;
 	sock->data.header.size = msgsize;
 	return 0;
 }

@@ -49,6 +49,8 @@ typedef struct sourced_hash_t sourced_hash_t;
 typedef struct sourced_hash_result_t sourced_hash_result_t;
 typedef struct sourced_dependencies_t sourced_dependencies_t;
 typedef struct sourced_dependencies_result_t sourced_dependencies_result_t;
+typedef struct sourced_read_blob_t sourced_read_blob_t;
+typedef struct sourced_read_blob_reply_t sourced_read_blob_reply_t;
 typedef struct sourced_delete_result_t sourced_delete_result_t;
 typedef struct sourced_notify_create_t sourced_notify_create_t;
 typedef struct sourced_notify_change_t sourced_notify_change_t;
@@ -82,6 +84,9 @@ enum sourced_message_id {
 
 	SOURCED_DEPENDENCIES,
 	SOURCED_DEPENDENCIES_RESULT,
+
+	SOURCED_READ_BLOB,
+	SOURCED_READ_BLOB_RESULT,
 
 	SOURCED_NOTIFY_CREATE,
 	SOURCED_NOTIFY_CHANGE,
@@ -251,6 +256,19 @@ struct sourced_dependencies_result_t {
 	uuid_t deps[FOUNDATION_FLEXIBLE_ARRAY];
 };
 
+struct sourced_read_blob_t {
+	SOURCED_DECLARE_MESSAGE;
+	uuid_t uuid;
+	uint64_t platform;
+	uint64_t key;
+};
+
+struct sourced_read_blob_reply_t {
+	SOURCED_DECLARE_REPLY;
+	uint64_t checksum;
+	uint64_t size;
+};
+
 struct sourced_notify_create_t {
 	SOURCED_DECLARE_MESSAGE;
 	uuid_t uuid;
@@ -301,3 +319,12 @@ sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps);
 
 int
 sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count);
+
+int
+sourced_write_read_blob(socket_t* sock, uuid_t uuid, uint64_t platform, hash_t key);
+
+int 
+sourced_write_read_blob_reply(socket_t* sock, hash_t checksum, void* store, size_t size);
+
+int 
+sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_reply_t* reply, void* store, size_t capacity);
