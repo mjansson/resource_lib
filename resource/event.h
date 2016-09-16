@@ -25,8 +25,11 @@
 RESOURCE_API uuid_t
 resource_event_uuid(const event_t* event);
 
+RESOURCE_API hash_t
+resource_event_token(const event_t* event);
+
 RESOURCE_API void
-resource_event_post(resource_event_id id, uuid_t uuid);
+resource_event_post(resource_event_id id, uuid_t uuid, hash_t token);
 
 RESOURCE_API event_stream_t*
 resource_event_stream(void);

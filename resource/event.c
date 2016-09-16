@@ -25,14 +25,25 @@
 
 event_stream_t* _resource_event_stream = 0;
 
+typedef struct {
+	uuid_t uuid;
+	hash_t token;
+} resource_event_payload_t;
+
 uuid_t
 resource_event_uuid(const event_t* event) {
-	return *((const uuid_t*)event->payload);
+	return ((const resource_event_payload_t*)event->payload)->uuid;
+}
+
+hash_t
+resource_event_token(const event_t* event) {
+	return ((const resource_event_payload_t*)event->payload)->token;
 }
 
 void
-resource_event_post(resource_event_id id, uuid_t uuid) {
-	event_post(_resource_event_stream, id, 0, 0, &uuid, sizeof(uuid));
+resource_event_post(resource_event_id id, uuid_t uuid, hash_t token) {
+	resource_event_payload_t payload = {uuid, token};
+	event_post(_resource_event_stream, id, 0, 0, &payload, sizeof(payload));
 }
 
 event_stream_t*

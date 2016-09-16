@@ -99,3 +99,26 @@ compiled_write_open_dynamic_reply(socket_t* sock, bool success, size_t size) {
 			return 0;
 	return -1;
 }
+
+int
+compiled_write_notify(socket_t* sock, compiled_message_id id, uuid_t uuid, hash_t token) {
+	compiled_notify_t msg = {
+		id,
+		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)),
+		uuid,
+		token
+	};
+	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg))
+		return 0;
+	return -1;
+}
+
+int
+compiled_read_notify(socket_t* sock, size_t size, compiled_notify_t* notify) {
+	const size_t expected = sizeof(uuid_t) + sizeof(uint64_t);
+	if (size != expected)
+		return -1;
+	if (socket_read(sock, &notify->uuid, expected) == expected)
+		return 0;
+	return -1;
+}

@@ -25,10 +25,14 @@
 
 #define SERVER_MESSAGE_TERMINATE 0
 #define SERVER_MESSAGE_CONNECTION 1
+#define SERVER_MESSAGE_BROADCAST_NOTIFY 2
 
 struct server_message_t {
 	int message;
 	void* data;
+	unsigned int id;
+	uuid_t uuid;
+	hash_t token;
 };
 
 typedef struct server_message_t server_message_t;
@@ -54,6 +58,9 @@ server_handle_dependencies(socket_t* sock, size_t msgsize);
 static int
 server_handle_read_blob(socket_t* sock, size_t msgsize);
 
+static int
+server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, hash_t token);
+
 void
 server_run(unsigned int port) {
 	int slot;
@@ -67,6 +74,7 @@ server_run(unsigned int port) {
 
 	beacon_initialize(&beacon);
 	event_stream_set_beacon(system_event_stream(), &beacon);
+	event_stream_set_beacon(fs_event_stream(), &beacon);
 	event_stream_set_beacon(resource_event_stream(), &beacon);
 
 	network_address_t** localaddr = network_address_local();
@@ -137,7 +145,11 @@ server_run(unsigned int port) {
 				default:
 					break;
 				}
+			}
 
+			event = nullptr;
+			block = event_stream_process(fs_event_stream());
+			while ((event = event_next(block, event))) {
 				resource_event_handle(event);
 			}
 
@@ -146,11 +158,19 @@ server_run(unsigned int port) {
 			while ((event = event_next(block, event))) {
 				switch (event->id) {
 				case RESOURCEEVENT_CREATE:
-				//SOURCED_NOTIFY_CREATE
 				case RESOURCEEVENT_MODIFY:
-				//SOURCED_NOTIFY_CHANGE
 				case RESOURCEEVENT_DELETE:
-					//SOURCED_NOTIFY_DELETE
+					message.message = SERVER_MESSAGE_BROADCAST_NOTIFY;
+					if (event->id == RESOURCEEVENT_CREATE)
+						message.id = SOURCED_NOTIFY_CREATE;
+					else if (event->id == RESOURCEEVENT_MODIFY)
+						message.id = SOURCED_NOTIFY_MODIFY;
+					else if (event->id == RESOURCEEVENT_DELETE)
+						message.id = SOURCED_NOTIFY_DELETE;
+					message.uuid = resource_event_uuid(event);
+					message.token = resource_event_token(event);
+					udp_socket_sendto(&local_socket[0], &message, sizeof(message),
+					                  socket_address_local(&local_socket[1]));
 					break;
 
 				default:
@@ -195,6 +215,7 @@ server_serve(void* arg) {
 	socket_t* control_socket = local_sockets + 1;
 	const network_address_t* local_addr;
 	network_poll_event_t events[64];
+	socket_t** clients = nullptr;
 
 	if (socket_fd(control_socket) == NETWORK_SOCKET_INVALID)
 		return nullptr;
@@ -222,10 +243,19 @@ server_serve(void* arg) {
 					terminate = true;
 					break;
 				}
-				if (message.message == SERVER_MESSAGE_CONNECTION) {
-					socket_t* sock = message.data;
+				socket_t* sock;
+				switch (message.message) {
+				case SERVER_MESSAGE_CONNECTION:
+					sock = message.data;
+					sock->id = array_size(clients);
 					socket_set_blocking(sock, false);
 					network_poll_add_socket(poll, sock);
+					array_push(clients, sock);
+					break;
+
+				case SERVER_MESSAGE_BROADCAST_NOTIFY:
+					server_broadcast_notify(clients, message.id, message.uuid, message.token);
+					break;
 				}
 			}
 			else {
@@ -244,6 +274,10 @@ server_serve(void* arg) {
 					disconnect = true;
 				}
 				if (disconnect) {
+					unsigned int client = sock->id;
+					array_erase(clients, client); //Swap with last, patch up swapped client
+					if (array_size(clients) > client)
+						clients[client]->id = client;
 					network_poll_remove_socket(poll, sock);
 					socket_deallocate(sock);
 				}
@@ -256,7 +290,7 @@ server_serve(void* arg) {
 	return nullptr;
 }
 
-int
+static int
 server_handle(socket_t* sock) {
 	sourced_message_t msg = {
 		(uint32_t)sock->data.header.id,
@@ -315,7 +349,7 @@ server_handle(socket_t* sock) {
 	case SOURCED_DEPENDENCIES_RESULT:
 	case SOURCED_READ_BLOB_RESULT:
 	case SOURCED_NOTIFY_CREATE:
-	case SOURCED_NOTIFY_CHANGE:
+	case SOURCED_NOTIFY_MODIFY:
 	case SOURCED_NOTIFY_DELETE:
 	default:
 		break;
@@ -494,4 +528,9 @@ server_handle_read_blob(socket_t* sock, size_t msgsize) {
 	return 0;
 }
 
-
+static int
+server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, hash_t token) {
+	for (size_t isock = 0, send = array_size(sockets); isock < send; ++isock)
+		sourced_write_notify(sockets[isock], msg, uuid, token);
+	return 0;
+}

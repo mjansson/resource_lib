@@ -29,13 +29,14 @@
 
 #define REMOTE_MESSAGE_NONE 0
 #define REMOTE_MESSAGE_TERMINATE 1
-#define REMOTE_MESSAGE_LOOKUP 2
-#define REMOTE_MESSAGE_READ 3
-#define REMOTE_MESSAGE_HASH 4
-#define REMOTE_MESSAGE_DEPENDENCIES 5
-#define REMOTE_MESSAGE_OPEN_STATIC 6
-#define REMOTE_MESSAGE_OPEN_DYNAMIC 7
-#define REMOTE_MESSAGE_READ_BLOB 8
+#define REMOTE_MESSAGE_WAKEUP 2
+#define REMOTE_MESSAGE_LOOKUP 3
+#define REMOTE_MESSAGE_READ 4
+#define REMOTE_MESSAGE_HASH 5
+#define REMOTE_MESSAGE_DEPENDENCIES 6
+#define REMOTE_MESSAGE_OPEN_STATIC 7
+#define REMOTE_MESSAGE_OPEN_DYNAMIC 8
+#define REMOTE_MESSAGE_READ_BLOB 9
 
 typedef struct remote_header_t remote_header_t;
 typedef struct remote_message_t remote_message_t;
@@ -128,13 +129,14 @@ resource_remote_comm(void* arg) {
 					continue;
 				if (!network_address_equal(addr, socket_address_local(context->client)))
 					continue;
+				if ((message.message == REMOTE_MESSAGE_NONE) || (message.message == REMOTE_MESSAGE_WAKEUP)) {
+					break;
+				}
 				if (message.message == REMOTE_MESSAGE_TERMINATE) {
 					terminate = true;
 					break;
 				}
-				else {
-					pending = message;
-				}
+				pending = message;
 			}
 			else {
 				socket_t* sock = events[ievt].socket;
@@ -189,7 +191,7 @@ resource_remote_comm(void* arg) {
 							reconnect = true;
 						}
 					}
-					
+
 					if (context->read(context, msg, waiting) < 0) {
 						if (had_header) {
 							log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Failed to read remote message"));
@@ -296,7 +298,8 @@ static socket_t _sourced_proxy;
 static remote_context_t _sourced_context;
 
 static int
-resource_sourced_read_lookup_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_sourced_read_lookup_result(remote_context_t* context, remote_header_t msg,
+                                    remote_message_t waiting) {
 	sourced_lookup_result_t reply;
 	log_info(HASH_RESOURCE, STRING_CONST("Read lookup result from remote sourced service"));
 	int ret = sourced_read_lookup_reply(context->remote, msg.size, &reply);
@@ -308,11 +311,12 @@ resource_sourced_read_lookup_result(remote_context_t* context, remote_header_t m
 }
 
 static int
-resource_sourced_read_read_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_sourced_read_read_result(remote_context_t* context, remote_header_t msg,
+                                  remote_message_t waiting) {
 	sourced_read_result_t* reply = memory_allocate(HASH_RESOURCE, msg.size, 0, MEMORY_PERSISTENT);
 	log_info(HASH_RESOURCE, STRING_CONST("Read read result from remote sourced service"));
 	int ret = sourced_read_read_reply(context->remote, msg.size, reply);
-	if ((ret >= 0 ) && (waiting.message == REMOTE_MESSAGE_READ)) {
+	if ((ret >= 0) && (waiting.message == REMOTE_MESSAGE_READ)) {
 		uint32_t status = 1;
 		sourced_change_t* change = (sourced_change_t*)reply->payload;
 		resource_source_t* source = waiting.store;
@@ -335,35 +339,63 @@ resource_sourced_read_read_result(remote_context_t* context, remote_header_t msg
 }
 
 static int
-resource_sourced_read_hash_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_sourced_read_hash_result(remote_context_t* context, remote_header_t msg,
+                                  remote_message_t waiting) {
 	sourced_hash_result_t result;
 	log_info(HASH_RESOURCE, STRING_CONST("Read hash result from remote sourced service"));
 	int ret = sourced_read_hash_reply(context->remote, msg.size, &result);
 	if ((ret >= 0) && (waiting.message == REMOTE_MESSAGE_HASH))
-		udp_socket_sendto(context->control, &result.hash, sizeof(result.hash), socket_address_local(context->client));
+		udp_socket_sendto(context->control, &result.hash, sizeof(result.hash),
+		                  socket_address_local(context->client));
 	return ret;
 }
 
 static int
-resource_sourced_read_dependencies_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_sourced_read_dependencies_result(remote_context_t* context, remote_header_t msg,
+                                          remote_message_t waiting) {
 	uint64_t count = 0;
 	log_info(HASH_RESOURCE, STRING_CONST("Read dependencies result from remote sourced service"));
-	int ret = sourced_read_dependencies_reply(context->remote, msg.size, waiting.store, waiting.capacity, &count);
+	int ret = sourced_read_dependencies_reply(context->remote, msg.size, waiting.store,
+	                                          waiting.capacity, &count);
 	if ((ret >= 0) && (waiting.message == REMOTE_MESSAGE_DEPENDENCIES))
 		udp_socket_sendto(context->control, &count, sizeof(count), socket_address_local(context->client));
 	return ret;
 }
 
 static int
-resource_sourced_read_read_blob_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_sourced_read_read_blob_result(remote_context_t* context, remote_header_t msg,
+                                       remote_message_t waiting) {
 	log_info(HASH_RESOURCE, STRING_CONST("Read read blob result from remote sourced service"));
 	sourced_read_blob_reply_t reply;
-	int ret = sourced_read_read_blob_reply(context->remote, msg.size, &reply, waiting.store, waiting.capacity);
+	int ret = sourced_read_read_blob_reply(context->remote, msg.size, &reply, waiting.store,
+	                                       waiting.capacity);
 	if ((ret >= 0) && (waiting.message == REMOTE_MESSAGE_READ_BLOB)) {
-		uint32_t status = ((waiting.checksum == reply.checksum) && (waiting.capacity >= reply.size)) ? 1 : 0;
+		uint32_t status = ((waiting.checksum == reply.checksum) &&
+		                   (waiting.capacity >= reply.size)) ? 1 : 0;
 		udp_socket_sendto(context->control, &status, sizeof(status), socket_address_local(context->client));
 	}
 	return ret;
+}
+
+static int
+resource_sourced_read_notify(remote_context_t* context, remote_header_t msg) {
+	log_info(HASH_RESOURCE, STRING_CONST("Read notify from remote sourced service"));
+	sourced_notify_t notify;
+	int ret = sourced_read_notify(context->remote, msg.size, &notify);
+	if (ret >= 0) {
+		switch (msg.id) {
+		case SOURCED_NOTIFY_CREATE:
+			resource_event_post(RESOURCEEVENT_CREATE, notify.uuid, notify.token);
+			break;
+		case SOURCED_NOTIFY_MODIFY:
+			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.token);
+			break;
+		case SOURCED_NOTIFY_DELETE:
+			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
+			break;
+		}
+	}
+	return 0;
 }
 
 static int
@@ -383,6 +415,11 @@ resource_sourced_read(remote_context_t* context, remote_header_t msg, remote_mes
 
 	case SOURCED_READ_BLOB_RESULT:
 		return resource_sourced_read_read_blob_result(context, msg, waiting);
+
+	case SOURCED_NOTIFY_CREATE:
+	case SOURCED_NOTIFY_MODIFY:
+	case SOURCED_NOTIFY_DELETE:
+		return resource_sourced_read_notify(context, msg);
 
 	default:
 		break;
@@ -550,7 +587,8 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps,
+                                     size_t capacity) {
 	if (!_sourced_initialized)
 		return 0;
 
@@ -637,7 +675,8 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps,
+                                     size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
@@ -684,7 +723,6 @@ typedef struct compiled_stream_t compiled_stream_t;
 struct compiled_stream_t {
 	FOUNDATION_DECLARE_STREAM;
 	socket_t* sock;
-	network_poll_t* poll;
 
 	size_t total_read;
 	size_t stream_size;
@@ -702,7 +740,8 @@ resource_compiled_stream_read(stream_t* rawstream, void* buffer, size_t size) {
 				break;
 			thread_yield();
 		}
-	} while (total < size);
+	}
+	while (total < size);
 	stream->total_read += total;
 	return total;
 }
@@ -739,7 +778,7 @@ resource_compiled_stream_last_modified(const stream_t* stream) {
 }
 
 static stream_t*
-resource_compiled_stream_allocate(socket_t* sock, size_t size, network_poll_t* poll) {
+resource_compiled_stream_allocate(socket_t* sock, size_t size) {
 	compiled_stream_t* stream = memory_allocate(HASH_NETWORK, sizeof(compiled_stream_t), 0,
 	                                            MEMORY_PERSISTENT | MEMORY_ZERO_INITIALIZED);
 
@@ -753,7 +792,6 @@ resource_compiled_stream_allocate(socket_t* sock, size_t size, network_poll_t* p
 	stream->sock = sock;
 	stream->total_read = 0;
 	stream->stream_size = size;
-	stream->poll = poll;
 
 	return (stream_t*)stream;
 }
@@ -761,7 +799,11 @@ resource_compiled_stream_allocate(socket_t* sock, size_t size, network_poll_t* p
 static void
 resource_compiled_stream_finalize(stream_t* rawstream) {
 	compiled_stream_t* stream = (compiled_stream_t*)rawstream;
-	network_poll_add_socket(stream->poll, stream->sock);
+	network_poll_add_socket(_compiled_context.poll, stream->sock);
+	remote_message_t wakeup;
+	wakeup.message = REMOTE_MESSAGE_WAKEUP;
+	udp_socket_sendto(&_compiled_client, &wakeup, sizeof(wakeup),
+	                  socket_address_local(&_compiled_proxy));
 }
 
 static int
@@ -778,7 +820,8 @@ resource_compiled_streams_initialize(void) {
 }
 
 static int
-resource_compiled_read_open_static_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_compiled_read_open_static_result(remote_context_t* context, remote_header_t msg,
+                                          remote_message_t waiting) {
 	compiled_open_result_t result;
 	log_info(HASH_RESOURCE, STRING_CONST("Read open static result from remote compiled service"));
 	int ret = compiled_read_open_static_reply(context->remote, msg.size, &result);
@@ -792,7 +835,8 @@ resource_compiled_read_open_static_result(remote_context_t* context, remote_head
 }
 
 static int
-resource_compiled_read_open_dynamic_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
+resource_compiled_read_open_dynamic_result(remote_context_t* context, remote_header_t msg,
+                                           remote_message_t waiting) {
 	compiled_open_result_t result;
 	log_info(HASH_RESOURCE, STRING_CONST("Read open dynamic result from remote compiled service"));
 	int ret = compiled_read_open_dynamic_reply(context->remote, msg.size, &result);
@@ -806,6 +850,27 @@ resource_compiled_read_open_dynamic_result(remote_context_t* context, remote_hea
 }
 
 static int
+resource_compiled_read_notify(remote_context_t* context, remote_header_t msg) {
+	log_info(HASH_RESOURCE, STRING_CONST("Read notify from remote compiled service"));
+	compiled_notify_t notify;
+	int ret = compiled_read_notify(context->remote, msg.size, &notify);
+	if (ret >= 0) {
+		switch (msg.id) {
+		case COMPILED_NOTIFY_CREATE:
+			resource_event_post(RESOURCEEVENT_CREATE, notify.uuid, notify.token);
+			break;
+		case COMPILED_NOTIFY_MODIFY:
+			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.token);
+			break;
+		case COMPILED_NOTIFY_DELETE:
+			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
+			break;
+		}
+	}
+	return 0;
+}
+
+static int
 resource_compiled_read(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
 	switch (msg.id) {
 	case COMPILED_OPEN_STATIC_RESULT:
@@ -813,6 +878,11 @@ resource_compiled_read(remote_context_t* context, remote_header_t msg, remote_me
 
 	case COMPILED_OPEN_DYNAMIC_RESULT:
 		return resource_compiled_read_open_dynamic_result(context, msg, waiting);
+
+	case COMPILED_NOTIFY_CREATE:
+	case COMPILED_NOTIFY_MODIFY:
+	case COMPILED_NOTIFY_DELETE:
+		return resource_compiled_read_notify(context, msg);
 
 	default:
 		break;
@@ -929,7 +999,7 @@ resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
 	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
-			return resource_compiled_stream_allocate(_compiled_context.remote, size, _compiled_context.poll);
+			return resource_compiled_stream_allocate(_compiled_context.remote, size);
 	}
 
 	return nullptr;
@@ -952,7 +1022,7 @@ resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
 	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
-			return resource_compiled_stream_allocate(_compiled_context.remote, size, _compiled_context.poll);
+			return resource_compiled_stream_allocate(_compiled_context.remote, size);
 	}
 
 	return nullptr;

@@ -30,13 +30,18 @@ typedef struct compiled_message_t compiled_message_t;
 typedef struct compiled_open_static_t compiled_open_static_t;
 typedef struct compiled_open_dynamic_t compiled_open_dynamic_t;
 typedef struct compiled_open_result_t compiled_open_result_t;
+typedef struct compiled_notify_t compiled_notify_t;
 
 enum compiled_message_id {
 	COMPILED_OPEN_STATIC,
 	COMPILED_OPEN_STATIC_RESULT,
 
 	COMPILED_OPEN_DYNAMIC,
-	COMPILED_OPEN_DYNAMIC_RESULT
+	COMPILED_OPEN_DYNAMIC_RESULT,
+
+	COMPILED_NOTIFY_CREATE,
+	COMPILED_NOTIFY_MODIFY,
+	COMPILED_NOTIFY_DELETE
 };
 
 enum compiled_result_id {
@@ -73,6 +78,12 @@ struct compiled_open_result_t {
 	uint64_t stream_size;
 };
 
+struct compiled_notify_t {
+	COMPILED_DECLARE_MESSAGE;
+	uuid_t uuid;
+	uint64_t token;
+};
+
 int
 compiled_write_open_static(socket_t* sock, uuid_t uuid, uint64_t platform);
 
@@ -90,3 +101,9 @@ compiled_write_open_static_reply(socket_t* sock, bool success, size_t size);
 
 int
 compiled_write_open_dynamic_reply(socket_t* sock, bool success, size_t size);
+
+int
+compiled_write_notify(socket_t* sock, compiled_message_id id, uuid_t uuid, hash_t token);
+
+int
+compiled_read_notify(socket_t* sock, size_t size, compiled_notify_t* notify);

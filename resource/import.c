@@ -122,7 +122,7 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 					string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
 					if (line.length)
 						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
-					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
+						          STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 				}
 				if (process_wait(&proc) == 0)
 					was_imported = true;
@@ -369,6 +369,7 @@ resource_import_lookup(const char* path, size_t length) {
 
 static mutex_t* _resource_autoimport_lock;
 static string_t* _resource_autoimport_dir;
+static atomic64_t _resource_autoimport_token;
 
 int
 resource_autoimport_initialize(void) {
@@ -380,6 +381,11 @@ void
 resource_autoimport_finalize(void) {
 	resource_autoimport_clear();
 	mutex_deallocate(_resource_autoimport_lock);
+}
+
+static hash_t
+resource_autoimport_token(void) {
+	return atomic_incr64(&_resource_autoimport_token);
 }
 
 static string_t
@@ -451,6 +457,23 @@ resource_autoimport(const uuid_t uuid) {
 	return false;
 }
 
+static bool
+resource_autoimport_source_changed(uuid_t uuid, const char* path, size_t length,
+                                   uint256_t curhash, uint256_t* newhash) {
+	stream_t* stream = stream_open(path, length, STREAM_IN);
+	uint256_t testhash = stream_sha256(stream);
+	stream_deallocate(stream);
+	if (newhash)
+		*newhash = testhash;
+	if (!uint256_equal(curhash, testhash)) {
+		string_const_t uuidstr = string_from_uuid_static(uuid);
+		log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, source hash changed: %.*s"),
+		           STRING_FORMAT(uuidstr));
+		return true;
+	}
+	return false;
+}
+
 bool
 resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	union {
@@ -469,15 +492,8 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	mutex_unlock(_resource_autoimport_lock);
 	if (path.length) {
 		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
-		stream_t* stream = stream_open(STRING_ARGS(path), STREAM_IN);
-		uint256_t newhash = stream_sha256(stream);
-		stream_deallocate(stream);
-		if (!uint256_equal(sig.hash, newhash)) {
-			uuidstr = string_from_uuid_static(uuid);
-			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, source hash changed: %.*s"),
-			           STRING_FORMAT(uuidstr));
+		if (resource_autoimport_source_changed(uuid, STRING_ARGS(path), sig.hash, nullptr))
 			return true;
-		}
 
 		uuid_t* localdeps = buffer.deps;
 		size_t capacity = sizeof(buffer.deps) / sizeof(uuid_t);
@@ -598,6 +614,9 @@ resource_autoimport_clear(void) {
 	mutex_unlock(_resource_autoimport_lock);
 }
 
+static uuid_t _resource_autoimport_last_uuid;
+static uint256_t _resource_autoimport_last_hash;
+
 void
 resource_autoimport_event_handle(event_t* event) {
 	if (!resource_module_config().enable_local_autoimport)
@@ -611,11 +630,20 @@ resource_autoimport_event_handle(event_t* event) {
 	for (size_t ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
 		if (path_subpath(STRING_ARGS(path), STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
 			const resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
-			if (!uuid_is_null(sig.uuid)) {
-				const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
-				log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s)"),
-				           STRING_FORMAT(path), STRING_FORMAT(uuidstr));
-				resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid);
+			uint256_t newhash;
+			if (!uuid_is_null(sig.uuid) &&
+			        resource_autoimport_source_changed(sig.uuid, STRING_ARGS(path), sig.hash, &newhash)) {
+				//Suppress multiple events on same file in sequence
+				if (!uuid_equal(sig.uuid, _resource_autoimport_last_uuid) ||
+				        !uint256_equal(newhash, _resource_autoimport_last_hash)) {
+					_resource_autoimport_last_uuid = sig.uuid;
+					_resource_autoimport_last_hash = newhash;
+
+					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
+					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s)"),
+					           STRING_FORMAT(path), STRING_FORMAT(uuidstr));
+					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, resource_autoimport_token());
+				}
 			}
 		}
 	}
