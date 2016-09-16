@@ -199,9 +199,10 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 			process_set_flags(&proc, PROCESS_STDSTREAMS | PROCESS_DETACHED);
 
 			if (process_spawn(&proc) == PROCESS_STILL_ACTIVE) {
-				stream_t* out = process_stderr(&proc);
-				while (!stream_eos(out)) {
-					string_t line = stream_read_line_buffer(out, buffer, sizeof(buffer), '\n');
+				stream_t* err = process_stderr(&proc);
+				stream_finalize(process_stdout(&proc));
+				while (!stream_eos(err)) {
+					string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
 					if (line.length)
 						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
 					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));

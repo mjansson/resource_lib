@@ -355,8 +355,9 @@ server_write_stream_to_socket(stream_t* stream, socket_t* sock) {
 		if (read) {
 			size_t total = 0;
 			do {
-				size_t wrote = socket_write(sock, buffer, read);
-				if (wrote != read) {
+				size_t want_write = read - total;
+				size_t wrote = socket_write(sock, pointer_offset(buffer, total), want_write);
+				if (wrote != want_write) {
 					if (socket_state(sock) != SOCKETSTATE_CONNECTED) {
 						ret = -1;
 						break;

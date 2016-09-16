@@ -93,7 +93,7 @@ resource_remote_comm(void* arg) {
 
 	socket_t remote;
 	tcp_socket_initialize(&remote);
-	socket_set_blocking(&remote, false);
+	socket_set_blocking(&remote, true);
 	context->remote = &remote;
 
 	remote_poll_t fixedpoll;

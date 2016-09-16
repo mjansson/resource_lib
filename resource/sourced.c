@@ -284,17 +284,24 @@ sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_
 		limit = capacity;
 	*count = limit;
 
-	size_t want_read = limit * sizeof(uuid_t);
-	read = socket_read(sock, deps, want_read);
-	if (read != want_read) {
+	read = 0;
+	limit *= sizeof(uuid_t);
+	while (read < limit) {
+		size_t want_read = limit - read;
+		size_t this_read = socket_read(sock, pointer_offset(deps, read), want_read);
+		read += this_read;
+		if (!this_read)
+			break;
+	}
+	if (read != limit) {
 		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
-		          read, want_read);
+		          read, limit);
 		return -1;
 	}
 
 	while (read < size) {
 		char buffer[256];
-		want_read = size - read;
+		size_t want_read = size - read;
 		if (want_read > sizeof(buffer))
 			want_read = sizeof(buffer);
 		size_t this_read = socket_read(sock, buffer, want_read);
@@ -337,7 +344,7 @@ sourced_write_read_blob_reply(socket_t* sock, hash_t checksum, void* store, size
 		size
 	};
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
-		if (socket_write(sock, &reply, reply_size) == reply_size) {
+		if (socket_write(sock, &reply, sizeof(sourced_read_blob_reply_t)) == sizeof(sourced_read_blob_reply_t)) {
 			if (socket_write(sock, store, size) == size)
 				return 0;
 		}
@@ -347,27 +354,25 @@ sourced_write_read_blob_reply(socket_t* sock, hash_t checksum, void* store, size
 
 int
 sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_reply_t* reply, void* store, size_t capacity) {
-	sourced_reply_t header;
-	size_t read = socket_read(sock, &header, sizeof(header));
-	if (read != sizeof(header)) {
-		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
-		          read, sizeof(header));
-		return -1;
-	}
-	size -= sizeof(header);
-
-	read = socket_read(sock, reply, sizeof(sourced_read_blob_reply_t));
+	size_t read = socket_read(sock, reply, sizeof(sourced_read_blob_reply_t));
 	if (read != sizeof(sourced_read_blob_reply_t)) {
 		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
 		          read, sizeof(sourced_read_blob_reply_t));
 		return -1;
 	}
-	size -= sizeof(header);
+	size -= sizeof(sourced_read_blob_reply_t);
 
+	read = 0;
 	size_t limit = size;
 	if (limit > capacity)
 		limit = capacity;
-	read = socket_read(sock, store, limit);
+	while (read < limit) {
+		size_t want_read = limit - read;
+		size_t this_read = socket_read(sock, pointer_offset(store, read), want_read);
+		read += this_read;
+		if (!this_read)
+			break;
+	}
 	if (read != limit) {
 		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
 		          read, limit);
@@ -381,7 +386,7 @@ sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_repl
 			want_read = sizeof(buffer);
 		size_t this_read = socket_read(sock, buffer, want_read);
 		if (this_read != want_read) {
-			log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
+			log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial read blob reply: %" PRIsize " of %" PRIsize),
 			          read + this_read, size);
 			return -1;
 		}
