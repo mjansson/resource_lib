@@ -185,6 +185,7 @@ resource_remote_comm(void* arg) {
 					if (!had_header) {
 						size_t read = socket_read(&remote, &msg, sizeof(msg));
 						if (read != sizeof(msg)) {
+							log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Failed to read remote message header"));
 							socket_close(&remote);
 							network_poll_update_socket(poll, &remote);
 							connected = false;
@@ -192,7 +193,8 @@ resource_remote_comm(void* arg) {
 						}
 					}
 
-					if (context->read(context, msg, waiting) < 0) {
+					int result = context->read(context, msg, waiting);
+					if (result < 0) {
 						if (had_header) {
 							log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Failed to read remote message"));
 							socket_close(&remote);
@@ -205,7 +207,7 @@ resource_remote_comm(void* arg) {
 							remote.data.header.size = msg.size;
 						}
 					}
-					else {
+					else if (result == 0) {
 						waiting.message = REMOTE_MESSAGE_NONE;
 					}
 				}
@@ -394,8 +396,9 @@ resource_sourced_read_notify(remote_context_t* context, remote_header_t msg) {
 			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
 			break;
 		}
+		return 1; //Don't clear waiting message on notifies
 	}
-	return 0;
+	return -1;
 }
 
 static int
@@ -866,8 +869,9 @@ resource_compiled_read_notify(remote_context_t* context, remote_header_t msg) {
 			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
 			break;
 		}
+		return 1; //Don't clear waiting message on notifies
 	}
-	return 0;
+	return -1;
 }
 
 static int
