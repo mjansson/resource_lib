@@ -139,6 +139,49 @@ resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
 	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_IN | STREAM_BINARY);
 }
 
+#else
+
+const string_const_t*
+resource_local_paths(void) {
+	return nullptr;
+}
+
+void
+resource_local_set_paths(const string_const_t* paths, size_t num) {
+	FOUNDATION_UNUSED(paths);
+	FOUNDATION_UNUSED(num);
+}
+
+void
+resource_local_add_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_local_remove_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_local_clear_paths(void) {
+}
+
+stream_t*
+resource_local_open_static(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
+}
+
+stream_t*
+resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
+}
+
 #endif
 
 #if RESOURCE_ENABLE_LOCAL_CACHE && RESOURCE_ENABLE_LOCAL_SOURCE
@@ -153,6 +196,22 @@ stream_t*
 resource_local_create_dynamic(const uuid_t uuid, uint64_t platform) {
 	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"),
 	                                  STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
+}
+
+#else
+
+stream_t*
+resource_local_create_static(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
+}
+
+stream_t*
+resource_local_create_dynamic(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
 }
 
 #endif

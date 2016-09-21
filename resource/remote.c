@@ -662,6 +662,26 @@ resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platfo
 
 #else
 
+string_const_t
+resource_remote_sourced(void) {
+	return string_empty();
+}
+
+void
+resource_remote_sourced_connect(const char* url, size_t length) {
+	FOUNDATION_UNUSED(url);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_remote_sourced_disconnect(void) {
+}
+
+bool
+resource_remote_sourced_is_connected(void) {
+	return false;
+}
+
 resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
@@ -1029,6 +1049,37 @@ resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
 			return resource_compiled_stream_allocate(_compiled_context.remote, size);
 	}
 
+	return nullptr;
+}
+
+#else
+
+string_const_t
+resource_remote_compiled(void) {
+	return string_empty();
+}
+
+void
+resource_remote_compiled_connect(const char* url, size_t length) {
+	FOUNDATION_UNUSED(url);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_remote_compiled_disconnect(void) {
+}
+
+stream_t*
+resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;
+}
+
+stream_t*
+resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
 	return nullptr;
 }
 

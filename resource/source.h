@@ -22,8 +22,6 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
 RESOURCE_API string_const_t
 resource_source_path(void);
 
@@ -121,32 +119,3 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 
 RESOURCE_API void
 resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num);
-
-#else
-
-#define resource_source_set_path(...) false
-#define resource_source_path() string_empty()
-#define resource_source_allocate() nullptr
-#define resource_source_deallocate(source) memory_deallocate(source)
-#define resource_source_initialize(source) ((void)sizeof(source))
-#define resource_source_finalize(source) ((void)sizeof(source))
-#define resource_source_read_hash(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), uint256_null()
-#define resource_source_set(source, timestamp, key, platform, ...) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
-#define resource_source_unset(source, timestamp, key, platform) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
-#define resource_source_read(source, uuid) (((void)sizeof(source)), ((void)sizeof(uuid)), false)
-#define resource_source_write(source, uuid, binary) (((void)sizeof(source)), ((void)sizeof(uuid)), ((void)sizeof(binary)), false)
-#define resource_source_set_blob(source, timestamp, key, platform, checksum, size) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(size))
-#define resource_source_read_blob(uuid, key, platform, checksum, data, capacity) (((void)sizeof(uuid)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(capacity)), false)
-#define resource_source_write_blob(uuid, timestamp, key, platform, checksum, data, size) (((void)sizeof(uuid)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(size)), false)
-#define resource_source_collapse_history(source) ((void)sizeof(source))
-#define resource_source_clear_blob_history(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)) 
-#define resource_source_map(source, platform, map) ((void)sizeof(source)), ((void)sizeof(platform)), ((void)sizeof(map))
-#define resource_source_map_all(source, map, all_platforms) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(all_platforms))
-#define resource_source_map_iterate(source, map, data, iterate) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
-#define resource_source_map_reduce(source, map, data, reduce) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
-#define resource_source_map_clear(map) ((void)sizeof(map))
-#define resource_source_num_dependencies(uuid, platform) ((void)sizeof(uuid)), ((void)sizeof(platform)), 0
-#define resource_source_dependencies(uuid, platform, deps, capacity) ((void)sizeof(uuid)), ((void)sizeof(platform)), ((void)sizeof(deps)), ((void)sizeof(capacity)), 0
-#define resource_source_set_dependencies(uuid, platform, deps, num) ((void)sizeof(uuid)), ((void)sizeof(platform)), ((void)sizeof(deps)), ((void)sizeof(num))
-
-#endif

@@ -97,5 +97,61 @@ resource_change_block_finalize(resource_change_block_t* block) {
 		resource_change_block_deallocate(block->next);
 }
 
+#else
+
+bool
+resource_change_is_value(resource_change_t* change) {
+	FOUNDATION_UNUSED(change);
+	return false;
+}
+
+bool
+resource_change_is_blob(resource_change_t* change) {
+	FOUNDATION_UNUSED(change);
+	return false;	
+}
+
+resource_change_data_t*
+resource_change_data_allocate(size_t size) {
+	FOUNDATION_UNUSED(size);
+	return nullptr;
+}
+
+void
+resource_change_data_deallocate(resource_change_data_t* data) {
+	memory_deallocate(data);
+}
+
+void
+resource_change_data_initialize(resource_change_data_t* data, void* buffer, size_t size) {
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(buffer);
+	FOUNDATION_UNUSED(size);
+}
+
+void
+resource_change_data_finalize(resource_change_data_t* data) {
+	FOUNDATION_UNUSED(data);
+}
+
+resource_change_block_t*
+resource_change_block_allocate(void) {
+	return nullptr;
+}
+
+void
+resource_change_block_deallocate(resource_change_block_t* block) {
+	memory_deallocate(block);
+}
+
+void
+resource_change_block_initialize(resource_change_block_t* block) {
+	FOUNDATION_UNUSED(block);
+}
+
+void
+resource_change_block_finalize(resource_change_block_t* block) {
+	FOUNDATION_UNUSED(block);
+}
 
 #endif

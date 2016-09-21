@@ -68,8 +68,8 @@ resource_autoimport_unwatch(const char* path, size_t length);
 RESOURCE_API void
 resource_autoimport_clear(void);
 
-/*! Handle foundation events. No other event types should be
-passed to this function.
+/*! Handle foundation events from fs_event_stream event stream.
+No other event types should be passed to this function.
 \param event Foundation event */
 RESOURCE_API void
 resource_autoimport_event_handle(event_t* event);

@@ -792,4 +792,195 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 	stream_deallocate(stream);
 }
 
+#else
+
+string_const_t
+resource_source_path(void) {
+	return string_empty();
+}
+
+bool
+resource_source_set_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	return false;
+}
+
+uint256_t
+resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return uint256_null();
+}
+
+resource_source_t*
+resource_source_allocate(void) {
+	return nullptr;
+}
+
+void
+resource_source_deallocate(resource_source_t* source) {
+	memory_deallocate(source);
+}
+
+void
+resource_source_initialize(resource_source_t* source) {
+	FOUNDATION_UNUSED(source);
+}
+
+void
+resource_source_finalize(resource_source_t* source) {
+	FOUNDATION_UNUSED(source);
+}
+
+bool
+resource_source_read(resource_source_t* source, const uuid_t uuid) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+	return false;
+}
+
+bool
+resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(binary);
+	return false;
+}
+
+void
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key,
+                    uint64_t platform, const char* value, size_t length) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(value);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
+                      uint64_t platform) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+}
+
+resource_change_t*
+resource_source_get(resource_source_t* source, hash_t key, uint64_t platform) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;
+}
+
+void
+resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key,
+                         uint64_t platform, hash_t checksum, size_t size) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(checksum);
+	FOUNDATION_UNUSED(size);
+}
+
+bool
+resource_source_read_blob(const uuid_t uuid, hash_t key,
+                          uint64_t platform, hash_t checksum, void* data, size_t capacity) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(checksum);
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(capacity);
+	return false;
+}
+
+bool
+resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
+                           uint64_t platform, hash_t checksum, const void* data, size_t size) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(checksum);
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(size);
+	return false;
+
+}
+
+void
+resource_source_collapse_history(resource_source_t* source) {
+	FOUNDATION_UNUSED(source);
+}
+
+void
+resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+}
+
+void
+resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(map);
+}
+
+void
+resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_timestamps) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(map);
+	FOUNDATION_UNUSED(all_timestamps);
+}
+
+void
+resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* data,
+                            resource_source_map_iterate_fn iterate) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(map);
+	FOUNDATION_UNUSED(data);
+}
+
+void
+resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
+                           resource_source_map_reduce_fn reduce) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(map);
+	FOUNDATION_UNUSED(data);
+}
+
+void
+resource_source_map_clear(hashmap_t* map) {
+	FOUNDATION_UNUSED(map);
+}
+
+size_t
+resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return 0;
+}
+
+size_t
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(deps);
+	FOUNDATION_UNUSED(capacity);
+	return 0;
+}
+
+void
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(deps);
+	FOUNDATION_UNUSED(num);
+}
+
 #endif
