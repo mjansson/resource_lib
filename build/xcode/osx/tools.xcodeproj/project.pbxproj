@@ -1,0 +1,467 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		CDFE0CF61D940FE800E11451 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDFE0CB81D9409EF00E11451 /* Carbon.framework */; };
+		CDFE0CF71D940FE800E11451 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454170CC1A03D19900CA967E /* Cocoa.framework */; };
+		CDFE0CF81D940FE800E11451 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454170CD1A03D19900CA967E /* CoreFoundation.framework */; };
+		CDFE0CFA1D940FE800E11451 /* libresource.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CDFE0CF91D940FE800E11451 /* libresource.a */; };
+		CDFE0CFE1D94100F00E11451 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = CDFE0CFD1D94100F00E11451 /* main.c */; };
+		CDFE0D0A1D94104B00E11451 /* libresource.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CDFE0CF91D940FE800E11451 /* libresource.a */; };
+		CDFE0D0B1D94104B00E11451 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDFE0CB81D9409EF00E11451 /* Carbon.framework */; };
+		CDFE0D0C1D94104B00E11451 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454170CC1A03D19900CA967E /* Cocoa.framework */; };
+		CDFE0D0D1D94104B00E11451 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454170CD1A03D19900CA967E /* CoreFoundation.framework */; };
+		CDFE0D121D94106600E11451 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = CDFE0D0F1D94106600E11451 /* main.c */; };
+		CDFE0D131D94106600E11451 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = CDFE0D101D94106600E11451 /* server.c */; };
+		CDFE0D1F1D9410B700E11451 /* libresource.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CDFE0CF91D940FE800E11451 /* libresource.a */; };
+		CDFE0D201D9410B700E11451 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDFE0CB81D9409EF00E11451 /* Carbon.framework */; };
+		CDFE0D211D9410B700E11451 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454170CC1A03D19900CA967E /* Cocoa.framework */; };
+		CDFE0D221D9410B700E11451 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 454170CD1A03D19900CA967E /* CoreFoundation.framework */; };
+		CDFE0D271D9410CF00E11451 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = CDFE0D241D9410CF00E11451 /* main.c */; };
+		CDFE0D281D9410CF00E11451 /* server.c in Sources */ = {isa = PBXBuildFile; fileRef = CDFE0D251D9410CF00E11451 /* server.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CDFE0CED1D940F5600E11451 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		CDFE0D011D94103E00E11451 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		CDFE0D161D9410A900E11451 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		454170CC1A03D19900CA967E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		454170CD1A03D19900CA967E /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		CDFE0CB81D9409EF00E11451 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		CDFE0CEF1D940F5600E11451 /* resource */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = resource; sourceTree = BUILT_PRODUCTS_DIR; };
+		CDFE0CF91D940FE800E11451 /* libresource.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresource.a; path = ../../../lib/macosx/debug/libresource.a; sourceTree = "<group>"; };
+		CDFE0CFC1D94100F00E11451 /* errorcodes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = errorcodes.h; path = ../../../tools/resource/errorcodes.h; sourceTree = "<group>"; };
+		CDFE0CFD1D94100F00E11451 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../tools/resource/main.c; sourceTree = "<group>"; };
+		CDFE0D031D94103E00E11451 /* sourced */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = sourced; sourceTree = BUILT_PRODUCTS_DIR; };
+		CDFE0D0F1D94106600E11451 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../tools/sourced/main.c; sourceTree = "<group>"; };
+		CDFE0D101D94106600E11451 /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = server.c; path = ../../../tools/sourced/server.c; sourceTree = "<group>"; };
+		CDFE0D111D94106600E11451 /* server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = server.h; path = ../../../tools/sourced/server.h; sourceTree = "<group>"; };
+		CDFE0D181D9410A900E11451 /* compiled */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = compiled; sourceTree = BUILT_PRODUCTS_DIR; };
+		CDFE0D241D9410CF00E11451 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../tools/compiled/main.c; sourceTree = "<group>"; };
+		CDFE0D251D9410CF00E11451 /* server.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = server.c; path = ../../../tools/compiled/server.c; sourceTree = "<group>"; };
+		CDFE0D261D9410CF00E11451 /* server.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = server.h; path = ../../../tools/compiled/server.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CDFE0CEC1D940F5600E11451 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDFE0CFA1D940FE800E11451 /* libresource.a in Frameworks */,
+				CDFE0CF61D940FE800E11451 /* Carbon.framework in Frameworks */,
+				CDFE0CF71D940FE800E11451 /* Cocoa.framework in Frameworks */,
+				CDFE0CF81D940FE800E11451 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CDFE0D001D94103E00E11451 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDFE0D0A1D94104B00E11451 /* libresource.a in Frameworks */,
+				CDFE0D0B1D94104B00E11451 /* Carbon.framework in Frameworks */,
+				CDFE0D0C1D94104B00E11451 /* Cocoa.framework in Frameworks */,
+				CDFE0D0D1D94104B00E11451 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CDFE0D151D9410A900E11451 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDFE0D1F1D9410B700E11451 /* libresource.a in Frameworks */,
+				CDFE0D201D9410B700E11451 /* Carbon.framework in Frameworks */,
+				CDFE0D211D9410B700E11451 /* Cocoa.framework in Frameworks */,
+				CDFE0D221D9410B700E11451 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		454170B31A03CC3A00CA967E = {
+			isa = PBXGroup;
+			children = (
+				CDFE0D231D9410BF00E11451 /* compiled */,
+				CDFE0CFB1D940FFF00E11451 /* resource */,
+				CDFE0D0E1D94105200E11451 /* sourced */,
+				454170D01A03D2C100CA967E /* framework */,
+				454170BF1A03CC7B00CA967E /* bin */,
+			);
+			sourceTree = "<group>";
+		};
+		454170BF1A03CC7B00CA967E /* bin */ = {
+			isa = PBXGroup;
+			children = (
+				CDFE0CEF1D940F5600E11451 /* resource */,
+				CDFE0D031D94103E00E11451 /* sourced */,
+				CDFE0D181D9410A900E11451 /* compiled */,
+			);
+			name = bin;
+			sourceTree = "<group>";
+		};
+		454170D01A03D2C100CA967E /* framework */ = {
+			isa = PBXGroup;
+			children = (
+				CDFE0CF91D940FE800E11451 /* libresource.a */,
+				CDFE0CB81D9409EF00E11451 /* Carbon.framework */,
+				454170CC1A03D19900CA967E /* Cocoa.framework */,
+				454170CD1A03D19900CA967E /* CoreFoundation.framework */,
+			);
+			name = framework;
+			sourceTree = "<group>";
+		};
+		CDFE0CFB1D940FFF00E11451 /* resource */ = {
+			isa = PBXGroup;
+			children = (
+				CDFE0CFC1D94100F00E11451 /* errorcodes.h */,
+				CDFE0CFD1D94100F00E11451 /* main.c */,
+			);
+			name = resource;
+			sourceTree = "<group>";
+		};
+		CDFE0D0E1D94105200E11451 /* sourced */ = {
+			isa = PBXGroup;
+			children = (
+				CDFE0D0F1D94106600E11451 /* main.c */,
+				CDFE0D101D94106600E11451 /* server.c */,
+				CDFE0D111D94106600E11451 /* server.h */,
+			);
+			name = sourced;
+			sourceTree = "<group>";
+		};
+		CDFE0D231D9410BF00E11451 /* compiled */ = {
+			isa = PBXGroup;
+			children = (
+				CDFE0D241D9410CF00E11451 /* main.c */,
+				CDFE0D251D9410CF00E11451 /* server.c */,
+				CDFE0D261D9410CF00E11451 /* server.h */,
+			);
+			name = compiled;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CDFE0CEE1D940F5600E11451 /* resource */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CDFE0CF51D940F5600E11451 /* Build configuration list for PBXNativeTarget "resource" */;
+			buildPhases = (
+				CDFE0CEB1D940F5600E11451 /* Sources */,
+				CDFE0CEC1D940F5600E11451 /* Frameworks */,
+				CDFE0CED1D940F5600E11451 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = resource;
+			productName = resource;
+			productReference = CDFE0CEF1D940F5600E11451 /* resource */;
+			productType = "com.apple.product-type.tool";
+		};
+		CDFE0D021D94103E00E11451 /* sourced */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CDFE0D071D94103E00E11451 /* Build configuration list for PBXNativeTarget "sourced" */;
+			buildPhases = (
+				CDFE0CFF1D94103E00E11451 /* Sources */,
+				CDFE0D001D94103E00E11451 /* Frameworks */,
+				CDFE0D011D94103E00E11451 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = sourced;
+			productName = sourced;
+			productReference = CDFE0D031D94103E00E11451 /* sourced */;
+			productType = "com.apple.product-type.tool";
+		};
+		CDFE0D171D9410A900E11451 /* compiled */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CDFE0D1C1D9410A900E11451 /* Build configuration list for PBXNativeTarget "compiled" */;
+			buildPhases = (
+				CDFE0D141D9410A900E11451 /* Sources */,
+				CDFE0D151D9410A900E11451 /* Frameworks */,
+				CDFE0D161D9410A900E11451 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = compiled;
+			productName = compiled;
+			productReference = CDFE0D181D9410A900E11451 /* compiled */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		454170B41A03CC3A00CA967E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0730;
+				TargetAttributes = {
+					CDFE0CEE1D940F5600E11451 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					CDFE0D021D94103E00E11451 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+					CDFE0D171D9410A900E11451 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 454170B71A03CC3A00CA967E /* Build configuration list for PBXProject "tools" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 454170B31A03CC3A00CA967E;
+			productRefGroup = 454170BF1A03CC7B00CA967E /* bin */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CDFE0CEE1D940F5600E11451 /* resource */,
+				CDFE0D021D94103E00E11451 /* sourced */,
+				CDFE0D171D9410A900E11451 /* compiled */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		CDFE0CEB1D940F5600E11451 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDFE0CFE1D94100F00E11451 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CDFE0CFF1D94103E00E11451 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDFE0D131D94106600E11451 /* server.c in Sources */,
+				CDFE0D121D94106600E11451 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CDFE0D141D9410A900E11451 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CDFE0D281D9410CF00E11451 /* server.c in Sources */,
+				CDFE0D271D9410CF00E11451 /* main.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		454170B81A03CC3A00CA967E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/debug;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_FAST_MATH = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_DEBUG=1";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_WARN_PEDANTIC = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../../../foundation_lib,
+					../../../../network_lib,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../lib/macosx,
+					../../../lib/macosx/debug,
+					../../../../network_lib/lib/macosx/debug,
+					../../../../foundation_lib/lib/macosx/debug,
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				OTHER_LDFLAGS = (
+					"-lresource",
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
+				SDKROOT = macosx;
+				USE_HEADERMAP = NO;
+			};
+			name = Debug;
+		};
+		454170B91A03CC3A00CA967E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/release;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_FAST_MATH = YES;
+				GCC_OPTIMIZATION_LEVEL = fast;
+				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_RELEASE=1";
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_UNROLL_LOOPS = YES;
+				GCC_WARN_PEDANTIC = YES;
+				HEADER_SEARCH_PATHS = (
+					../../..,
+					../../../../foundation_lib,
+					../../../../network_lib,
+					"$(inherited)",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../../lib/macosx,
+					../../../lib/macosx/debug,
+					../../../../network_lib/lib/macosx/debug,
+					../../../../foundation_lib/lib/macosx/debug,
+					"$(inherited)",
+				);
+				LLVM_LTO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
+				OTHER_LDFLAGS = (
+					"-lresource",
+					"-lnetwork",
+					"-lfoundation",
+				);
+				PRECOMPS_INCLUDE_HEADERS_FROM_BUILT_PRODUCTS_DIR = NO;
+				SDKROOT = macosx;
+				USE_HEADERMAP = NO;
+			};
+			name = Release;
+		};
+		CDFE0CF31D940F5600E11451 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CDFE0CF41D940F5600E11451 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CDFE0D081D94103E00E11451 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CDFE0D091D94103E00E11451 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		CDFE0D1D1D9410A900E11451 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		CDFE0D1E1D9410A900E11451 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		454170B71A03CC3A00CA967E /* Build configuration list for PBXProject "tools" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				454170B81A03CC3A00CA967E /* Debug */,
+				454170B91A03CC3A00CA967E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CDFE0CF51D940F5600E11451 /* Build configuration list for PBXNativeTarget "resource" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CDFE0CF31D940F5600E11451 /* Debug */,
+				CDFE0CF41D940F5600E11451 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		CDFE0D071D94103E00E11451 /* Build configuration list for PBXNativeTarget "sourced" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CDFE0D081D94103E00E11451 /* Debug */,
+				CDFE0D091D94103E00E11451 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		CDFE0D1C1D9410A900E11451 /* Build configuration list for PBXNativeTarget "compiled" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CDFE0D1D1D9410A900E11451 /* Debug */,
+				CDFE0D1E1D9410A900E11451 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 454170B41A03CC3A00CA967E /* Project object */;
+}

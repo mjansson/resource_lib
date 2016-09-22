@@ -234,7 +234,7 @@ server_serve(void* arg) {
 
 		for (ievt = 0; ievt < count; ++ievt) {
 			if (events[ievt].socket == control_socket) {
-				network_address_t* addr;
+				const network_address_t* addr;
 				if (udp_socket_recvfrom(control_socket, &message, sizeof(message), &addr) != sizeof(message))
 					continue;
 				if (!network_address_equal(addr, local_addr))

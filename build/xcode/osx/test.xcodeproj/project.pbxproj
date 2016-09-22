@@ -90,7 +90,6 @@
 		CD5BC2891D84089E00899D05 = {
 			isa = PBXGroup;
 			children = (
-				CD5BC2B31D84104200899D05 /* libresource.a */,
 				CD5BC2981D84093800899D05 /* all */,
 				CD5BC2A91D840FF100899D05 /* source */,
 				CD5BC2BE1D84122300899D05 /* framework */,
@@ -128,6 +127,7 @@
 		CD5BC2BE1D84122300899D05 /* framework */ = {
 			isa = PBXGroup;
 			children = (
+				CD5BC2B31D84104200899D05 /* libresource.a */,
 				CD5BC2BC1D84121100899D05 /* Carbon.framework */,
 				CD5BC2B81D8411E600899D05 /* Cocoa.framework */,
 				CD5BC2B91D8411E600899D05 /* CoreFoundation.framework */,
@@ -518,6 +518,7 @@
 				CD5BC29F1D84093800899D05 /* Deploy */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Deploy;
 		};
 		CD5BC2AC1D840FF100899D05 /* Build configuration list for PBXNativeTarget "test-source" */ = {
 			isa = XCConfigurationList;
@@ -528,6 +529,7 @@
 				CD5BC2B01D840FF100899D05 /* Deploy */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Deploy;
 		};
 /* End XCConfigurationList section */
 	};

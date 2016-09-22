@@ -24,6 +24,12 @@
 
 #include <network/network.h>
 
+#if FOUNDATION_PLATFORM_LINUX || FOUNDATION_PLATFORM_ANDROID
+#  include <sys/epoll.h>
+#elif FOUNDATION_PLATFORM_MACOSX || FOUNDATION_PLATFORM_IOS
+#  include <sys/poll.h>
+#endif
+
 #define REMOTE_CONNECT_BACKOFF_MIN (2 * 1000)
 #define REMOTE_CONNECT_BACKOFF_MAX (60 * 1000)
 
@@ -61,7 +67,7 @@ struct remote_message_t {
 };
 
 struct remote_poll_t {
-	NETWORK_DECLARE_POLL(2);
+	NETWORK_DECLARE_FIXEDSIZE_POLL(2);
 };
 
 struct remote_context_t {
@@ -150,7 +156,7 @@ resource_remote_comm(void* arg) {
 
 					string_t addrstr = network_address_to_string(addrbuf, sizeof(addrbuf),
 					                                             socket_address_remote(&remote), true);
-					log_infof(HASH_RESOURCE, STRING_CONST("Connected to remote address: %.*s"),
+					log_infof(HASH_RESOURCE, STRING_CONST("Connection completed to remote address: %.*s"),
 					          STRING_FORMAT(addrstr));
 				}
 				else if ((events[ievt].event == NETWORKEVENT_ERROR) ||
@@ -653,7 +659,7 @@ resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platfo
 		return false;
 
 	uint32_t status = 0;
-	network_address_t* addr;
+	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_sourced_client, &status, sizeof(status), &addr) == sizeof(status))
 		return status > 0;
 
