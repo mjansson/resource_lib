@@ -130,7 +130,17 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	}
 
 	resource_source_initialize(&source);
-	if (resource_source_read(&source, uuid)) {
+	bool was_read = resource_source_read(&source, uuid);
+	if (!was_read) {
+		resource_source_finalize(&source);
+	
+		//Try reimporting
+		resource_autoimport(uuid);
+
+		resource_source_initialize(&source);
+		was_read = resource_source_read(&source, uuid);
+	}
+	if (was_read) {
 		uint256_t source_hash;
 		resource_change_t* change;
 
