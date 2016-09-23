@@ -659,6 +659,15 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 	return false;
 }
 
+resource_signature_t
+resource_import_lookup(const char* path, size_t length) {
+	resource_signature_t sig;
+	memset(&sig, 0, sizeof(sig));
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	return sig;
+}
+
 void
 resource_import_register(resource_import_fn importer) {
 	FOUNDATION_UNUSED(importer);

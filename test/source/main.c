@@ -285,8 +285,6 @@ DECLARE_TEST(source, unset) {
 	return 0;
 }
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
 static resource_change_t*
 resource_unique_set_per_platform(resource_change_t* change, resource_change_t* best, void* data) {
 	int* result = (int*)data;
@@ -308,8 +306,6 @@ resource_unique_set_per_platform(resource_change_t* change, resource_change_t* b
 	}
 	return change;
 }
-
-#endif
 
 DECLARE_TEST(source, collapse) {
 	hashmap_fixed_t fixedmap;

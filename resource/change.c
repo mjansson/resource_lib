@@ -43,6 +43,7 @@ resource_change_data_allocate(size_t size) {
 }
 
 void resource_change_data_deallocate(resource_change_data_t* data) {
+	resource_change_data_finalize(data);
 	memory_deallocate(data);
 }
 
@@ -52,6 +53,11 @@ resource_change_data_initialize(resource_change_data_t* data, void* buffer, size
 	data->size = size;
 	data->used = 0;
 	data->next = 0;
+}
+
+void
+resource_change_data_finalize(resource_change_data_t* data) {
+	FOUNDATION_UNUSED(data);
 }
 
 resource_change_block_t*
