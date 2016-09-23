@@ -23,22 +23,13 @@
 
 #define COMPILED_PROTOCOL_VERSION 1
 
-typedef enum compiled_message_id compiled_message_id;
-typedef enum compiled_result_id compiled_result_id;
-
-typedef struct compiled_message_t compiled_message_t;
-typedef struct compiled_open_static_t compiled_open_static_t;
-typedef struct compiled_open_dynamic_t compiled_open_dynamic_t;
-typedef struct compiled_open_result_t compiled_open_result_t;
-typedef struct compiled_notify_t compiled_notify_t;
-
 enum compiled_message_id {
 	COMPILED_OPEN_STATIC,
 	COMPILED_OPEN_STATIC_RESULT,
-
+	
 	COMPILED_OPEN_DYNAMIC,
 	COMPILED_OPEN_DYNAMIC_RESULT,
-
+	
 	COMPILED_NOTIFY_CREATE,
 	COMPILED_NOTIFY_MODIFY,
 	COMPILED_NOTIFY_DELETE
@@ -48,6 +39,15 @@ enum compiled_result_id {
 	COMPILED_OK = 0,
 	COMPILED_FAILED
 };
+
+typedef enum compiled_message_id compiled_message_id;
+typedef enum compiled_result_id compiled_result_id;
+
+typedef struct compiled_message_t compiled_message_t;
+typedef struct compiled_open_static_t compiled_open_static_t;
+typedef struct compiled_open_dynamic_t compiled_open_dynamic_t;
+typedef struct compiled_open_result_t compiled_open_result_t;
+typedef struct compiled_notify_t compiled_notify_t;
 
 #define COMPILED_DECLARE_MESSAGE \
 	uint32_t id; \
