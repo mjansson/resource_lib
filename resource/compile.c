@@ -21,12 +21,6 @@
 
 #include <foundation/foundation.h>
 
-#if FOUNDATION_PLATFORM_WINDOWS
-#  define RESOURCE_COMPILER_PATTERN "^.*compile\\.exe$"
-#else
-#  define RESOURCE_COMPILER_PATTERN "^.*compile$"
-#endif
-
 static resource_compile_fn* _resource_compilers;
 static string_t* _resource_compile_tool_path;
 
@@ -44,6 +38,12 @@ resource_compile_finalize(void) {
 }
 
 #if (RESOURCE_ENABLE_LOCAL_SOURCE || RESOURCE_ENABLE_REMOTE_SOURCED) && RESOURCE_ENABLE_LOCAL_CACHE
+
+#if FOUNDATION_PLATFORM_WINDOWS
+#  define RESOURCE_COMPILER_PATTERN "^.*compile\\.exe$"
+#else
+#  define RESOURCE_COMPILER_PATTERN "^.*compile$"
+#endif
 
 bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform) {

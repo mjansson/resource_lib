@@ -283,6 +283,8 @@ exit:
 
 static resource_change_t* 
 resource_dump_fn(resource_change_t* change, resource_change_t* best, void* data) {
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(best);
 	if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
 		log_infof(HASH_RESOURCE, STRING_CONST("BLOB %" PRItick " %" PRIhash " %" PRIx64 " : %" PRIhash " (%" PRIsize ")"),
 		          change->timestamp, change->hash, change->platform, change->value.blob.checksum, change->value.blob.size);

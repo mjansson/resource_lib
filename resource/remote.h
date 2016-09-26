@@ -59,6 +59,9 @@ resource_remote_compiled_connect(const char* url, size_t length);
 RESOURCE_API void
 resource_remote_compiled_disconnect(void);
 
+RESOURCE_API bool
+resource_remote_compiled_is_connected(void);
+
 RESOURCE_API stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform);
 

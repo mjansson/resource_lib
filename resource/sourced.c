@@ -148,23 +148,23 @@ sourced_write_read_reply(socket_t* sock, resource_source_t* source, uint256_t ha
 
 		size = sizeof(sourced_read_result_t) + walker.size + (sizeof(sourced_change_t) * walker.count);
 		
-		sourced_read_result_t* result = memory_allocate(HASH_RESOURCE, size, 0, MEMORY_PERSISTENT);
-		result->result = SOURCED_OK;
-		result->flags = 0;
-		result->hash = hash;
-		result->num_changes = walker.count;
+		sourced_read_result_t* read_result = memory_allocate(HASH_RESOURCE, size, 0, MEMORY_PERSISTENT);
+		read_result->result = SOURCED_OK;
+		read_result->flags = 0;
+		read_result->hash = hash;
+		read_result->num_changes = walker.count;
 
 		walker.count = 0;
 		walker.size = 0;
-		walker.change = (sourced_change_t*)result->payload;
-		walker.payload = result->payload;
-		walker.offset = sizeof(sourced_change_t) * result->num_changes;
+		walker.change = (sourced_change_t*)read_result->payload;
+		walker.payload = (void*)read_result->payload;
+		walker.offset = sizeof(sourced_change_t) * read_result->num_changes;
 
 		resource_source_map_iterate(source, map, &walker, sourced_copy_source);
 		resource_source_map_clear(map);
 		hashmap_finalize(map);
 
-		reply = allocated = result;
+		reply = allocated = read_result;
 	}
 
 	msg.size = (uint32_t)size;

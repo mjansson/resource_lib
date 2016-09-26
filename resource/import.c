@@ -21,12 +21,6 @@
 
 #include <foundation/foundation.h>
 
-#if FOUNDATION_PLATFORM_WINDOWS
-#  define RESOURCE_IMPORTER_PATTERN "^.*import\\.exe$"
-#else
-#  define RESOURCE_IMPORTER_PATTERN "^.*import$"
-#endif
-
 static resource_import_fn* _resource_importers;
 static string_t _resource_import_base_path;
 static string_t* _resource_import_tool_path;
@@ -59,6 +53,12 @@ resource_import_set_base_path(const char* path, size_t length) {
 }
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
+
+#if FOUNDATION_PLATFORM_WINDOWS
+#  define RESOURCE_IMPORTER_PATTERN "^.*import\\.exe$"
+#else
+#  define RESOURCE_IMPORTER_PATTERN "^.*import$"
+#endif
 
 bool
 resource_import(const char* path, size_t length, const uuid_t uuid) {
@@ -385,7 +385,7 @@ resource_autoimport_finalize(void) {
 
 static hash_t
 resource_autoimport_token(void) {
-	return atomic_incr64(&_resource_autoimport_token);
+	return (hash_t)atomic_incr64(&_resource_autoimport_token);
 }
 
 static string_t
@@ -688,14 +688,6 @@ void
 resource_import_unregister_path(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
-}
-
-resource_signature_t
-resource_import_map_lookup(const char* path, size_t length) {
-	resource_signature_t sig = {uuid_null(), uint256_null()};
-	FOUNDATION_UNUSED(path);
-	FOUNDATION_UNUSED(length);
-	return sig;
 }
 
 uuid_t

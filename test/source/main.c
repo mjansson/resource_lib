@@ -61,12 +61,14 @@ DECLARE_TEST(source, set) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
 	resource_source_t source;
-
+	
 	map = (hashmap_t*)&fixedmap;
 
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
 	resource_source_initialize(&source);
-
+	
+	EXPECT_PTREQ(source.first.next, nullptr);
+	
 	resource_change_t* change;
 	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, HASH_TEST);

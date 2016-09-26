@@ -27,7 +27,7 @@ typedef struct {
 	string_const_t    source_path;
 	string_const_t*   config_files;
 	string_const_t    remote_sourced;
-	int               port;
+	unsigned int      port;
 } compiled_input_t;
 
 static compiled_input_t input;
@@ -139,32 +139,32 @@ compiled_parse_config(const char* path, size_t path_size,
 
 static compiled_input_t
 compiled_parse_command_line(const string_const_t* cmdline) {
-	compiled_input_t input;
+	compiled_input_t in;
 	size_t arg, asize;
 
 	error_context_push(STRING_CONST("parse command line"), STRING_CONST(""));
-	memset(&input, 0, sizeof(input));
+	memset(&in, 0, sizeof(in));
 
 	for (arg = 1, asize = array_size(cmdline); arg < asize; ++arg) {
 		if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--help")))
-			input.display_help = true;
+			in.display_help = true;
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--source"))) {
 			if (arg < asize - 1)
-				input.source_path = cmdline[++arg];
+				in.source_path = cmdline[++arg];
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--config"))) {
 			if (arg < asize - 1)
-				array_push(input.config_files, cmdline[++arg]);
+				array_push(in.config_files, cmdline[++arg]);
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--port"))) {
 			if (arg < asize - 1) {
 				string_const_t portstr = cmdline[++arg];
-				input.port = string_to_uint(STRING_ARGS(portstr), false);
+				in.port = string_to_uint(STRING_ARGS(portstr), false);
 			}
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--remote"))) {
 			if (arg < asize - 1)
-				input.remote_sourced = cmdline[++arg];
+				in.remote_sourced = cmdline[++arg];
 		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
@@ -176,7 +176,7 @@ compiled_parse_command_line(const string_const_t* cmdline) {
 	}
 	error_context_pop();
 
-	return input;
+	return in;
 }
 
 static void

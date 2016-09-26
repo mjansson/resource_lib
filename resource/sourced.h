@@ -196,7 +196,7 @@ struct sourced_read_result_t {
 	SOURCED_DECLARE_REPLY;
 	uint256_t hash;
 	uint32_t num_changes;
-	char payload[FOUNDATION_FLEXIBLE_ARRAY];
+	sourced_change_t payload[FOUNDATION_FLEXIBLE_ARRAY];
 };
 
 struct sourced_set_t {

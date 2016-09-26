@@ -17,6 +17,7 @@
  */
 
 #include <resource/resource.h>
+#include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
@@ -119,8 +120,10 @@ resource_remote_comm(void* arg) {
 	size_t iaddr = 0;
 	size_t lastaddr = 0;
 
-	remote_message_t pending = {REMOTE_MESSAGE_NONE, 0, 0};
-	remote_message_t waiting = {REMOTE_MESSAGE_NONE, 0, 0};
+	remote_message_t pending;
+	remote_message_t waiting;
+	memset(&pending, 0, sizeof(pending));
+	memset(&waiting, 0, sizeof(waiting));
 
 	while (!terminate) {
 		size_t ievt;
@@ -326,7 +329,7 @@ resource_sourced_read_read_result(remote_context_t* context, remote_header_t msg
 	int ret = sourced_read_read_reply(context->remote, msg.size, reply);
 	if ((ret >= 0) && (waiting.message == REMOTE_MESSAGE_READ)) {
 		uint32_t status = 1;
-		sourced_change_t* change = (sourced_change_t*)reply->payload;
+		sourced_change_t* change = reply->payload;
 		resource_source_t* source = waiting.store;
 		for (uint32_t ich = 0; ich < reply->num_changes; ++ich, ++change) {
 			if (change->flags & RESOURCE_SOURCEFLAG_BLOB)

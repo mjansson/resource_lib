@@ -24,7 +24,7 @@
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
 static char _resource_source_path_buffer[BUILD_MAX_PATHLEN];
-string_t _resource_source_path;
+static string_t _resource_source_path;
 
 static resource_change_t*
 resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
@@ -137,6 +137,7 @@ resource_source_deallocate(resource_source_t* source) {
 
 void
 resource_source_initialize(resource_source_t* source) {
+	memset(source, 0, sizeof(resource_source_t));
 	resource_change_block_initialize(&source->first);
 	source->current = &source->first;
 }
@@ -825,7 +826,7 @@ resource_source_deallocate(resource_source_t* source) {
 
 void
 resource_source_initialize(resource_source_t* source) {
-	FOUNDATION_UNUSED(source);
+	memset(source, 0, sizeof(resource_source_t));
 }
 
 void
@@ -944,6 +945,7 @@ resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* dat
 	FOUNDATION_UNUSED(source);
 	FOUNDATION_UNUSED(map);
 	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(iterate);
 }
 
 void
@@ -952,6 +954,7 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
 	FOUNDATION_UNUSED(source);
 	FOUNDATION_UNUSED(map);
 	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(reduce);
 }
 
 void

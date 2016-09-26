@@ -92,8 +92,8 @@ void
 resource_change_block_initialize(resource_change_block_t* block) {
 	resource_change_data_initialize(&block->fixed.data, block->fixed.fixed, sizeof(block->fixed.fixed));
 	block->used = 0;
+	block->next = nullptr;
 	block->current_data = &block->fixed.data;
-	block->next = 0;
 }
 
 void
@@ -130,7 +130,7 @@ resource_change_data_deallocate(resource_change_data_t* data) {
 
 void
 resource_change_data_initialize(resource_change_data_t* data, void* buffer, size_t size) {
-	FOUNDATION_UNUSED(data);
+	memset(data, 0, sizeof(resource_change_data_t));
 	FOUNDATION_UNUSED(buffer);
 	FOUNDATION_UNUSED(size);
 }
@@ -152,7 +152,7 @@ resource_change_block_deallocate(resource_change_block_t* block) {
 
 void
 resource_change_block_initialize(resource_change_block_t* block) {
-	FOUNDATION_UNUSED(block);
+	memset(block, 0, sizeof(resource_change_block_t));
 }
 
 void
