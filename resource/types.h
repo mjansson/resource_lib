@@ -70,16 +70,18 @@ struct resource_config_t {
 };
 
 struct resource_platform_t {
-	//! Platform identifier, 7 bits, [0,127)
-	int  platform;
-	//! Render API group identifier, 5 bits, [0,31)
-	int  render_api_group;
-	//! Render API identifier, 7 bits, [0,127)
-	int  render_api;
-	//! Quality level identifier, 4 bits, [0,15)
-	int  quality_level;
-	//! Custom identifier, 8 bits, [0,255)
-	int  custom;
+	//! Platform identifier, 7 bits, [0..126]
+	int platform;
+	//! Architecture identifier, 6 bits, [0..62]
+	int arch;
+	//! Render API group identifier, 5 bits, [0..30]
+	int render_api_group;
+	//! Render API identifier, 7 bits, [0..126]
+	int render_api;
+	//! Quality level identifier, 4 bits, [0..14]
+	int quality_level;
+	//! Custom identifier, 8 bits, [0..254]
+	int custom;
 };
 
 /*! Representation of metadata for a binary data blob */

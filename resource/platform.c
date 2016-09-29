@@ -33,6 +33,7 @@ bits    description       variants
 */
 
 #define RESOURCE_PLATFORM_BITS 7ULL
+#define RESOURCE_ARCH_BITS 7ULL
 #define RESOURCE_RENDERAPIGROUP_BITS 5ULL
 #define RESOURCE_RENDERAPI_BITS 7ULL
 #define RESOURCE_QUALITYLEVEL_BITS 4ULL
@@ -42,7 +43,11 @@ bits    description       variants
 #define RESOURCE_PLATFORM_MASK ((1ULL<<RESOURCE_PLATFORM_BITS)-1ULL)
 #define RESOURCE_PLATFORM_INPLACE (RESOURCE_PLATFORM_MASK<<RESOURCE_PLATFORM_SHIFT)
 
-#define RESOURCE_RENDERAPIGROUP_SHIFT (RESOURCE_PLATFORM_SHIFT+RESOURCE_PLATFORM_BITS)
+#define RESOURCE_ARCH_SHIFT (RESOURCE_PLATFORM_SHIFT+RESOURCE_PLATFORM_BITS)
+#define RESOURCE_ARCH_MASK ((1ULL<<RESOURCE_ARCH_BITS)-1ULL)
+#define RESOURCE_ARCH_INPLACE (RESOURCE_ARCH_MASK<<RESOURCE_ARCH_SHIFT)
+
+#define RESOURCE_RENDERAPIGROUP_SHIFT (RESOURCE_ARCH_SHIFT+RESOURCE_ARCH_BITS)
 #define RESOURCE_RENDERAPIGROUP_MASK ((1ULL<<RESOURCE_RENDERAPIGROUP_BITS)-1ULL)
 #define RESOURCE_RENDERAPIGROUP_INPLACE (RESOURCE_RENDERAPIGROUP_MASK<<RESOURCE_RENDERAPIGROUP_SHIFT)
 
@@ -59,18 +64,21 @@ bits    description       variants
 #define RESOURCE_CUSTOM_INPLACE (RESOURCE_CUSTOM_MASK<<RESOURCE_CUSTOM_SHIFT)
 
 #define RESOURCE_PLATFORM_TO_BITS(platform) (((uint64_t)(platform) & RESOURCE_PLATFORM_MASK) << RESOURCE_PLATFORM_SHIFT)
+#define RESOURCE_ARCH_TO_BITS(platform) (((uint64_t)(platform) & RESOURCE_ARCH_MASK) << RESOURCE_ARCH_SHIFT)
 #define RESOURCE_RENDERAPIGROUP_TO_BITS(renderapi) (((uint64_t)(renderapi) & RESOURCE_RENDERAPIGROUP_MASK) << RESOURCE_RENDERAPIGROUP_SHIFT)
 #define RESOURCE_RENDERAPI_TO_BITS(renderapi) (((uint64_t)(renderapi) & RESOURCE_RENDERAPI_MASK) << RESOURCE_RENDERAPI_SHIFT)
 #define RESOURCE_QUALITYLEVEL_TO_BITS(qualitylevel) (((uint64_t)(qualitylevel) & RESOURCE_QUALITYLEVEL_MASK) << RESOURCE_QUALITYLEVEL_SHIFT)
 #define RESOURCE_CUSTOM_TO_BITS(custom) (((uint64_t)(custom) & RESOURCE_CUSTOM_MASK) << RESOURCE_CUSTOM_SHIFT)
 
 #define RESOURCE_PLATFORM_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_PLATFORM_SHIFT) & RESOURCE_PLATFORM_MASK))
+#define RESOURCE_ARCH_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_ARCH_SHIFT) & RESOURCE_ARCH_MASK))
 #define RESOURCE_RENDERAPIGROUP_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_RENDERAPIGROUP_SHIFT) & RESOURCE_RENDERAPIGROUP_MASK))
 #define RESOURCE_RENDERAPI_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_RENDERAPI_SHIFT) & RESOURCE_RENDERAPI_MASK))
 #define RESOURCE_QUALITYLEVEL_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_QUALITYLEVEL_SHIFT) & RESOURCE_QUALITYLEVEL_MASK))
 #define RESOURCE_CUSTOM_FROM_BITS(bits) ((int)(((bits) >> RESOURCE_CUSTOM_SHIFT) & RESOURCE_CUSTOM_MASK))
 
 #define RESOURCE_PLATFORM_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_PLATFORM_INPLACE) || ((test & RESOURCE_PLATFORM_INPLACE) == (ref & RESOURCE_PLATFORM_INPLACE)))
+#define RESOURCE_ARCH_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_ARCH_INPLACE) || ((test & RESOURCE_ARCH_INPLACE) == (ref & RESOURCE_ARCH_INPLACE)))
 #define RESOURCE_RENDERAPIGROUP_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_RENDERAPIGROUP_INPLACE) || ((test & RESOURCE_RENDERAPIGROUP_INPLACE) == (ref & RESOURCE_RENDERAPIGROUP_INPLACE)))
 #define RESOURCE_RENDERAPI_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_RENDERAPI_INPLACE) || ((test & RESOURCE_RENDERAPI_INPLACE) == (ref & RESOURCE_RENDERAPI_INPLACE)))
 #define RESOURCE_QUALITYLEVEL_EQUAL_OR_MORE_SPECIFIC(test, ref) (!(ref & RESOURCE_QUALITYLEVEL_INPLACE) || ((test & RESOURCE_QUALITYLEVEL_INPLACE) == (ref & RESOURCE_QUALITYLEVEL_INPLACE)))
@@ -81,6 +89,8 @@ resource_platform(const resource_platform_t declaration) {
 	uint64_t compact = 0;
 	if ((declaration.platform >= 0) && ((unsigned int)declaration.platform < RESOURCE_PLATFORM_MASK))
 		compact |= RESOURCE_PLATFORM_TO_BITS(declaration.platform+1);
+	if ((declaration.arch >= 0) && ((unsigned int)declaration.arch < RESOURCE_ARCH_MASK))
+		compact |= RESOURCE_ARCH_TO_BITS(declaration.arch+1);
 	if ((declaration.render_api_group >= 0) &&
 	        ((unsigned int)declaration.render_api_group < RESOURCE_RENDERAPIGROUP_MASK))
 		compact |= RESOURCE_RENDERAPIGROUP_TO_BITS(declaration.render_api_group+1);
@@ -98,6 +108,7 @@ resource_platform_decompose(uint64_t platform) {
 	resource_platform_t decl;
 	memset(&decl, 0, sizeof(decl));
 	decl.platform = RESOURCE_PLATFORM_FROM_BITS(platform) - 1;
+	decl.arch = RESOURCE_ARCH_FROM_BITS(platform) - 1;
 	decl.render_api_group = RESOURCE_RENDERAPIGROUP_FROM_BITS(platform) - 1;
 	decl.render_api = RESOURCE_RENDERAPI_FROM_BITS(platform) - 1;
 	decl.quality_level = RESOURCE_QUALITYLEVEL_FROM_BITS(platform) - 1;
@@ -108,6 +119,7 @@ resource_platform_decompose(uint64_t platform) {
 bool
 resource_platform_is_equal_or_more_specific(uint64_t platform, uint64_t reference) {
 	return (RESOURCE_PLATFORM_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
+	        RESOURCE_ARCH_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
 	        RESOURCE_RENDERAPIGROUP_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
 	        RESOURCE_RENDERAPI_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
 	        RESOURCE_QUALITYLEVEL_EQUAL_OR_MORE_SPECIFIC(platform, reference) &&
@@ -132,6 +144,8 @@ resource_platform_reduce(uint64_t platform, uint64_t full_platform) {
 	platform |= (full_platform & RESOURCE_RENDERAPI_INPLACE) |
 	            (full_platform & RESOURCE_RENDERAPIGROUP_INPLACE);
 
+	if (platform & RESOURCE_ARCH_INPLACE)
+		return platform & ~RESOURCE_ARCH_INPLACE;
 	if (platform & RESOURCE_PLATFORM_INPLACE)
 		return platform & ~RESOURCE_PLATFORM_INPLACE;
 

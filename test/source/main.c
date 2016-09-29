@@ -170,10 +170,10 @@ DECLARE_TEST(source, unset) {
 	//Verify map result for default platform and A-D
 	resource_source_initialize(&source);
 
-	uint64_t platformA = resource_platform((resource_platform_t){1,-1,-1,-1,-1});
-	uint64_t platformB = resource_platform((resource_platform_t){1,2,-1,-1,-1});
-	uint64_t platformC = resource_platform((resource_platform_t){1,2,3,-1,-1});
-	uint64_t platformD = resource_platform((resource_platform_t){1,-1,-1,4,-1});
+	uint64_t platformA = resource_platform((resource_platform_t){1,-1,-1,-1,-1,-1});
+	uint64_t platformB = resource_platform((resource_platform_t){1,2,-1,-1,-1,-1});
+	uint64_t platformC = resource_platform((resource_platform_t){1,2,3,-1,-1,-1});
+	uint64_t platformD = resource_platform((resource_platform_t){1,-1,-1,-1,4,-1});
 
 	hash_t keyOne = HASH_TEST;
 	hash_t keyTwo = HASH_RESOURCE;
@@ -324,10 +324,10 @@ DECLARE_TEST(source, collapse) {
 		HASH_NONE, HASH_TRUE, HASH_FALSE, HASH_SYSTEM
 	};
 	const uint64_t platforms[4] = {
-		resource_platform((resource_platform_t){-1,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,2,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,2,3,4,-1})
+		resource_platform((resource_platform_t){-1,-1,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,-1,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,2,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,2,3,4,-1,-1})
 	};
 
 	struct resource_expect_change_t {
