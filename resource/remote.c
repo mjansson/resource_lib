@@ -37,13 +37,22 @@
 #define REMOTE_MESSAGE_NONE 0
 #define REMOTE_MESSAGE_TERMINATE 1
 #define REMOTE_MESSAGE_WAKEUP 2
+
+#if RESOURCE_ENABLE_REMOTE_SOURCED
 #define REMOTE_MESSAGE_LOOKUP 3
 #define REMOTE_MESSAGE_READ 4
 #define REMOTE_MESSAGE_HASH 5
 #define REMOTE_MESSAGE_DEPENDENCIES 6
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
 #define REMOTE_MESSAGE_OPEN_STATIC 7
 #define REMOTE_MESSAGE_OPEN_DYNAMIC 8
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_SOURCED
 #define REMOTE_MESSAGE_READ_BLOB 9
+#endif
 
 typedef struct remote_header_t remote_header_t;
 typedef struct remote_message_t remote_message_t;
@@ -752,7 +761,7 @@ static stream_vtable_t _compiled_stream_vtable;
 
 typedef struct compiled_stream_t compiled_stream_t;
 
-struct compiled_stream_t {
+FOUNDATION_ALIGNED_STRUCT(compiled_stream_t, 8) {
 	FOUNDATION_DECLARE_STREAM;
 	socket_t* sock;
 
@@ -811,7 +820,7 @@ resource_compiled_stream_last_modified(const stream_t* stream) {
 
 static stream_t*
 resource_compiled_stream_allocate(socket_t* sock, size_t size) {
-	compiled_stream_t* stream = memory_allocate(HASH_NETWORK, sizeof(compiled_stream_t), 0,
+	compiled_stream_t* stream = memory_allocate(HASH_NETWORK, sizeof(compiled_stream_t), 8,
 	                                            MEMORY_PERSISTENT | MEMORY_ZERO_INITIALIZED);
 
 	//Network streams are always little endian by default
@@ -1028,7 +1037,7 @@ resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
 	                      socket_address_local(&_compiled_proxy)) != sizeof(message))
 		return nullptr;
 
-	uint64_t size = 0;
+	size_t size = 0;
 	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
@@ -1051,7 +1060,7 @@ resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
 	                      socket_address_local(&_compiled_proxy)) != sizeof(message))
 		return nullptr;
 
-	uint64_t size = 0;
+	size_t size = 0;
 	const network_address_t* addr;
 	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)

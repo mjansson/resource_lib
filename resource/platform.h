@@ -49,3 +49,10 @@ resource_platform_is_equal_or_more_specific(uint64_t platform, uint64_t referenc
 \return Reduced platform specifier */
 RESOURCE_API uint64_t
 resource_platform_reduce(uint64_t platform, uint64_t full_platform);
+
+/*! Parse platform declaration string
+\param decl Platform declaration string
+\param length Length of declaration string
+\return Platform specifier */
+RESOURCE_API uint64_t
+resource_platform_parse(const char* decl, size_t length);

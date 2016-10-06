@@ -151,3 +151,29 @@ resource_platform_reduce(uint64_t platform, uint64_t full_platform) {
 
 	return 0;
 }
+
+static uint64_t
+resource_platform_parse_token(const char* token, size_t length) {
+	if (string_equal(token, length, STRING_CONST("ARM8_64")) ||
+	    string_equal(token, length, STRING_CONST("arm8_64")) ||
+	    string_equal(token, length, STRING_CONST("ARM64")) ||
+	    string_equal(token, length, STRING_CONST("arm64")))
+		return (uint64_t)(ARCHITECTURE_ARM8_64 + 1) << RESOURCE_ARCH_SHIFT;
+	return 0;
+}
+
+uint64_t
+resource_platform_parse(const char* decl, size_t length) {
+
+	if (string_find_first_not_of(decl, length, STRING_CONST("0123456789abcdefABCDEF"), 0) == STRING_NPOS)
+		return string_to_uint64(decl, length, true);
+
+	uint64_t platform = 0;
+	string_const_t tokens[32];
+	size_t num_tokens = string_explode(decl, length, STRING_CONST(" ,:;\t"),
+                                       tokens, sizeof(tokens)/sizeof(tokens[0]), false);
+	for (size_t itok = 0; itok < num_tokens; ++itok)
+		platform |= resource_platform_parse_token(STRING_ARGS(tokens[itok]));
+
+	return platform;
+}

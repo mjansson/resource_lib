@@ -77,13 +77,19 @@ resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 	}
 
 	stream = resource_local_open_dynamic(res, platform);
-	if (stream)
+	if (stream) {
+		string_const_t uuidstr = string_from_uuid_static(res);
+		string_const_t path = stream_path(stream);
+		log_infof(HASH_RESOURCE,
+		          STRING_CONST("Opened dynamic stream for resource: %.*s (%" PRIx64 "): %.*s"),
+		          STRING_FORMAT(uuidstr), platform, STRING_FORMAT(path));
 		return stream;
+	}
 
 	string_const_t uuidstr = string_from_uuid_static(res);
 	log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-	          STRING_CONST("Unable to open dynamic stream for resource: %.*s"),
-	          STRING_FORMAT(uuidstr));
+	          STRING_CONST("Unable to open dynamic stream for resource: %.*s (%" PRIx64 ")"),
+	          STRING_FORMAT(uuidstr), platform);
 
 	return 0;
 }

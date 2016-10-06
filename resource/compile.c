@@ -129,6 +129,9 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		}
 	}
 
+	if (resource_autoimport_need_update(uuid, platform))
+		resource_autoimport(uuid);
+
 	resource_source_initialize(&source);
 	bool was_read = resource_source_read(&source, uuid);
 	if (!was_read) {
@@ -217,8 +220,10 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
 					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 				}
-				if (process_wait(&proc) == 0)
+				if (process_wait(&proc) == 0) {
+					log_debugf(HASH_RESOURCE, STRING_CONST("Compiled with external tool: %.*s"), STRING_FORMAT(tools[itool]));
 					success = true;
+				}
 			}
 
 			process_finalize(&proc);
@@ -294,6 +299,17 @@ resource_compile_unregister_path(const char* path, size_t length) {
 	}
 }
 
+void
+resource_compile_clear(void) {
+	array_clear(_resource_compilers);
+}
+
+void
+resource_compile_clear_path(void) {
+	string_array_deallocate_elements(_resource_compile_tool_path);
+	array_clear(_resource_compile_tool_path);
+}
+
 #else
 
 bool
@@ -330,6 +346,14 @@ void
 resource_compile_unregister_path(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_compile_clear(void) {
+}
+
+void
+resource_compile_clear_path(void) {
 }
 
 #endif

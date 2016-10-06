@@ -278,8 +278,8 @@ sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_
 	}
 
 	size -= sizeof(header);
-	uint64_t pending = size / sizeof(uuid_t);
-	uint64_t limit = pending;
+	size_t pending = size / sizeof(uuid_t);
+	size_t limit = pending;
 	if (limit > capacity)
 		limit = capacity;
 	*count = limit;
@@ -294,7 +294,7 @@ sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_
 			break;
 	}
 	if (read != limit) {
-		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIu64),
+		log_warnf(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Read partial dependencies reply: %" PRIsize " of %" PRIsize),
 		          read, limit);
 		return -1;
 	}
