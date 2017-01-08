@@ -10,6 +10,17 @@
 		45670B7119ED95A500BE1677 /* event.c in Sources */ = {isa = PBXBuildFile; fileRef = 45670B6719ED95A500BE1677 /* event.c */; };
 		45670B7219ED95A500BE1677 /* resource.c in Sources */ = {isa = PBXBuildFile; fileRef = 45670B6C19ED95A500BE1677 /* resource.c */; };
 		45670B7319ED95A500BE1677 /* stream.c in Sources */ = {isa = PBXBuildFile; fileRef = 45670B6E19ED95A500BE1677 /* stream.c */; };
+		CD384A731D97D9A6006F177B /* bundle.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A5E1D97D9A6006F177B /* bundle.c */; };
+		CD384A741D97D9A6006F177B /* change.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A601D97D9A6006F177B /* change.c */; };
+		CD384A751D97D9A6006F177B /* compile.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A621D97D9A6006F177B /* compile.c */; };
+		CD384A761D97D9A6006F177B /* compiled.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A641D97D9A6006F177B /* compiled.c */; };
+		CD384A771D97D9A6006F177B /* import.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A661D97D9A6006F177B /* import.c */; };
+		CD384A781D97D9A6006F177B /* local.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A681D97D9A6006F177B /* local.c */; };
+		CD384A791D97D9A6006F177B /* platform.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A6A1D97D9A6006F177B /* platform.c */; };
+		CD384A7A1D97D9A6006F177B /* remote.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A6C1D97D9A6006F177B /* remote.c */; };
+		CD384A7B1D97D9A6006F177B /* source.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A6E1D97D9A6006F177B /* source.c */; };
+		CD384A7C1D97D9A6006F177B /* sourced.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A701D97D9A6006F177B /* sourced.c */; };
+		CD384A7D1D97D9A6006F177B /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = CD384A721D97D9A6006F177B /* version.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,7 +36,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		45670B4019ED950600BE1677 /* libresource.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; name = libresource.a; path = "/Users/mjansson/projects/resource_lib/build/xcode/ios/build/Debug-iphoneos/libresource.a"; sourceTree = "<absolute>"; };
 		45670B6619ED95A500BE1677 /* build.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = build.h; path = ../../../resource/build.h; sourceTree = "<group>"; };
 		45670B6719ED95A500BE1677 /* event.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = event.c; path = ../../../resource/event.c; sourceTree = "<group>"; };
 		45670B6819ED95A500BE1677 /* event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = event.h; path = ../../../resource/event.h; sourceTree = "<group>"; };
@@ -37,6 +47,28 @@
 		45670B6E19ED95A500BE1677 /* stream.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = stream.c; path = ../../../resource/stream.c; sourceTree = "<group>"; };
 		45670B6F19ED95A500BE1677 /* stream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = stream.h; path = ../../../resource/stream.h; sourceTree = "<group>"; };
 		45670B7019ED95A500BE1677 /* types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = types.h; path = ../../../resource/types.h; sourceTree = "<group>"; };
+		CD384A5D1D97D97C006F177B /* libresource.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libresource.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		CD384A5E1D97D9A6006F177B /* bundle.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = bundle.c; path = ../../../resource/bundle.c; sourceTree = "<group>"; };
+		CD384A5F1D97D9A6006F177B /* bundle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bundle.h; path = ../../../resource/bundle.h; sourceTree = "<group>"; };
+		CD384A601D97D9A6006F177B /* change.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = change.c; path = ../../../resource/change.c; sourceTree = "<group>"; };
+		CD384A611D97D9A6006F177B /* change.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = change.h; path = ../../../resource/change.h; sourceTree = "<group>"; };
+		CD384A621D97D9A6006F177B /* compile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = compile.c; path = ../../../resource/compile.c; sourceTree = "<group>"; };
+		CD384A631D97D9A6006F177B /* compile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compile.h; path = ../../../resource/compile.h; sourceTree = "<group>"; };
+		CD384A641D97D9A6006F177B /* compiled.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = compiled.c; path = ../../../resource/compiled.c; sourceTree = "<group>"; };
+		CD384A651D97D9A6006F177B /* compiled.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compiled.h; path = ../../../resource/compiled.h; sourceTree = "<group>"; };
+		CD384A661D97D9A6006F177B /* import.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = import.c; path = ../../../resource/import.c; sourceTree = "<group>"; };
+		CD384A671D97D9A6006F177B /* import.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = import.h; path = ../../../resource/import.h; sourceTree = "<group>"; };
+		CD384A681D97D9A6006F177B /* local.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = local.c; path = ../../../resource/local.c; sourceTree = "<group>"; };
+		CD384A691D97D9A6006F177B /* local.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = local.h; path = ../../../resource/local.h; sourceTree = "<group>"; };
+		CD384A6A1D97D9A6006F177B /* platform.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = platform.c; path = ../../../resource/platform.c; sourceTree = "<group>"; };
+		CD384A6B1D97D9A6006F177B /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = platform.h; path = ../../../resource/platform.h; sourceTree = "<group>"; };
+		CD384A6C1D97D9A6006F177B /* remote.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = remote.c; path = ../../../resource/remote.c; sourceTree = "<group>"; };
+		CD384A6D1D97D9A6006F177B /* remote.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = remote.h; path = ../../../resource/remote.h; sourceTree = "<group>"; };
+		CD384A6E1D97D9A6006F177B /* source.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = source.c; path = ../../../resource/source.c; sourceTree = "<group>"; };
+		CD384A6F1D97D9A6006F177B /* source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = source.h; path = ../../../resource/source.h; sourceTree = "<group>"; };
+		CD384A701D97D9A6006F177B /* sourced.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sourced.c; path = ../../../resource/sourced.c; sourceTree = "<group>"; };
+		CD384A711D97D9A6006F177B /* sourced.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sourced.h; path = ../../../resource/sourced.h; sourceTree = "<group>"; };
+		CD384A721D97D9A6006F177B /* version.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = version.c; path = ../../../resource/version.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +86,7 @@
 			isa = PBXGroup;
 			children = (
 				45670B6519ED959400BE1677 /* resource */,
+				CD384A5D1D97D97C006F177B /* libresource.a */,
 			);
 			sourceTree = "<group>";
 		};
@@ -61,16 +94,37 @@
 			isa = PBXGroup;
 			children = (
 				45670B6619ED95A500BE1677 /* build.h */,
+				CD384A5E1D97D9A6006F177B /* bundle.c */,
+				CD384A5F1D97D9A6006F177B /* bundle.h */,
+				CD384A601D97D9A6006F177B /* change.c */,
+				CD384A611D97D9A6006F177B /* change.h */,
+				CD384A621D97D9A6006F177B /* compile.c */,
+				CD384A631D97D9A6006F177B /* compile.h */,
+				CD384A641D97D9A6006F177B /* compiled.c */,
+				CD384A651D97D9A6006F177B /* compiled.h */,
 				45670B6719ED95A500BE1677 /* event.c */,
 				45670B6819ED95A500BE1677 /* event.h */,
 				45670B6919ED95A500BE1677 /* hashstrings.h */,
 				45670B6A19ED95A500BE1677 /* hashstrings.txt */,
+				CD384A661D97D9A6006F177B /* import.c */,
+				CD384A671D97D9A6006F177B /* import.h */,
 				45670B6B19ED95A500BE1677 /* internal.h */,
+				CD384A681D97D9A6006F177B /* local.c */,
+				CD384A691D97D9A6006F177B /* local.h */,
+				CD384A6A1D97D9A6006F177B /* platform.c */,
+				CD384A6B1D97D9A6006F177B /* platform.h */,
+				CD384A6C1D97D9A6006F177B /* remote.c */,
+				CD384A6D1D97D9A6006F177B /* remote.h */,
 				45670B6C19ED95A500BE1677 /* resource.c */,
 				45670B6D19ED95A500BE1677 /* resource.h */,
+				CD384A6E1D97D9A6006F177B /* source.c */,
+				CD384A6F1D97D9A6006F177B /* source.h */,
+				CD384A701D97D9A6006F177B /* sourced.c */,
+				CD384A711D97D9A6006F177B /* sourced.h */,
 				45670B6E19ED95A500BE1677 /* stream.c */,
 				45670B6F19ED95A500BE1677 /* stream.h */,
 				45670B7019ED95A500BE1677 /* types.h */,
+				CD384A721D97D9A6006F177B /* version.c */,
 			);
 			name = resource;
 			sourceTree = "<group>";
@@ -92,7 +146,7 @@
 			);
 			name = resource;
 			productName = resource;
-			productReference = 45670B4019ED950600BE1677 /* libresource.a */;
+			productReference = CD384A5D1D97D97C006F177B /* libresource.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -101,7 +155,7 @@
 		45670B3819ED950600BE1677 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0600;
+				LastUpgradeCheck = 0800;
 				ORGANIZATIONNAME = "Rampant Pixels AB";
 				TargetAttributes = {
 					45670B3F19ED950600BE1677 = {
@@ -132,8 +186,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				45670B7119ED95A500BE1677 /* event.c in Sources */,
+				CD384A741D97D9A6006F177B /* change.c in Sources */,
 				45670B7219ED95A500BE1677 /* resource.c in Sources */,
+				CD384A781D97D9A6006F177B /* local.c in Sources */,
+				CD384A7D1D97D9A6006F177B /* version.c in Sources */,
+				CD384A751D97D9A6006F177B /* compile.c in Sources */,
+				CD384A771D97D9A6006F177B /* import.c in Sources */,
+				CD384A7B1D97D9A6006F177B /* source.c in Sources */,
+				CD384A7A1D97D9A6006F177B /* remote.c in Sources */,
+				CD384A7C1D97D9A6006F177B /* sourced.c in Sources */,
+				CD384A791D97D9A6006F177B /* platform.c in Sources */,
+				CD384A761D97D9A6006F177B /* compiled.c in Sources */,
 				45670B7319ED95A500BE1677 /* stream.c in Sources */,
+				CD384A731D97D9A6006F177B /* bundle.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,26 +209,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/ios/debug;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -173,24 +226,18 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_THREADSAFE_STATICS = NO;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					../../../lib/macosx/debug,
 					../../../../foundation_lib/lib/macosx/debug,
 				);
-				MTL_ENABLE_DEBUG_INFO = YES;
 				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
 			};
@@ -200,51 +247,32 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/ios/release;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_RELEASE=1";
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_UNROLL_LOOPS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					../../../lib/macosx/release,
 					../../../../foundation_lib/lib/macosx/release,
 				);
 				LLVM_LTO = YES;
-				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
 				VALIDATE_PRODUCT = YES;
@@ -254,7 +282,6 @@
 		45670B5219ED950600BE1677 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -263,7 +290,6 @@
 		45670B5319ED950600BE1677 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -273,51 +299,32 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/ios/profile;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_PROFILE=1";
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_UNROLL_LOOPS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					../../../lib/macosx/profile,
 					../../../../foundation_lib/lib/macosx/profile,
 				);
 				LLVM_LTO = YES;
-				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
 				VALIDATE_PRODUCT = YES;
@@ -327,7 +334,6 @@
 		45670B7519ED998F00BE1677 /* Profile */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};
@@ -337,51 +343,32 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/ios/deploy;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_DEPLOY=1";
 				GCC_THREADSAFE_STATICS = NO;
 				GCC_UNROLL_LOOPS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 6.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					../../../lib/macosx/deploy,
 					../../../../foundation_lib/lib/macosx/deploy,
 				);
 				LLVM_LTO = YES;
-				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
 				VALIDATE_PRODUCT = YES;
@@ -391,7 +378,6 @@
 		45670B7919ED99A400BE1677 /* Deploy */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 			};

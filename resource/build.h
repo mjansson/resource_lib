@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -50,10 +50,16 @@
 #  define RESOURCE_ENABLE_LOCAL_CACHE 0
 #endif
 
-#if !BUILD_DEPLOY || !RESOURCE_ENABLE_LOCAL_CACHE
-#  define RESOURCE_ENABLE_REMOTE_CACHE 1
+#if !FOUNDATION_PLATFORM_FAMILY_CONSOLE && !BUILD_DEPLOY
+#  define RESOURCE_ENABLE_REMOTE_SOURCED 1
 #else
-#  define RESOURCE_ENABLE_REMOTE_CACHE 0
+#  define RESOURCE_ENABLE_REMOTE_SOURCED 0
+#endif
+
+#if !BUILD_DEPLOY || !RESOURCE_ENABLE_LOCAL_CACHE
+#  define RESOURCE_ENABLE_REMOTE_COMPILED 1
+#else
+#  define RESOURCE_ENABLE_REMOTE_COMPILED 0
 #endif
 
 /*! Number of changes in a change block */
@@ -62,7 +68,10 @@
 /*! Initial size of change block string data */
 #define RESOURCE_CHANGE_BLOCK_DATA_SIZE 1024
 
+/*! Name of import map files */
+#define RESOURCE_IMPORT_MAP "import.map"
+
 //Make sure we have at least one way of loading resources
-#if !RESOURCE_ENABLE_REMOTE_CACHE && !RESOURCE_ENABLE_LOCAL_CACHE
+#if !RESOURCE_ENABLE_REMOTE_COMPILED && !RESOURCE_ENABLE_LOCAL_CACHE
 #  error Invalid build configuration, no way of loading resources
 #endif

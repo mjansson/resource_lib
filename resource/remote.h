@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -22,25 +22,48 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_REMOTE_CACHE
-
 RESOURCE_API string_const_t
-resource_remote_url(void);
+resource_remote_sourced(void);
 
 RESOURCE_API void
-resource_remote_set_url(const char* url, size_t length);
+resource_remote_sourced_connect(const char* url, size_t length);
+
+RESOURCE_API void
+resource_remote_sourced_disconnect(void);
+
+RESOURCE_API bool
+resource_remote_sourced_is_connected(void);
+
+RESOURCE_API resource_signature_t
+resource_remote_sourced_lookup(const char* path, size_t length);
+
+RESOURCE_API uint256_t
+resource_remote_sourced_hash(uuid_t uuid, uint64_t platform);
+
+RESOURCE_API size_t
+resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+
+RESOURCE_API bool
+resource_remote_sourced_read(resource_source_t* source, uuid_t uuid);
+
+RESOURCE_API bool
+resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platform,
+                                  hash_t checksum, void* data, size_t capacity);
+
+RESOURCE_API string_const_t
+resource_remote_compiled(void);
+
+RESOURCE_API void
+resource_remote_compiled_connect(const char* url, size_t length);
+
+RESOURCE_API void
+resource_remote_compiled_disconnect(void);
+
+RESOURCE_API bool
+resource_remote_compiled_is_connected(void);
 
 RESOURCE_API stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API stream_t*
 resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform);
-
-#else
-
-#define resource_remote_url() string_empty()
-#define resource_remote_set_url(...) do { FOUNDATION_UNUSED_VARARGS(__VA_ARGS__); } while(0)
-#define resource_remote_open_static(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
-#define resource_remote_open_dynamic(uuid, platform) (((void)sizeof(uuid)), ((void)sizeof(platform)), (void*)0)
-
-#endif

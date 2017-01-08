@@ -23,6 +23,21 @@
 		4572E4FD1A44CA84001F198E /* local.h in Headers */ = {isa = PBXBuildFile; fileRef = 4572E4F81A44CA84001F198E /* local.h */; };
 		4572E4FE1A44CA84001F198E /* remote.c in Sources */ = {isa = PBXBuildFile; fileRef = 4572E4F91A44CA84001F198E /* remote.c */; };
 		4572E4FF1A44CA84001F198E /* remote.h in Headers */ = {isa = PBXBuildFile; fileRef = 4572E4FA1A44CA84001F198E /* remote.h */; };
+		CD5BC27A1D84069000899D05 /* change.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC26B1D84069000899D05 /* change.c */; };
+		CD5BC27B1D84069000899D05 /* change.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC26C1D84069000899D05 /* change.h */; };
+		CD5BC27C1D84069000899D05 /* compile.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC26D1D84069000899D05 /* compile.c */; };
+		CD5BC27D1D84069000899D05 /* compile.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC26E1D84069000899D05 /* compile.h */; };
+		CD5BC27E1D84069000899D05 /* compiled.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC26F1D84069000899D05 /* compiled.c */; };
+		CD5BC27F1D84069000899D05 /* compiled.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC2701D84069000899D05 /* compiled.h */; };
+		CD5BC2801D84069000899D05 /* import.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2711D84069000899D05 /* import.c */; };
+		CD5BC2811D84069000899D05 /* import.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC2721D84069000899D05 /* import.h */; };
+		CD5BC2821D84069000899D05 /* platform.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2731D84069000899D05 /* platform.c */; };
+		CD5BC2831D84069000899D05 /* platform.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC2741D84069000899D05 /* platform.h */; };
+		CD5BC2841D84069000899D05 /* source.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2751D84069000899D05 /* source.c */; };
+		CD5BC2851D84069000899D05 /* source.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC2761D84069000899D05 /* source.h */; };
+		CD5BC2861D84069000899D05 /* sourced.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2771D84069000899D05 /* sourced.c */; };
+		CD5BC2871D84069000899D05 /* sourced.h in Headers */ = {isa = PBXBuildFile; fileRef = CD5BC2781D84069000899D05 /* sourced.h */; };
+		CD5BC2881D84069000899D05 /* version.c in Sources */ = {isa = PBXBuildFile; fileRef = CD5BC2791D84069000899D05 /* version.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -44,6 +59,21 @@
 		4572E4F81A44CA84001F198E /* local.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = local.h; path = ../../../resource/local.h; sourceTree = "<group>"; };
 		4572E4F91A44CA84001F198E /* remote.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = remote.c; path = ../../../resource/remote.c; sourceTree = "<group>"; };
 		4572E4FA1A44CA84001F198E /* remote.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = remote.h; path = ../../../resource/remote.h; sourceTree = "<group>"; };
+		CD5BC26B1D84069000899D05 /* change.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = change.c; path = ../../../resource/change.c; sourceTree = "<group>"; };
+		CD5BC26C1D84069000899D05 /* change.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = change.h; path = ../../../resource/change.h; sourceTree = "<group>"; };
+		CD5BC26D1D84069000899D05 /* compile.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = compile.c; path = ../../../resource/compile.c; sourceTree = "<group>"; };
+		CD5BC26E1D84069000899D05 /* compile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compile.h; path = ../../../resource/compile.h; sourceTree = "<group>"; };
+		CD5BC26F1D84069000899D05 /* compiled.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = compiled.c; path = ../../../resource/compiled.c; sourceTree = "<group>"; };
+		CD5BC2701D84069000899D05 /* compiled.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = compiled.h; path = ../../../resource/compiled.h; sourceTree = "<group>"; };
+		CD5BC2711D84069000899D05 /* import.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = import.c; path = ../../../resource/import.c; sourceTree = "<group>"; };
+		CD5BC2721D84069000899D05 /* import.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = import.h; path = ../../../resource/import.h; sourceTree = "<group>"; };
+		CD5BC2731D84069000899D05 /* platform.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = platform.c; path = ../../../resource/platform.c; sourceTree = "<group>"; };
+		CD5BC2741D84069000899D05 /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = platform.h; path = ../../../resource/platform.h; sourceTree = "<group>"; };
+		CD5BC2751D84069000899D05 /* source.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = source.c; path = ../../../resource/source.c; sourceTree = "<group>"; };
+		CD5BC2761D84069000899D05 /* source.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = source.h; path = ../../../resource/source.h; sourceTree = "<group>"; };
+		CD5BC2771D84069000899D05 /* sourced.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sourced.c; path = ../../../resource/sourced.c; sourceTree = "<group>"; };
+		CD5BC2781D84069000899D05 /* sourced.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sourced.h; path = ../../../resource/sourced.h; sourceTree = "<group>"; };
+		CD5BC2791D84069000899D05 /* version.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = version.c; path = ../../../resource/version.c; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,20 +110,35 @@
 				45670B1E19DA810400BE1677 /* build.h */,
 				4572E4F41A44CA6F001F198E /* bundle.c */,
 				4572E4F61A44CA84001F198E /* bundle.h */,
+				CD5BC26B1D84069000899D05 /* change.c */,
+				CD5BC26C1D84069000899D05 /* change.h */,
+				CD5BC26D1D84069000899D05 /* compile.c */,
+				CD5BC26E1D84069000899D05 /* compile.h */,
+				CD5BC26F1D84069000899D05 /* compiled.c */,
+				CD5BC2701D84069000899D05 /* compiled.h */,
 				45670B1F19DA810400BE1677 /* hashstrings.h */,
 				45670B2019DA810400BE1677 /* hashstrings.txt */,
 				45670B3319ED7A7F00BE1677 /* event.c */,
 				45670B3119ED797800BE1677 /* event.h */,
+				CD5BC2711D84069000899D05 /* import.c */,
+				CD5BC2721D84069000899D05 /* import.h */,
 				45670B2119DA810400BE1677 /* internal.h */,
 				4572E4F71A44CA84001F198E /* local.c */,
 				4572E4F81A44CA84001F198E /* local.h */,
+				CD5BC2731D84069000899D05 /* platform.c */,
+				CD5BC2741D84069000899D05 /* platform.h */,
 				4572E4F91A44CA84001F198E /* remote.c */,
 				4572E4FA1A44CA84001F198E /* remote.h */,
 				45670B2219DA810400BE1677 /* resource.c */,
 				45670B2319DA810400BE1677 /* resource.h */,
 				45670B3519ED941E00BE1677 /* stream.c */,
 				45670B2F19ED762500BE1677 /* stream.h */,
+				CD5BC2751D84069000899D05 /* source.c */,
+				CD5BC2761D84069000899D05 /* source.h */,
+				CD5BC2771D84069000899D05 /* sourced.c */,
+				CD5BC2781D84069000899D05 /* sourced.h */,
 				45670B2419DA810400BE1677 /* types.h */,
+				CD5BC2791D84069000899D05 /* version.c */,
 			);
 			name = resource;
 			sourceTree = "<group>";
@@ -105,16 +150,23 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CD5BC27D1D84069000899D05 /* compile.h in Headers */,
 				4572E4FD1A44CA84001F198E /* local.h in Headers */,
 				4572E4FB1A44CA84001F198E /* bundle.h in Headers */,
+				CD5BC2811D84069000899D05 /* import.h in Headers */,
 				45670B3019ED762500BE1677 /* stream.h in Headers */,
+				CD5BC27B1D84069000899D05 /* change.h in Headers */,
+				CD5BC2831D84069000899D05 /* platform.h in Headers */,
+				CD5BC27F1D84069000899D05 /* compiled.h in Headers */,
 				45670B2919DA810400BE1677 /* resource.h in Headers */,
 				4572E4FF1A44CA84001F198E /* remote.h in Headers */,
 				45670B2719DA810400BE1677 /* internal.h in Headers */,
 				45670B3219ED797800BE1677 /* event.h in Headers */,
+				CD5BC2871D84069000899D05 /* sourced.h in Headers */,
 				45670B2519DA810400BE1677 /* build.h in Headers */,
 				45670B2A19DA810400BE1677 /* types.h in Headers */,
 				45670B2619DA810400BE1677 /* hashstrings.h in Headers */,
+				CD5BC2851D84069000899D05 /* source.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -144,7 +196,7 @@
 		45670AE419DA7F3C00BE1677 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0600;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = "Rampant Pixels AB";
 				TargetAttributes = {
 					45670AEB19DA7F3D00BE1677 = {
@@ -175,8 +227,16 @@
 			buildActionMask = 2147483647;
 			files = (
 				45670B3419ED7A7F00BE1677 /* event.c in Sources */,
+				CD5BC27E1D84069000899D05 /* compiled.c in Sources */,
+				CD5BC2801D84069000899D05 /* import.c in Sources */,
 				45670B2819DA810400BE1677 /* resource.c in Sources */,
+				CD5BC2881D84069000899D05 /* version.c in Sources */,
 				45670B3619ED941E00BE1677 /* stream.c in Sources */,
+				CD5BC2821D84069000899D05 /* platform.c in Sources */,
+				CD5BC2841D84069000899D05 /* source.c in Sources */,
+				CD5BC27C1D84069000899D05 /* compile.c in Sources */,
+				CD5BC2861D84069000899D05 /* sourced.c in Sources */,
+				CD5BC27A1D84069000899D05 /* change.c in Sources */,
 				4572E4FC1A44CA84001F198E /* local.c in Sources */,
 				4572E4F51A44CA6F001F198E /* bundle.c in Sources */,
 				4572E4FE1A44CA84001F198E /* remote.c in Sources */,
@@ -190,26 +250,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/macosx/debug;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -219,24 +266,20 @@
 				);
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_THREADSAFE_STATICS = NO;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_WARN_PEDANTIC = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
 					../../../lib/macosx/debug,
 					../../../../foundation_lib/lib/macosx/debug,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				MTL_ENABLE_DEBUG_INFO = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 				USE_HEADERMAP = NO;
 			};
@@ -246,42 +289,26 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/macosx/release;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_RELEASE=1";
 				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_UNROLL_LOOPS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
+				GCC_WARN_PEDANTIC = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
@@ -289,8 +316,7 @@
 					../../../../foundation_lib/lib/macosx/release,
 				);
 				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				MTL_ENABLE_DEBUG_INFO = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 				USE_HEADERMAP = NO;
 			};
@@ -316,42 +342,26 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/macosx/profile;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_PROFILE=1";
 				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_UNROLL_LOOPS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
+				GCC_WARN_PEDANTIC = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
@@ -359,8 +369,7 @@
 					../../../../foundation_lib/lib/macosx/profile,
 				);
 				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				MTL_ENABLE_DEBUG_INFO = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 				USE_HEADERMAP = NO;
 			};
@@ -378,42 +387,26 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = NO;
-				CLANG_ENABLE_OBJC_ARC = NO;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				CONFIGURATION_BUILD_DIR = ../../../lib/macosx/deploy;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				GCC_C_LANGUAGE_STANDARD = c11;
-				GCC_ENABLE_CPP_EXCEPTIONS = NO;
-				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
 				GCC_FAST_MATH = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GCC_PREPROCESSOR_DEFINITIONS = "BUILD_DEPLOY=1";
 				GCC_THREADSAFE_STATICS = NO;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_UNROLL_LOOPS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
+				GCC_WARN_PEDANTIC = YES;
 				HEADER_SEARCH_PATHS = (
 					../../..,
 					../../../../foundation_lib,
 					../../../../foundation_lib/test,
+					../../../../network_lib,
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
@@ -421,8 +414,7 @@
 					../../../../foundation_lib/lib/macosx/deploy,
 				);
 				LLVM_LTO = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.6;
-				MTL_ENABLE_DEBUG_INFO = NO;
+				MACOSX_DEPLOYMENT_TARGET = 10.7;
 				SDKROOT = macosx;
 				USE_HEADERMAP = NO;
 			};

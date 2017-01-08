@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -22,8 +22,6 @@
 
 #include <resource/types.h>
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
 RESOURCE_API string_const_t
 resource_source_path(void);
 
@@ -31,7 +29,7 @@ RESOURCE_API bool
 resource_source_set_path(const char* path, size_t length);
 
 RESOURCE_API uint256_t
-resource_source_read_hash(const uuid_t uuid);
+resource_source_read_hash(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API resource_source_t*
 resource_source_allocate(void);
@@ -94,9 +92,15 @@ resource_change_t* data for inspection. Clears the map before storing data.
 RESOURCE_API void
 resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_timestamps);
 
-/*! Iterate of a map of source key-value to perform operations on each change and optionally
-selecting the best change. The iteration can be aborted by the reduce function returning
-a marker value of -1 */
+/*! Iterate of a map of source key-value to perform operations on each change.
+The iteration can be aborted by the reduce function returning a marker value of -1 */
+RESOURCE_API void
+resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* data,
+                            resource_source_map_iterate_fn iterate);
+
+/*! Iterate of a map of source key-value to perform operations on each change and
+selecting the best change, thus reducing the map to one change per key/platform.
+The iteration can be aborted by the reduce function returning a marker value of -1 */
 RESOURCE_API void
 resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
                            resource_source_map_reduce_fn reduce);
@@ -107,25 +111,11 @@ be called for a map not reduced with #resource_source_map_reduce.
 RESOURCE_API void
 resource_source_map_clear(hashmap_t* map);
 
-#else
+RESOURCE_API size_t
+resource_source_num_dependencies(const uuid_t uuid, uint64_t platform);
 
-#define resource_source_set_path(...) false
-#define resource_source_path() string_empty()
-#define resource_source_allocate() nullptr
-#define resource_source_deallocate(source) memory_deallocate(source)
-#define resource_source_initialize(source) ((void)sizeof(source))
-#define resource_source_finalize(source) ((void)sizeof(source))
-#define resource_source_set(source, timestamp, key, platform, ...) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
-#define resource_source_unset(source, timestamp, key, platform) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform))
-#define resource_source_read(source, uuid) (((void)sizeof(source)), ((void)sizeof(uuid)), false)
-#define resource_source_write(source, uuid, binary) (((void)sizeof(source)), ((void)sizeof(uuid)), ((void)sizeof(binary)), false)
-#define resource_source_set_blob(source, timestamp, key, platform, checksum, size) ((void)sizeof(source)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(size))
-#define resource_source_read_blob(uuid, key, platform, checksum, data, capacity) (((void)sizeof(uuid)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(capacity)), false)
-#define resource_source_write_blob(uuid, timestamp, key, platform, checksum, data, size) (((void)sizeof(uuid)), ((void)sizeof(timestamp)), ((void)sizeof(key)), ((void)sizeof(platform)), ((void)sizeof(checksum)), ((void)sizeof(data)), ((void)sizeof(size)), false)
-#define resource_source_collapse_history(source) ((void)sizeof(source))
-#define resource_source_clear_blob_history(source, uuid) ((void)sizeof(source)), ((void)sizeof(uuid)) 
-#define resource_source_map(source, platform, map) ((void)sizeof(source)), ((void)sizeof(platform)), ((void)sizeof(map))
-#define resource_source_map_all(source, map, all_platforms) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(all_platforms))
-#define resource_source_map_reduce(source, map, data, reduce) ((void)sizeof(source)), ((void)sizeof(map)), ((void)sizeof(data))
+RESOURCE_API size_t
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
 
-#endif
+RESOURCE_API void
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num);

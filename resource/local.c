@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -16,9 +16,7 @@
  *
  */
 
-#include <resource/local.h>
-#include <resource/stream.h>
-#include <resource/platform.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -44,10 +42,13 @@ resource_local_set_paths(const string_const_t* paths, size_t num) {
 
 void
 resource_local_add_path(const char* path, size_t length) {
-	size_t capacity = length + 2;
-	string_t copy = string_copy(string_allocate(length, capacity).str, capacity,
-	                            path, length);
-	array_push(_resource_local_paths, path_clean(STRING_ARGS(copy), capacity));
+	char pathbuf[BUILD_MAX_PATHLEN];
+	string_t pathstr;
+	pathstr = string_copy(pathbuf, sizeof(pathbuf), path, length);
+	pathstr = path_clean(STRING_ARGS(pathstr), sizeof(pathbuf));
+	pathstr = path_absolute(STRING_ARGS(pathstr), sizeof(pathbuf));
+	pathstr = string_clone(STRING_ARGS(pathstr));
+	array_push(_resource_local_paths, pathstr);
 }
 
 void resource_local_remove_path(const char* path, size_t length) {
@@ -68,37 +69,61 @@ resource_local_clear_paths(void) {
 	string_array_deallocate(_resource_local_paths);
 }
 
+static string_t
+resource_local_make_platform_path(char* buffer, size_t capacity, size_t local_path,
+                                  const uuid_t uuid, uint64_t platform,
+                                  const char* suffix, size_t suffix_length) {
+	string_t curpath = resource_stream_make_path(buffer, capacity,
+	                                             STRING_ARGS(_resource_local_paths[local_path]),
+	                                             uuid);
+	string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
+	string_t platformpath = path_append(STRING_ARGS(curpath), capacity, STRING_ARGS(platformstr));
+	if (suffix_length)
+		platformpath = string_append(STRING_ARGS(platformpath), capacity, suffix, suffix_length);
+	return platformpath;
+}
+
 static stream_t*
 resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suffix,
                            size_t suffix_length, unsigned int mode) {
-	stream_t* stream = 0;
+	stream_t* stream = nullptr;
 	size_t ipath, pathsize;
 	char buffer[BUILD_MAX_PATHLEN];
 	uint64_t full_platform = platform;
+	bool try_create = (mode & STREAM_CREATE);
+	bool tried_create = false;
 
-	if (!_resource_config.enable_local_cache)
+	if (!resource_module_config().enable_local_cache)
 		return nullptr;
 
-	for (ipath = 0, pathsize = array_size(_resource_local_paths); !stream &&
-	        (ipath < pathsize); ++ipath) {
-		string_t curpath = resource_stream_make_path(buffer, sizeof(buffer),
-		                                             STRING_ARGS(_resource_local_paths[ipath]),
-		                                             uuid);
-		while (!stream) {
-			string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
-			string_t platformpath = path_append(STRING_ARGS(curpath), sizeof(buffer),
-			                                    STRING_ARGS(platformstr));
-			if (suffix_length)
-				platformpath = string_append(STRING_ARGS(platformpath), sizeof(buffer), suffix, suffix_length);
+	//If stream is to be created, first iterate all local paths to find
+	//existing file on most specified platform level. If such file does
+	//not exist, retry and create a new file at the most specified level
+	//in the first local path that succeeds.
+	mode &= ~STREAM_CREATE;
+	while (!stream) {
+retry:
+		for (ipath = 0, pathsize = array_size(_resource_local_paths); !stream &&
+		        (ipath < pathsize); ++ipath) {
+			string_t platformpath = resource_local_make_platform_path(
+			                            buffer, sizeof(buffer), ipath,
+			                            uuid, platform, suffix, suffix_length);
 			if (mode & STREAM_CREATE) {
 				string_const_t path = path_directory_name(STRING_ARGS(platformpath));
 				fs_make_directory(STRING_ARGS(path));
 			}
 			stream = stream_open(STRING_ARGS(platformpath), mode);
-			if (!platform)
-				break;
-			platform = resource_platform_reduce(platform, full_platform);
 		}
+		if (!stream && try_create) {
+			if (tried_create)
+				break;
+			tried_create = true;
+			mode |= STREAM_CREATE;
+			goto retry;
+		}
+		if (!platform)
+			break;
+		platform = resource_platform_reduce(platform, full_platform);
 	}
 
 	return stream;
@@ -114,18 +139,79 @@ resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
 	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_IN | STREAM_BINARY);
 }
 
+#else
+
+const string_const_t*
+resource_local_paths(void) {
+	return nullptr;
+}
+
+void
+resource_local_set_paths(const string_const_t* paths, size_t num) {
+	FOUNDATION_UNUSED(paths);
+	FOUNDATION_UNUSED(num);
+}
+
+void
+resource_local_add_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_local_remove_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_local_clear_paths(void) {
+}
+
+stream_t*
+resource_local_open_static(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
+}
+
+stream_t*
+resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
+}
+
 #endif
 
 #if RESOURCE_ENABLE_LOCAL_CACHE && RESOURCE_ENABLE_LOCAL_SOURCE
 
 stream_t*
 resource_local_create_static(const uuid_t uuid, uint64_t platform) {
-	return resource_local_open_stream(uuid, platform, 0, 0, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
+	return resource_local_open_stream(uuid, platform, 0, 0,
+	                                  STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
 }
 
 stream_t*
 resource_local_create_dynamic(const uuid_t uuid, uint64_t platform) {
-	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
+	return resource_local_open_stream(uuid, platform, STRING_CONST(".blob"),
+	                                  STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE | STREAM_BINARY);
+}
+
+#else
+
+stream_t*
+resource_local_create_static(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
+}
+
+stream_t*
+resource_local_create_dynamic(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;	
 }
 
 #endif

@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -30,14 +30,14 @@ The static and dynamic parts of the bundle resources are stored in separate file
 
 /*! Load static part of bundle, creating and initializing all
 resources stored in the bundle
-\param uuid Bundle UUID
+\param bundle Bundle UUID
 \return true if successful, false if error */
 RESOURCE_API bool
 resource_bundle_load(const uuid_t bundle);
 
 /*! Open stream of dynamic part of bundle, creating and initializing all
 resources stored in the bundle
-\param uuid Bundle UUID
+\param bundle Bundle UUID
 \return Stream for dynamic resource data, null if error */
 RESOURCE_API stream_t*
 resource_bundle_stream(const uuid_t bundle);

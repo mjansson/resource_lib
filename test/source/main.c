@@ -20,8 +20,9 @@ test_source_application(void) {
 	memset(&app, 0, sizeof(app));
 	app.name = string_const(STRING_CONST("Resource source tests"));
 	app.short_name = string_const(STRING_CONST("test_source"));
-	app.config_dir = string_const(STRING_CONST("test_source"));
+	app.company = string_const(STRING_CONST("Rampant Pixels"));
 	app.flags = APPLICATION_UTILITY;
+	app.exception_handler = test_exception_handler;
 	return app;
 }
 
@@ -42,6 +43,7 @@ test_source_initialize(void) {
 	resource_config_t config;
 	memset(&config, 0, sizeof(config));
 	config.enable_local_source = true;
+	config.enable_local_cache = true;
 	return resource_module_initialize(config);
 }
 
@@ -50,16 +52,23 @@ test_source_finalize(void) {
 	resource_module_finalize();
 }
 
+static void
+test_source_event(event_t* event) {
+	resource_event_handle(event);
+}
+
 DECLARE_TEST(source, set) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
 	resource_source_t source;
-
+	
 	map = (hashmap_t*)&fixedmap;
 
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
 	resource_source_initialize(&source);
-
+	
+	EXPECT_PTREQ(source.first.next, nullptr);
+	
 	resource_change_t* change;
 	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, HASH_TEST);
@@ -161,10 +170,10 @@ DECLARE_TEST(source, unset) {
 	//Verify map result for default platform and A-D
 	resource_source_initialize(&source);
 
-	uint64_t platformA = resource_platform((resource_platform_t){1,-1,-1,-1,-1});
-	uint64_t platformB = resource_platform((resource_platform_t){1,2,-1,-1,-1});
-	uint64_t platformC = resource_platform((resource_platform_t){1,2,3,-1,-1});
-	uint64_t platformD = resource_platform((resource_platform_t){1,-1,-1,4,-1});
+	uint64_t platformA = resource_platform((resource_platform_t){1,-1,-1,-1,-1,-1});
+	uint64_t platformB = resource_platform((resource_platform_t){1,2,-1,-1,-1,-1});
+	uint64_t platformC = resource_platform((resource_platform_t){1,2,3,-1,-1,-1});
+	uint64_t platformD = resource_platform((resource_platform_t){1,-1,-1,-1,4,-1});
 
 	hash_t keyOne = HASH_TEST;
 	hash_t keyTwo = HASH_RESOURCE;
@@ -278,8 +287,6 @@ DECLARE_TEST(source, unset) {
 	return 0;
 }
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
-
 static resource_change_t*
 resource_unique_set_per_platform(resource_change_t* change, resource_change_t* best, void* data) {
 	int* result = (int*)data;
@@ -302,8 +309,6 @@ resource_unique_set_per_platform(resource_change_t* change, resource_change_t* b
 	return change;
 }
 
-#endif
-
 DECLARE_TEST(source, collapse) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
@@ -319,10 +324,10 @@ DECLARE_TEST(source, collapse) {
 		HASH_NONE, HASH_TRUE, HASH_FALSE, HASH_SYSTEM
 	};
 	const uint64_t platforms[4] = {
-		resource_platform((resource_platform_t){-1,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,2,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,2,3,4,-1})
+		resource_platform((resource_platform_t){-1,-1,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,-1,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,2,-1,-1,-1,-1}),
+		resource_platform((resource_platform_t){1,2,3,4,-1,-1})
 	};
 
 	struct resource_expect_change_t {
@@ -538,7 +543,8 @@ static test_suite_t test_source_suite = {
 	test_source_config,
 	test_source_declare,
 	test_source_initialize,
-	test_source_finalize
+	test_source_finalize,
+	test_source_event
 };
 
 #if BUILD_MONOLITHIC

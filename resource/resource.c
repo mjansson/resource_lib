@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -21,7 +21,7 @@
 
 #include <foundation/foundation.h>
 
-resource_config_t _resource_config;
+static resource_config_t _resource_config;
 static bool _resource_module_initialized;
 
 static void
@@ -33,9 +33,14 @@ resource_module_initialize_config(const resource_config_t config) {
 #if !RESOURCE_ENABLE_LOCAL_CACHE
 	_resource_config.enable_local_cache = false;
 #endif
-#if !RESOURCE_ENABLE_REMOTE_CACHE
-	_resource_config.enable_remote_cache = false;
+#if !RESOURCE_ENABLE_REMOTE_SOURCED
+	_resource_config.enable_remote_sourced = false;
 #endif
+#if !RESOURCE_ENABLE_REMOTE_COMPILED
+	_resource_config.enable_remote_compiled = false;
+#endif
+	if (!_resource_config.enable_local_source)
+		_resource_config.enable_local_autoimport = false;
 }
 
 int
@@ -47,59 +52,74 @@ resource_module_initialize(const resource_config_t config) {
 
 	_resource_event_stream = event_stream_allocate(0);
 
-	config_load(STRING_CONST("resource"), HASH_RESOURCE, true, false);
-	{
-		size_t ipath;
-		const string_const_t remote_url = config_string(HASH_RESOURCE, HASH_REMOTE_URL);
-		if (remote_url.length)
-			resource_remote_set_url(STRING_ARGS(remote_url));
-
-		const string_const_t local_source = config_string(HASH_RESOURCE, HASH_LOCAL_SOURCE);
-		if (local_source.length)
-			resource_source_set_path(STRING_ARGS(local_source));
-
-		const string_const_t local_path = config_string(HASH_RESOURCE, HASH_LOCAL_PATH);
-		if (local_path.length) {
+	size_t iarg, argsize, ipath;
+	const string_const_t* cmdline = environment_command_line();
+	for (iarg = 0, argsize = array_size(cmdline); iarg < argsize; ++iarg) {
+		if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-sourced")) &&
+		        (iarg < (argsize - 1))) {
+			++iarg;
+			resource_remote_sourced_connect(STRING_ARGS(cmdline[iarg]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-compiled")) &&
+		        (iarg < (argsize - 1))) {
+			++iarg;
+			resource_remote_compiled_connect(STRING_ARGS(cmdline[iarg]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-source")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			resource_source_set_path(STRING_ARGS(cmdline[iarg]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-path")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
 			string_const_t paths[32];
-			size_t numpaths = string_explode(STRING_ARGS(local_path), STRING_CONST(";,"), paths,
+			size_t numpaths = string_explode(STRING_ARGS(cmdline[iarg]), STRING_CONST(";,"), paths,
 			                                 sizeof(paths)/sizeof(paths[0]), false);
 			for (ipath = 0; ipath < numpaths; ++ipath)
 				resource_local_add_path(STRING_ARGS(paths[ipath]));
 		}
-
-		size_t iarg, argsize;
-		const string_const_t* cmdline = environment_command_line();
-		for (iarg = 0, argsize = array_size(cmdline); iarg < argsize; ++iarg) {
-			if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-remote-url")) &&
-			        (iarg < (argsize - 1))) {
-				++iarg;
-				resource_remote_set_url(STRING_ARGS(cmdline[iarg]));
-			}
-			else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-source")) &&
-			         (iarg < (argsize - 1))) {
-				++iarg;
-				resource_source_set_path(STRING_ARGS(cmdline[iarg]));
-			}
-			else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-path")) &&
-			         (iarg < (argsize - 1))) {
-				++iarg;
-				string_const_t paths[32];
-				size_t numpaths = string_explode(STRING_ARGS(cmdline[iarg]), STRING_CONST(";,"), paths,
-				                                 sizeof(paths)/sizeof(paths[0]), false);
-				for (ipath = 0; ipath < numpaths; ++ipath)
-					resource_local_add_path(STRING_ARGS(paths[ipath]));
-			}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-base-path")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			resource_import_set_base_path(STRING_ARGS(cmdline[iarg]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-autoimport-path")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			string_const_t paths[32];
+			size_t numpaths = string_explode(STRING_ARGS(cmdline[iarg]), STRING_CONST(";,"), paths,
+			                                 sizeof(paths)/sizeof(paths[0]), false);
+			for (ipath = 0; ipath < numpaths; ++ipath)
+				resource_autoimport_watch(STRING_ARGS(paths[ipath]));
+		}
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-tool-path")) &&
+		         (iarg < (argsize - 1))) {
+			++iarg;
+			resource_import_register_path(STRING_ARGS(cmdline[iarg]));
+			resource_compile_register_path(STRING_ARGS(cmdline[iarg]));
 		}
 	}
 
 	//Make sure we have at least one way of loading resources
 	if (!_resource_config.enable_local_cache &&
-	        !_resource_config.enable_local_source &&
-	        !_resource_config.enable_remote_cache) {
+	        !_resource_config.enable_remote_compiled) {
 		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE,
-		          STRING_CONST("Invalid config, no way of loading resources"));
+		          STRING_CONST("Invalid config, no way of loading compiled resources"));
 		return -1;
 	}
+
+	if (resource_import_initialize() < 0)
+		return -1;
+
+	if (resource_compile_initialize() < 0)
+		return -1;
+
+	if (resource_autoimport_initialize() < 0)
+		return -1;
+
+	if (resource_remote_initialize() < 0)
+		return -1;
 
 	_resource_module_initialized = true;
 
@@ -111,15 +131,15 @@ resource_module_finalize(void) {
 	if (!_resource_module_initialized)
 		return;
 
-	array_deallocate(_resource_importers);
-	array_deallocate(_resource_compilers);
-
 	resource_local_clear_paths();
+
+	resource_remote_finalize();
+	resource_autoimport_finalize();
+	resource_import_finalize();
+	resource_compile_finalize();
 
 	event_stream_deallocate(_resource_event_stream);
 
-	_resource_importers = 0;
-	_resource_compilers = 0;
 	_resource_event_stream = 0;
 	_resource_module_initialized = false;
 }
@@ -127,4 +147,62 @@ resource_module_finalize(void) {
 bool
 resource_module_is_initialized(void) {
 	return _resource_module_initialized;
+}
+
+void
+resource_module_parse_config(const char* path, size_t path_size,
+                             const char* buffer, size_t size,
+                             const json_token_t* tokens, size_t num_tokens) {
+	FOUNDATION_UNUSED(size);
+	char pathbuf[BUILD_MAX_PATHLEN];
+
+	for (size_t tok = num_tokens ? tokens[0].child : 0; tok &&
+	        tok < num_tokens; tok = tokens[tok].sibling) {
+
+		string_const_t id = json_token_identifier(buffer, tokens + tok);
+		if ((tokens[tok].type == JSON_OBJECT) && string_equal(STRING_ARGS(id), STRING_CONST("resource"))) {
+
+			for (size_t restok = tokens[tok].child; restok &&
+			        (restok < num_tokens); restok = tokens[restok].sibling) {
+
+				string_const_t resid = json_token_identifier(buffer, tokens + restok);
+				if (tokens[restok].type == JSON_STRING) {
+					string_const_t value = json_token_value(buffer, tokens + restok);
+					hash_t idhash = hash(STRING_ARGS(resid));
+					string_const_t sourcedir = path_directory_name(path, path_size);
+
+					string_t fullpath;
+					if (!path_is_absolute(STRING_ARGS(value))) {
+						fullpath = path_concat(pathbuf, sizeof(pathbuf), STRING_ARGS(sourcedir), STRING_ARGS(value));
+						fullpath = path_absolute(STRING_ARGS(fullpath), sizeof(pathbuf));
+					}
+					else {
+						fullpath = string_copy(pathbuf, sizeof(pathbuf), STRING_ARGS(value));
+					}
+
+					if (idhash == HASH_LOCAL_PATH)
+						resource_local_add_path(STRING_ARGS(fullpath));
+					else if (idhash == HASH_SOURCE_PATH)
+						resource_source_set_path(STRING_ARGS(fullpath));
+					else if (idhash == HASH_BASE_PATH)
+						resource_import_set_base_path(STRING_ARGS(fullpath));
+					else if (idhash == HASH_AUTOIMPORT_PATH)
+						resource_autoimport_watch(STRING_ARGS(fullpath));
+					else if (idhash == HASH_REMOTE_SOURCED)
+						resource_remote_sourced_connect(STRING_ARGS(value));
+					else if (idhash == HASH_REMOTE_COMPILED)
+						resource_remote_compiled_connect(STRING_ARGS(value));
+					else if (idhash == HASH_TOOL_PATH) {
+						resource_import_register_path(STRING_ARGS(fullpath));
+						resource_compile_register_path(STRING_ARGS(fullpath));
+					}
+				}
+			}
+		}
+	}
+}
+
+resource_config_t
+resource_module_config(void) {
+	return _resource_config;
 }

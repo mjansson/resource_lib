@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -18,20 +18,32 @@
 
 
 #include <resource/event.h>
+#include <resource/import.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
 event_stream_t* _resource_event_stream = 0;
 
+typedef struct {
+	uuid_t uuid;
+	hash_t token;
+} resource_event_payload_t;
+
 uuid_t
 resource_event_uuid(const event_t* event) {
-	return ((const resource_event_t*)event)->uuid;
+	return ((const resource_event_payload_t*)event->payload)->uuid;
+}
+
+hash_t
+resource_event_token(const event_t* event) {
+	return ((const resource_event_payload_t*)event->payload)->token;
 }
 
 void
-resource_event_post(resource_event_id id, uuid_t uuid) {
-	event_post(_resource_event_stream, id, sizeof(uuid_t), 0, &uuid, 0);
+resource_event_post(resource_event_id id, uuid_t uuid, hash_t token) {
+	resource_event_payload_t payload = {uuid, token};
+	event_post(_resource_event_stream, id, 0, 0, &payload, sizeof(payload));
 }
 
 event_stream_t*
@@ -39,3 +51,7 @@ resource_event_stream(void) {
 	return _resource_event_stream;
 }
 
+void
+resource_event_handle(event_t* event) {
+	resource_autoimport_event_handle(event);
+}

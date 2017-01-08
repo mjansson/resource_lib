@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -43,6 +43,7 @@ resource_change_data_allocate(size_t size) {
 }
 
 void resource_change_data_deallocate(resource_change_data_t* data) {
+	resource_change_data_finalize(data);
 	memory_deallocate(data);
 }
 
@@ -52,6 +53,11 @@ resource_change_data_initialize(resource_change_data_t* data, void* buffer, size
 	data->size = size;
 	data->used = 0;
 	data->next = 0;
+}
+
+void
+resource_change_data_finalize(resource_change_data_t* data) {
+	FOUNDATION_UNUSED(data);
 }
 
 resource_change_block_t*
@@ -86,8 +92,8 @@ void
 resource_change_block_initialize(resource_change_block_t* block) {
 	resource_change_data_initialize(&block->fixed.data, block->fixed.fixed, sizeof(block->fixed.fixed));
 	block->used = 0;
+	block->next = nullptr;
 	block->current_data = &block->fixed.data;
-	block->next = 0;
 }
 
 void
@@ -97,5 +103,61 @@ resource_change_block_finalize(resource_change_block_t* block) {
 		resource_change_block_deallocate(block->next);
 }
 
+#else
+
+bool
+resource_change_is_value(resource_change_t* change) {
+	FOUNDATION_UNUSED(change);
+	return false;
+}
+
+bool
+resource_change_is_blob(resource_change_t* change) {
+	FOUNDATION_UNUSED(change);
+	return false;	
+}
+
+resource_change_data_t*
+resource_change_data_allocate(size_t size) {
+	FOUNDATION_UNUSED(size);
+	return nullptr;
+}
+
+void
+resource_change_data_deallocate(resource_change_data_t* data) {
+	memory_deallocate(data);
+}
+
+void
+resource_change_data_initialize(resource_change_data_t* data, void* buffer, size_t size) {
+	memset(data, 0, sizeof(resource_change_data_t));
+	FOUNDATION_UNUSED(buffer);
+	FOUNDATION_UNUSED(size);
+}
+
+void
+resource_change_data_finalize(resource_change_data_t* data) {
+	FOUNDATION_UNUSED(data);
+}
+
+resource_change_block_t*
+resource_change_block_allocate(void) {
+	return nullptr;
+}
+
+void
+resource_change_block_deallocate(resource_change_block_t* block) {
+	memory_deallocate(block);
+}
+
+void
+resource_change_block_initialize(resource_change_block_t* block) {
+	memset(block, 0, sizeof(resource_change_block_t));
+}
+
+void
+resource_change_block_finalize(resource_change_block_t* block) {
+	FOUNDATION_UNUSED(block);
+}
 
 #endif

@@ -1,6 +1,11 @@
 
 HASH_RESOURCE                              resource
-HASH_REMOTE_URL                            remote_url
-HASH_LOCAL_SOURCE                          local_source
+HASH_REMOTE_SOURCED                        remote_sourced
+HASH_REMOTE_COMPILED                       remote_compiled
+HASH_SOURCE_PATH                           source_path
 HASH_LOCAL_PATH                            local_path
 HASH_RESOURCE_TYPE                         resource_type
+HASH_BASE_PATH                             base_path
+HASH_AUTOIMPORT                            autoimport
+HASH_AUTOIMPORT_PATH                       autoimport_path
+HASH_TOOL_PATH                             tool_path

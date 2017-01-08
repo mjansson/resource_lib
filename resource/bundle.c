@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -16,25 +16,25 @@
  *
  */
 
-#include <resource/bundle.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
 
 bool
 resource_bundle_load(const uuid_t bundle) {
-#if RESOURCE_ENABLE_REMOTE_CACHE
-	if (_resource_config.enable_remote_cache) {
-	}
-#endif
-
 #if RESOURCE_ENABLE_LOCAL_SOURCE
-	if (_resource_config.enable_local_source) {
+	if (resource_module_config().enable_local_source) {
 	}
 #endif
 
 #if RESOURCE_ENABLE_LOCAL_CACHE
-	if (_resource_config.enable_local_cache) {
+	if (resource_module_config().enable_local_cache) {
+	}
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
+	if (resource_module_config().enable_remote_compiled) {
 	}
 #endif
 
@@ -45,18 +45,18 @@ resource_bundle_load(const uuid_t bundle) {
 
 stream_t*
 resource_bundle_stream(const uuid_t bundle) {
-#if RESOURCE_ENABLE_REMOTE_CACHE
-	if (_resource_config.enable_remote_cache) {
-	}
-#endif
-
 #if RESOURCE_ENABLE_LOCAL_SOURCE
-	if (_resource_config.enable_local_source) {
+	if (resource_module_config().enable_local_source) {
 	}
 #endif
 
 #if RESOURCE_ENABLE_LOCAL_CACHE
-	if (_resource_config.enable_local_cache) {
+	if (resource_module_config().enable_local_cache) {
+	}
+#endif
+
+#if RESOURCE_ENABLE_REMOTE_COMPILED
+	if (resource_module_config().enable_remote_compiled) {
 	}
 #endif
 

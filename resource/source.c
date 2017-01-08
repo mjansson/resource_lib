@@ -6,7 +6,7 @@
  *
  * The latest source code maintained by Rampant Pixels is always available at
  *
- * https://github.com/rampantpixels/render_lib
+ * https://github.com/rampantpixels/resource_lib
  *
  * The foundation library source code maintained by Rampant Pixels is always available at
  *
@@ -16,10 +16,7 @@
  *
  */
 
-#include <resource/source.h>
-#include <resource/change.h>
-#include <resource/stream.h>
-#include <resource/platform.h>
+#include <resource/resource.h>
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
@@ -27,7 +24,7 @@
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
 static char _resource_source_path_buffer[BUILD_MAX_PATHLEN];
-string_t _resource_source_path;
+static string_t _resource_source_path;
 
 static resource_change_t*
 resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
@@ -35,7 +32,7 @@ resource_source_change_platform_compare(resource_change_t* change, resource_chan
 
 bool
 resource_source_set_path(const char* path, size_t length) {
-	if (!_resource_config.enable_local_source)
+	if (!resource_module_config().enable_local_source)
 		return false;
 	_resource_source_path = string_copy(_resource_source_path_buffer,
 	                                    sizeof(_resource_source_path_buffer), path, length);
@@ -69,6 +66,19 @@ resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
 	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
 	                                          STRING_ARGS(_resource_source_path), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".hash"));
+	if (mode & STREAM_OUT) {
+		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
+		fs_make_directory(STRING_ARGS(dir_path));
+	}
+	return stream_open(STRING_ARGS(path), mode);
+}
+
+static stream_t*
+resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
+	                                          STRING_ARGS(_resource_source_path), uuid);
+	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".deps"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
 		fs_make_directory(STRING_ARGS(dir_path));
@@ -127,6 +137,7 @@ resource_source_deallocate(resource_source_t* source) {
 
 void
 resource_source_initialize(resource_source_t* source) {
+	memset(source, 0, sizeof(resource_source_t));
 	resource_change_block_initialize(&source->first);
 	source->current = &source->first;
 }
@@ -282,6 +293,41 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 			}
 		}
 		block = block->next;
+	}
+}
+
+void
+resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* data,
+                            resource_source_map_iterate_fn iterate) {
+	size_t ibucket, bsize;
+	FOUNDATION_UNUSED(source);
+	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+		size_t inode, nsize;
+		hashmap_node_t* bucket = map->bucket[ibucket];
+		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
+			resource_change_t* change = 0;
+			void* stored = bucket[inode].value;
+			if (!stored)
+				continue;
+			else if ((uintptr_t)stored & 1) {
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
+				size_t imap, msize;
+				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
+					change = maparr[imap];
+					if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+						continue;
+					if (iterate(change, data) < 0)
+						return;
+				}
+			}
+			else {
+				change = stored;
+				if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+					continue;
+				if (iterate(change, data) < 0)
+					return;
+			}
+		}
 	}
 }
 
@@ -460,8 +506,8 @@ resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid)
 	hashmap_finalize(map);
 }
 
-bool
-resource_source_read(resource_source_t* source, const uuid_t uuid) {
+static bool
+resource_source_read_local(resource_source_t* source, const uuid_t uuid) {
 	const char op_set = '=';
 	const char op_unset = '-';
 	const char op_blob = '#';
@@ -506,8 +552,16 @@ resource_source_read(resource_source_t* source, const uuid_t uuid) {
 }
 
 bool
+resource_source_read(resource_source_t* source, const uuid_t uuid) {
+	if (resource_remote_sourced_is_connected() &&
+	        resource_remote_sourced_read(source, uuid))
+		return true;
+
+	return resource_source_read_local(source, uuid);
+}
+
+bool
 resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary) {
-	const char separator = ' ';
 	const char op_set = '=';
 	const char op_unset = '-';
 	const char op_blob = '#';
@@ -525,42 +579,41 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 		for (ichg = 0, chgsize = block->used; ichg < chgsize; ++ichg) {
 			resource_change_t* change = block->changes + ichg;
 			stream_write_int64(stream, change->timestamp);
-			sha256_digest(&sha, &change->timestamp, sizeof(change->timestamp));
-			if (!binary)
-				stream_write(stream, &separator, 1);
+			stream_write_separator(stream);
 			stream_write_uint64(stream, change->hash);
-			sha256_digest(&sha, &change->hash, sizeof(change->hash));
-			if (!binary)
-				stream_write(stream, &separator, 1);
+			stream_write_separator(stream);
 			stream_write_uint64(stream, change->platform);
+			stream_write_separator(stream);
+
+			sha256_digest(&sha, &change->timestamp, sizeof(change->timestamp));
+			sha256_digest(&sha, &change->hash, sizeof(change->hash));
 			sha256_digest(&sha, &change->platform, sizeof(change->platform));
-			if (!binary)
-				stream_write(stream, &separator, 1);
-			if (change->flags == RESOURCE_SOURCEFLAG_UNSET)
+
+			if (change->flags == RESOURCE_SOURCEFLAG_UNSET) {
 				stream_write(stream, &op_unset, 1);
+			}
 			else {
 				if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
 					stream_write(stream, &op_blob, 1);
-					if (!binary)
-						stream_write(stream, &separator, 1);
+					stream_write_separator(stream);
 					stream_write_uint64(stream, change->value.blob.checksum);
-					sha256_digest(&sha, &change->value.blob.checksum, sizeof(change->value.blob.checksum));
-					if (!binary)
-						stream_write(stream, &separator, 1);
+					stream_write_separator(stream);
 					stream_write_uint64(stream, change->value.blob.size);
+
+					sha256_digest(&sha, &change->value.blob.checksum, sizeof(change->value.blob.checksum));
 					sha256_digest(&sha, &change->value.blob.size, sizeof(change->value.blob.size));
 				}
 				else {
 					stream_write(stream, &op_set, 1);
-					if (!binary)
-						stream_write(stream, &separator, 1);
+					stream_write_separator(stream);
 					stream_write_string(stream, STRING_ARGS(change->value.value));
+
 					sha256_digest(&sha, STRING_ARGS(change->value.value));
 				}
 			}
+			stream_write_endl(stream);
+
 			sha256_digest(&sha, &change->flags, sizeof(change->flags));
-			if (!binary)
-				stream_write_endl(stream);
 		}
 		block = block->next;
 	}
@@ -572,10 +625,8 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	stream = resource_source_open_hash(uuid, STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (stream) {
 		uint256_t hash = sha256_get_digest_raw(&sha);
-		stream_write_uint64(stream, hash.word[0]);
-		stream_write_uint64(stream, hash.word[1]);
-		stream_write_uint64(stream, hash.word[2]);
-		stream_write_uint64(stream, hash.word[3]);
+		string_const_t value = string_from_uint256_static(hash);
+		stream_write_string(stream, STRING_ARGS(value));
 	}
 	stream_deallocate(stream);
 
@@ -583,16 +634,43 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 }
 
 uint256_t
-resource_source_read_hash(const uuid_t uuid) {
+resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
 	uint256_t hash = uint256_null();
+
+	if (resource_remote_sourced_is_connected()) {
+		hash = resource_remote_sourced_hash(uuid, platform);
+		if (!uint256_is_null(hash))
+			return hash;
+	}
+
 	stream_t* stream = resource_source_open_hash(uuid, STREAM_IN);
 	if (stream) {
-		hash.word[0] = stream_read_uint64(stream);
-		hash.word[1] = stream_read_uint64(stream);
-		hash.word[2] = stream_read_uint64(stream);
-		hash.word[3] = stream_read_uint64(stream);
+		char buffer[65];
+		string_t value = stream_read_string_buffer(stream, buffer, sizeof(buffer));
+		hash = string_to_uint256(STRING_ARGS(value));
 	}
 	stream_deallocate(stream);
+
+	//TODO: Implement adding dependency resource hashes based on platform
+	uuid_t localdeps[16];
+	size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
+	size_t numdeps = resource_source_num_dependencies(uuid, platform);
+	if (numdeps) {
+		uuid_t* deps = localdeps;
+		if (numdeps > capacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, numdeps);
+		for (size_t idep = 0; idep < numdeps; ++idep) {
+			uint256_t dephash = resource_source_read_hash(deps[idep], platform);
+			hash.word[0] ^= dephash.word[0];
+			hash.word[1] ^= dephash.word[1];
+			hash.word[2] ^= dephash.word[2];
+			hash.word[3] ^= dephash.word[3];
+		}
+		if (deps != localdeps)
+			memory_deallocate(deps);
+	}
+
 	return hash;
 }
 
@@ -600,12 +678,12 @@ static resource_change_t*
 resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
                                         uint64_t platform) {
 	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
-//Change must be superset of requested platform
+	        //Change must be superset of requested platform
 	        resource_platform_is_equal_or_more_specific(platform, change->platform) &&
-//Either no previous result, or
-//  previous best is platform superset of change platform and
-//    either platforms are different (change is exclusively more specific), or
-///   change is newer (and platforms are equal)
+	        //Either no previous result, or
+	        //  previous best is platform superset of change platform and
+	        //    either platforms are different (change is exclusively more specific), or
+	        ///   change is newer (and platforms are equal)
 	        (!best || (resource_platform_is_equal_or_more_specific(change->platform, best->platform) &&
 	                   ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
 		return change;
@@ -627,6 +705,10 @@ resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map
 bool
 resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform,
                           hash_t checksum, void* data, size_t capacity) {
+	if (resource_remote_sourced_is_connected() &&
+	        resource_remote_sourced_read_blob(uuid, key, platform, checksum, data, capacity))
+		return true;
+
 	stream_t* stream = resource_source_open_blob(uuid, key, platform, checksum, STREAM_IN);
 	if (!stream)
 		return false;
@@ -646,6 +728,262 @@ resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
 	size_t written = stream_write(stream, data, size);
 	stream_deallocate(stream);
 	return written == size;
+}
+
+size_t
+resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
+	return resource_source_dependencies(uuid, platform, nullptr, 0);
+}
+
+size_t
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+	size_t numdeps = 0;
+
+	if (resource_remote_sourced_is_connected())
+		return resource_remote_sourced_dependencies(uuid, platform, deps, capacity);
+
+	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN);
+	while (stream && !stream_eos(stream)) {
+		numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		for (size_t idep = 0; idep < numdeps; ++idep) {
+			uuid_t depuuid = stream_read_uuid(stream);
+			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
+				if (idep < capacity)
+					deps[idep] = depuuid;
+			}
+		}
+	}
+	stream_deallocate(stream);
+	return numdeps;
+}
+
+void
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps,
+                                 size_t num) {
+	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
+	size_t size = stream_size(stream);
+	while (!stream_eos(stream)) {
+		ssize_t startofs = (ssize_t)stream_tell(stream);
+		unsigned int numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		for (unsigned int idep = 0; idep < numdeps; ++idep)
+			stream_read_uuid(stream);
+		stream_skip_whitespace(stream);
+		size_t endofs = stream_tell(stream);
+		if (platform == depplatform) {
+			//Replace line with new line at end
+			size_t toread = size - endofs;
+			char* remain = memory_allocate(HASH_RESOURCE, toread, 0, MEMORY_PERSISTENT);
+			size_t read = stream_read(stream, remain, toread);
+			stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+			stream_write(stream, remain, read);
+			break;
+		}
+	}
+	stream_write_uint32(stream, (uint32_t)num);
+	stream_write_separator(stream);
+	stream_write_uint64(stream, platform);
+	for (unsigned int idep = 0; idep < num; ++idep) {
+		stream_write_separator(stream);
+		stream_write_uuid(stream, deps[idep]);
+	}
+	stream_write_endl(stream);
+	stream_truncate(stream, stream_tell(stream));
+	stream_deallocate(stream);
+}
+
+#else
+
+string_const_t
+resource_source_path(void) {
+	return string_empty();
+}
+
+bool
+resource_source_set_path(const char* path, size_t length) {
+	FOUNDATION_UNUSED(path);
+	FOUNDATION_UNUSED(length);
+	return false;
+}
+
+uint256_t
+resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return uint256_null();
+}
+
+resource_source_t*
+resource_source_allocate(void) {
+	return nullptr;
+}
+
+void
+resource_source_deallocate(resource_source_t* source) {
+	memory_deallocate(source);
+}
+
+void
+resource_source_initialize(resource_source_t* source) {
+	memset(source, 0, sizeof(resource_source_t));
+}
+
+void
+resource_source_finalize(resource_source_t* source) {
+	FOUNDATION_UNUSED(source);
+}
+
+bool
+resource_source_read(resource_source_t* source, const uuid_t uuid) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+	return false;
+}
+
+bool
+resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(binary);
+	return false;
+}
+
+void
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key,
+                    uint64_t platform, const char* value, size_t length) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(value);
+	FOUNDATION_UNUSED(length);
+}
+
+void
+resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
+                      uint64_t platform) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+}
+
+resource_change_t*
+resource_source_get(resource_source_t* source, hash_t key, uint64_t platform) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	return nullptr;
+}
+
+void
+resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key,
+                         uint64_t platform, hash_t checksum, size_t size) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(checksum);
+	FOUNDATION_UNUSED(size);
+}
+
+bool
+resource_source_read_blob(const uuid_t uuid, hash_t key,
+                          uint64_t platform, hash_t checksum, void* data, size_t capacity) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(checksum);
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(capacity);
+	return false;
+}
+
+bool
+resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
+                           uint64_t platform, hash_t checksum, const void* data, size_t size) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(timestamp);
+	FOUNDATION_UNUSED(key);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(checksum);
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(size);
+	return false;
+
+}
+
+void
+resource_source_collapse_history(resource_source_t* source) {
+	FOUNDATION_UNUSED(source);
+}
+
+void
+resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(uuid);
+}
+
+void
+resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(map);
+}
+
+void
+resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_timestamps) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(map);
+	FOUNDATION_UNUSED(all_timestamps);
+}
+
+void
+resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* data,
+                            resource_source_map_iterate_fn iterate) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(map);
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(iterate);
+}
+
+void
+resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data,
+                           resource_source_map_reduce_fn reduce) {
+	FOUNDATION_UNUSED(source);
+	FOUNDATION_UNUSED(map);
+	FOUNDATION_UNUSED(data);
+	FOUNDATION_UNUSED(reduce);
+}
+
+void
+resource_source_map_clear(hashmap_t* map) {
+	FOUNDATION_UNUSED(map);
+}
+
+size_t
+resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return 0;
+}
+
+size_t
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(deps);
+	FOUNDATION_UNUSED(capacity);
+	return 0;
+}
+
+void
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(deps);
+	FOUNDATION_UNUSED(num);
 }
 
 #endif
