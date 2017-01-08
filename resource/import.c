@@ -120,9 +120,12 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 				stream_finalize(process_stdout(&proc));
 				while (!stream_eos(err)) {
 					string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
-					if (line.length)
+					if (line.length) {
+						if (line.str[line.length-1] == '\r')
+							--line.length;
 						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
 						          STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
+					}
 				}
 				if (process_wait(&proc) == 0)
 					was_imported = true;
@@ -252,6 +255,8 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 		line = stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
 		if (line.length < 120)
 			continue;
+		if (line.str[line.length-1] == '\r')
+			--line.length;
 
 		linehash = string_to_uint64(STRING_ARGS(line), true);
 		if (linehash != pathhash)
@@ -413,6 +418,8 @@ resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capac
 				string_t line = stream_read_line_buffer(map, linebuffer, sizeof(linebuffer), '\n');
 				if (line.length < 120)
 					continue;
+				if (line.str[line.length-1] == '\r')
+					--line.length;
 
 				siguuid = string_to_uuid(line.str + 17, 37);
 				if (uuid_equal(uuid, siguuid)) {
@@ -461,6 +468,8 @@ static bool
 resource_autoimport_source_changed(uuid_t uuid, const char* path, size_t length,
                                    uint256_t curhash, uint256_t* newhash) {
 	stream_t* stream = stream_open(path, length, STREAM_IN);
+	if (!stream)
+		return false;
 	uint256_t testhash = stream_sha256(stream);
 	stream_deallocate(stream);
 	if (newhash)

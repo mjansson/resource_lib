@@ -535,6 +535,8 @@ resource_source_read_local(resource_source_t* source, const uuid_t uuid) {
 			else {
 				stream_read(stream, &separator, 1);
 				value = stream_read_line(stream, '\n');
+				if (value.length && (value.str[value.length-1] == '\r'))
+					--value.length;
 			}
 			resource_source_set(source, timestamp, key, platform, STRING_ARGS(value));
 			string_deallocate(value.str);

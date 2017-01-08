@@ -16,6 +16,8 @@
     <ClInclude Include="..\..\resource\source.h" />
     <ClInclude Include="..\..\resource\stream.h" />
     <ClInclude Include="..\..\resource\types.h" />
+    <ClInclude Include="..\..\resource\compiled.h" />
+    <ClInclude Include="..\..\resource\sourced.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\resource\bundle.c" />
@@ -30,6 +32,8 @@
     <ClCompile Include="..\..\resource\source.c" />
     <ClCompile Include="..\..\resource\stream.c" />
     <ClCompile Include="..\..\resource\version.c" />
+    <ClCompile Include="..\..\resource\compiled.c" />
+    <ClCompile Include="..\..\resource\sourced.c" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\resource\hashstrings.txt" />

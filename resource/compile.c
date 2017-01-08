@@ -216,9 +216,12 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 				stream_finalize(process_stdout(&proc));
 				while (!stream_eos(err)) {
 					string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
-					if (line.length)
+					if (line.length) {
+						if (line.str[line.length-1] == '\r')
+							--line.length;
 						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
 					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
+					}
 				}
 				if (process_wait(&proc) == 0) {
 					log_debugf(HASH_RESOURCE, STRING_CONST("Compiled with external tool: %.*s"), STRING_FORMAT(tools[itool]));

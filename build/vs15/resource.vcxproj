@@ -39,6 +39,7 @@
     <ClInclude Include="..\..\resource\bundle.h" />
     <ClInclude Include="..\..\resource\change.h" />
     <ClInclude Include="..\..\resource\compile.h" />
+    <ClInclude Include="..\..\resource\compiled.h" />
     <ClInclude Include="..\..\resource\event.h" />
     <ClInclude Include="..\..\resource\hashstrings.h" />
     <ClInclude Include="..\..\resource\import.h" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\resource\remote.h" />
     <ClInclude Include="..\..\resource\resource.h" />
     <ClInclude Include="..\..\resource\source.h" />
+    <ClInclude Include="..\..\resource\sourced.h" />
     <ClInclude Include="..\..\resource\stream.h" />
     <ClInclude Include="..\..\resource\types.h" />
   </ItemGroup>
@@ -55,6 +57,7 @@
     <ClCompile Include="..\..\resource\bundle.c" />
     <ClCompile Include="..\..\resource\change.c" />
     <ClCompile Include="..\..\resource\compile.c" />
+    <ClCompile Include="..\..\resource\compiled.c" />
     <ClCompile Include="..\..\resource\event.c" />
     <ClCompile Include="..\..\resource\import.c" />
     <ClCompile Include="..\..\resource\local.c" />
@@ -62,6 +65,7 @@
     <ClCompile Include="..\..\resource\remote.c" />
     <ClCompile Include="..\..\resource\resource.c" />
     <ClCompile Include="..\..\resource\source.c" />
+    <ClCompile Include="..\..\resource\sourced.c" />
     <ClCompile Include="..\..\resource\stream.c" />
     <ClCompile Include="..\..\resource\version.c" />
   </ItemGroup>
@@ -217,7 +221,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
@@ -252,7 +256,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
@@ -289,7 +293,7 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -326,7 +330,7 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -363,7 +367,7 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -400,7 +404,7 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -438,7 +442,7 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -476,7 +480,7 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\window_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..;..\..\..\foundation_lib;..\..\..\network_lib;..\..\..\resource_lib</AdditionalIncludeDirectories>
       <CompileAsManaged>false</CompileAsManaged>
       <CompileAsWinRT>false</CompileAsWinRT>
       <TreatWarningAsError>true</TreatWarningAsError>
