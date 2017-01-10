@@ -1,4 +1,4 @@
-/* local.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* source.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
@@ -101,7 +101,30 @@ resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform,
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
 		fs_make_directory(STRING_ARGS(dir_path));
 	}
-	return stream_open(STRING_ARGS(path), mode);
+	stream_t* stream = stream_open(STRING_ARGS(path), mode);
+	if (stream && ((mode & STREAM_IN) != 0)) {
+		//Verify checksum
+		hash_t current_checksum = 0;
+		size_t size = stream_size(stream);
+		if (size) {
+			void* data = memory_allocate(HASH_RESOURCE, size, 0, MEMORY_PERSISTENT);
+			if (stream_read(stream, data, size) == size) {
+				current_checksum = hash(data, size);
+			}
+			memory_deallocate(data);
+		}
+		if (current_checksum != checksum) {
+			log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+			          STRING_CONST("Invalid blob checksum for %.*s: Wanted %" PRIhash ", got %" PRIhash),
+			          STRING_FORMAT(path), checksum, current_checksum);
+			stream_deallocate(stream);
+			stream = nullptr;
+		}
+		else {
+			stream_seek(stream, 0, STREAM_SEEK_BEGIN);
+		}
+	}
+	return stream;
 }
 
 

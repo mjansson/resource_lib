@@ -1,4 +1,4 @@
-/* local.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* source.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
