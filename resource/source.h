@@ -43,6 +43,11 @@ resource_source_initialize(resource_source_t* source);
 RESOURCE_API void
 resource_source_finalize(resource_source_t* source);
 
+/*! Read source file. If source is null the return value indicates
+if file could have been read.
+\param source Source to read into
+\param uuid Resource UUID
+\return true if read successfully, false if failed or error */
 RESOURCE_API bool
 resource_source_read(resource_source_t* source, const uuid_t uuid);
 

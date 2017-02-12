@@ -492,9 +492,14 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 
 	if (!resource_module_config().enable_local_autoimport)
 		return false;
+	if (resource_remote_sourced_is_connected())
+		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
 	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s"), STRING_FORMAT(uuidstr));
+
+	if (!resource_source_read(nullptr, uuid))
+		return true;
 
 	mutex_lock(_resource_autoimport_lock);
 	string_t path = resource_autoimport_reverse_lookup(uuid, buffer.path, sizeof(buffer.path));
@@ -510,8 +515,8 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		if (numdeps) {
 			bool need_import = false;
 			uuid_t* deps = localdeps;
-			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, %" PRIsize
-			                                       " source dependency checks: %.*s"),
+			log_debugf(HASH_RESOURCE,
+			           STRING_CONST("Autoimport check, %" PRIsize " source dependency checks: %.*s"),
 			           numdeps, STRING_FORMAT(uuidstr));
 			if (numdeps > capacity)
 				deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);

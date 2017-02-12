@@ -537,6 +537,8 @@ resource_source_read_local(resource_source_t* source, const uuid_t uuid) {
 	stream_t* stream = resource_source_open(uuid, STREAM_IN);
 	if (!stream)
 		return false;
+	if (!source)
+		goto exit;
 	stream_determine_binary_mode(stream, 16);
 	const bool binary = stream_is_binary(stream);
 	source->read_binary = binary;
@@ -571,14 +573,14 @@ resource_source_read_local(resource_source_t* source, const uuid_t uuid) {
 		}
 	}
 
+exit:
 	stream_deallocate(stream);
-
 	return true;
 }
 
 bool
 resource_source_read(resource_source_t* source, const uuid_t uuid) {
-	if (resource_remote_sourced_is_connected() &&
+	if (source && resource_remote_sourced_is_connected() &&
 	        resource_remote_sourced_read(source, uuid))
 		return true;
 
