@@ -337,19 +337,22 @@ resource_sourced_read_read_result(remote_context_t* context, remote_header_t msg
 	log_info(HASH_RESOURCE, STRING_CONST("Read read result from remote sourced service"));
 	int ret = sourced_read_read_reply(context->remote, msg.size, reply);
 	if ((ret >= 0) && (waiting.message == REMOTE_MESSAGE_READ)) {
-		uint32_t status = 1;
-		sourced_change_t* change = reply->payload;
-		resource_source_t* source = waiting.store;
-		for (uint32_t ich = 0; ich < reply->num_changes; ++ich, ++change) {
-			if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
-				resource_source_set_blob(source, change->timestamp, change->hash, change->platform,
-				                         change->value.blob.checksum, change->value.blob.size);
-			else if (change->flags & RESOURCE_SOURCEFLAG_VALUE)
-				resource_source_set(source, change->timestamp, change->hash, change->platform,
-				                    pointer_offset(reply->payload, change->value.value.offset),
-				                    change->value.value.length);
-			else
-				resource_source_unset(source, change->timestamp, change->hash, change->platform);
+		uint32_t status = 0;
+		if ((reply->result == SOURCED_OK) && (msg.size >= sizeof(sourced_read_result_t))) {
+			sourced_change_t* change = reply->payload;
+			resource_source_t* source = waiting.store;
+			for (uint32_t ich = 0; ich < reply->num_changes; ++ich, ++change) {
+				if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
+					resource_source_set_blob(source, change->timestamp, change->hash, change->platform,
+				                             change->value.blob.checksum, change->value.blob.size);
+				else if (change->flags & RESOURCE_SOURCEFLAG_VALUE)
+					resource_source_set(source, change->timestamp, change->hash, change->platform,
+				                        pointer_offset(reply->payload, change->value.value.offset),
+				                        change->value.value.length);
+				else
+					resource_source_unset(source, change->timestamp, change->hash, change->platform);
+			}
+			status = 1;
 		}
 		udp_socket_sendto(context->control, &status, sizeof(status), socket_address_local(context->client));
 	}
@@ -502,6 +505,8 @@ static void
 resource_remote_sourced_initialize(const char* url, size_t length) {
 	if (_sourced_initialized)
 		return;
+	if (!resource_module_config().enable_remote_sourced)
+		return;
 
 	network_address_t** localaddr = network_address_local();
 	udp_socket_initialize(&_sourced_client);
@@ -509,6 +514,7 @@ resource_remote_sourced_initialize(const char* url, size_t length) {
 	socket_bind(&_sourced_client, localaddr[0]);
 	socket_bind(&_sourced_proxy, localaddr[0]);
 	socket_set_blocking(&_sourced_client, true);
+	network_address_array_deallocate(localaddr);
 
 	_sourced_url = string_clone(url, length);
 	_sourced_initialized = true;
@@ -962,6 +968,8 @@ static void
 resource_remote_compiled_initialize(const char* url, size_t length) {
 	if (_compiled_initialized)
 		return;
+	if (!resource_module_config().enable_remote_compiled)
+		return;
 
 	network_address_t** localaddr = network_address_local();
 	udp_socket_initialize(&_compiled_client);
@@ -969,6 +977,7 @@ resource_remote_compiled_initialize(const char* url, size_t length) {
 	socket_bind(&_compiled_client, localaddr[0]);
 	socket_bind(&_compiled_proxy, localaddr[0]);
 	socket_set_blocking(&_compiled_client, true);
+	network_address_array_deallocate(localaddr);
 
 	_compiled_url = string_clone(url, length);
 	_compiled_initialized = true;

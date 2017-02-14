@@ -403,10 +403,20 @@ server_handle_read(socket_t* sock, size_t msgsize) {
 		resource_source_initialize(&source);
 		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of resource: %.*s"),
 		          STRING_FORMAT(uuidstr));
-		if (resource_source_read(&source, readmsg.uuid))
+		if (resource_autoimport_need_update(readmsg.uuid, 0)) {
+			uuidstr = string_from_uuid_static(readmsg.uuid);
+			log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (read)"),
+			           STRING_FORMAT(uuidstr));
+			resource_autoimport(readmsg.uuid);
+		}
+		if (resource_source_read(&source, readmsg.uuid)) {
 			ret = sourced_write_read_reply(sock, &source, resource_source_read_hash(readmsg.uuid, 0));
-		else
+			log_infof(HASH_RESOURCE, STRING_CONST("  read resource successfully, wrote reply"));
+		}
+		else {
 			ret = sourced_write_read_reply(sock, nullptr, uint256_null());
+			log_infof(HASH_RESOURCE, STRING_CONST("  failed reading resource, wrote reply"));
+		}
 		resource_source_finalize(&source);
 		return ret;
 	}
@@ -500,6 +510,12 @@ server_handle_read_blob(socket_t* sock, size_t msgsize) {
 		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
 		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of resource blob: %.*s %" PRIx64),
 		          STRING_FORMAT(uuidstr), readmsg.key);
+		if (resource_autoimport_need_update(readmsg.uuid, readmsg.platform)) {
+			uuidstr = string_from_uuid_static(readmsg.uuid);
+			log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (read blob)"),
+			           STRING_FORMAT(uuidstr));
+			resource_autoimport(readmsg.uuid);
+		}
 		if (resource_source_read(&source, readmsg.uuid)) {
 			resource_change_t* blobchange = resource_source_get(&source, readmsg.key, readmsg.platform);
 			if (blobchange && (blobchange->flags & RESOURCE_SOURCEFLAG_BLOB)) {
