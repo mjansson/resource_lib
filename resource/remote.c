@@ -944,6 +944,7 @@ resource_compiled_write(remote_context_t* context, remote_message_t waiting) {
 	case REMOTE_MESSAGE_OPEN_STATIC:
 		log_info(HASH_RESOURCE, STRING_CONST("Write open static message to remote compiled service"));
 		if (compiled_write_open_static(context->remote, waiting.uuid, waiting.platform) < 0) {
+			log_warn(HASH_RESOURCE, WARNING_SUSPICIOUS, STRING_CONST("Failed writing open static message to remote compiled service"));
 			size_t size = 0;
 			udp_socket_sendto(context->control, &size, sizeof(size), socket_address_local(context->client));
 		}
@@ -952,6 +953,7 @@ resource_compiled_write(remote_context_t* context, remote_message_t waiting) {
 	case REMOTE_MESSAGE_OPEN_DYNAMIC:
 		log_info(HASH_RESOURCE, STRING_CONST("Write open dynamic message to remote compiled service"));
 		if (compiled_write_open_dynamic(context->remote, waiting.uuid, waiting.platform) < 0) {
+			log_warn(HASH_RESOURCE, WARNING_SUSPICIOUS, STRING_CONST("Failed writing open dynamic message to remote compiled service"));
 			size_t size = 0;
 			udp_socket_sendto(context->control, &size, sizeof(size), socket_address_local(context->client));
 		}

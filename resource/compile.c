@@ -198,7 +198,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 
 			string_const_t local_source = resource_source_path();
 			if (local_source.length) {
-				array_push(args, string_const(STRING_CONST("--resource-local-source")));
+				array_push(args, string_const(STRING_CONST("--resource-source-path")));
 				array_push(args, local_source);
 			}
 
@@ -223,9 +223,19 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 					}
 				}
-				if (process_wait(&proc) == 0) {
-					log_debugf(HASH_RESOURCE, STRING_CONST("Compiled with external tool: %.*s"), STRING_FORMAT(tools[itool]));
+				int exit_code = process_wait(&proc);
+				while (exit_code == PROCESS_STILL_ACTIVE) {
+					thread_yield();
+					exit_code = process_wait(&proc);
+				}
+				if (exit_code == 0) {
+					log_debugf(HASH_RESOURCE, STRING_CONST("Compiled with external tool: %.*s"),
+					           STRING_FORMAT(tools[itool]));
 					success = true;
+				}
+				else {
+					log_debugf(HASH_RESOURCE, STRING_CONST("Failed compiling with external tool: %.*s (%d)"),
+					           STRING_FORMAT(tools[itool]), exit_code);
 				}
 			}
 

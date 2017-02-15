@@ -65,7 +65,7 @@ resource_module_initialize(const resource_config_t config) {
 			++iarg;
 			resource_remote_compiled_connect(STRING_ARGS(cmdline[iarg]));
 		}
-		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-local-source")) &&
+		else if (string_equal(STRING_ARGS(cmdline[iarg]), STRING_CONST("--resource-source-path")) &&
 		         (iarg < (argsize - 1))) {
 			++iarg;
 			resource_source_set_path(STRING_ARGS(cmdline[iarg]));

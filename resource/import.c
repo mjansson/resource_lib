@@ -103,7 +103,7 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 
 			string_const_t local_source = resource_source_path();
 			if (local_source.length) {
-				array_push(args, string_const(STRING_CONST("--resource-local-source")));
+				array_push(args, string_const(STRING_CONST("--resource-source-path")));
 				array_push(args, local_source);
 			}
 			string_const_t base_path = resource_import_base_path();
@@ -127,8 +127,20 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 						          STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 					}
 				}
-				if (process_wait(&proc) == 0)
+				int exit_code = process_wait(&proc);
+				while (exit_code == PROCESS_STILL_ACTIVE) {
+					thread_yield();
+					exit_code = process_wait(&proc);
+				}
+				if (exit_code == 0) {
+					log_debugf(HASH_RESOURCE, STRING_CONST("Imported with external tool: %.*s"),
+					           STRING_FORMAT(tools[itool]));
 					was_imported = true;
+				}
+				else {
+					log_debugf(HASH_RESOURCE, STRING_CONST("Failed importing with external tool: %.*s (%d)"),
+					           STRING_FORMAT(tools[itool]), exit_code);
+				}
 			}
 
 			process_finalize(&proc);
