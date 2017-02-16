@@ -22,9 +22,13 @@
 
 #include <resource/types.h>
 
+/*! The stream returned must be deallocated before calling any other resource
+stream using function, such as loading another resource */
 RESOURCE_API stream_t*
 resource_stream_open_static(const uuid_t res, uint64_t platform);
 
+/*! The stream returned must be deallocated before calling any other resource
+stream using function, such as loading another resource */
 RESOURCE_API stream_t*
 resource_stream_open_dynamic(const uuid_t res, uint64_t platform);
 
