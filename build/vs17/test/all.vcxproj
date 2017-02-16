@@ -148,7 +148,7 @@
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>test-$(ProjectName)</TargetName>
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\bin\windows\debug\x86-64\</OutDir>
+    <OutDir>..\..\..\bin\windows\debug\x86-64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -172,19 +172,19 @@
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>test-$(ProjectName)</TargetName>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\bin\windows\release\x86-64\</OutDir>
+    <OutDir>..\..\..\bin\windows\release\x86-64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Deploy|x64'">
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>test-$(ProjectName)</TargetName>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\bin\windows\deploy\x86-64\</OutDir>
+    <OutDir>..\..\..\bin\windows\deploy\x86-64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>test-$(ProjectName)</TargetName>
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\bin\windows\profile\x86-64\</OutDir>
+    <OutDir>..\..\..\bin\windows\profile\x86-64\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
