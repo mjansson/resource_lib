@@ -210,33 +210,32 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 
 			process_set_arguments(&proc, args, array_size(args));
 			process_set_flags(&proc, PROCESS_STDSTREAMS | PROCESS_DETACHED);
+			process_spawn(&proc);
 
-			if (process_spawn(&proc) == PROCESS_STILL_ACTIVE) {
-				stream_t* err = process_stderr(&proc);
-				stream_finalize(process_stdout(&proc));
-				while (!stream_eos(err)) {
-					string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
-					if (line.length) {
-						if (line.str[line.length-1] == '\r')
-							--line.length;
-						log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
-					              STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
-					}
+			stream_t* err = process_stderr(&proc);
+			stream_finalize(process_stdout(&proc));
+			while (!stream_eos(err)) {
+				string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
+				if (line.length) {
+					if (line.str[line.length-1] == '\r')
+						--line.length;
+					log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
+					            STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 				}
-				int exit_code = process_wait(&proc);
-				while (exit_code == PROCESS_STILL_ACTIVE) {
-					thread_yield();
-					exit_code = process_wait(&proc);
-				}
-				if (exit_code == 0) {
-					log_debugf(HASH_RESOURCE, STRING_CONST("Compiled with external tool: %.*s"),
-					           STRING_FORMAT(tools[itool]));
-					success = true;
-				}
-				else {
-					log_debugf(HASH_RESOURCE, STRING_CONST("Failed compiling with external tool: %.*s (%d)"),
-					           STRING_FORMAT(tools[itool]), exit_code);
-				}
+			}
+			int exit_code = process_wait(&proc);
+			while (exit_code == PROCESS_STILL_ACTIVE) {
+				thread_yield();
+				exit_code = process_wait(&proc);
+			}
+			if (exit_code == 0) {
+				log_debugf(HASH_RESOURCE, STRING_CONST("Compiled with external tool: %.*s"),
+					        STRING_FORMAT(tools[itool]));
+				success = true;
+			}
+			else {
+				log_debugf(HASH_RESOURCE, STRING_CONST("Failed compiling with external tool: %.*s (%d)"),
+					        STRING_FORMAT(tools[itool]), exit_code);
 			}
 
 			process_finalize(&proc);
