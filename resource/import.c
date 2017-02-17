@@ -507,10 +507,15 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s"), STRING_FORMAT(uuidstr));
+	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s (platform %" PRIx64 ")"),
+	           STRING_FORMAT(uuidstr), platform);
 
-	if (!resource_source_read(nullptr, uuid))
+	if (!resource_source_read(nullptr, uuid)) {
+		uuidstr = string_from_uuid_static(uuid);
+		log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source file missing: %.*s"),
+		           STRING_FORMAT(uuidstr));
 		return true;
+	}
 
 	mutex_lock(_resource_autoimport_lock);
 	string_t path = resource_autoimport_reverse_lookup(uuid, buffer.path, sizeof(buffer.path));
@@ -527,17 +532,18 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 			bool need_import = false;
 			uuid_t* deps = localdeps;
 			log_debugf(HASH_RESOURCE,
-			           STRING_CONST("Autoimport check, %" PRIsize " source dependency checks: %.*s"),
-			           numdeps, STRING_FORMAT(uuidstr));
+			           STRING_CONST("Autoimport check, %" PRIsize " source dependency checks for platform: %.*s (%" PRIx64 ")"),
+			           numdeps, STRING_FORMAT(uuidstr), platform);
 			if (numdeps > capacity)
 				deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
-			resource_source_dependencies(uuid, platform, deps, numdeps);
+			numdeps = resource_source_dependencies(uuid, platform, deps, numdeps);
 			for (size_t idep = 0; idep < numdeps; ++idep) {
 				if (resource_autoimport_need_update(deps[idep], platform)) {
 					need_import = true;
 					uuidstr = string_from_uuid_static(uuid);
-					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, source dependency changed: %.*s"),
-					           STRING_FORMAT(uuidstr));
+					string_t depstr = string_from_uuid(buffer.path, sizeof(buffer.path), deps[idep]);
+					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source dependency changed for platform: %.*s <- %.*s (%" PRIx64 ")"),
+					           STRING_FORMAT(uuidstr), STRING_FORMAT(depstr), platform);
 					break;
 				}
 			}

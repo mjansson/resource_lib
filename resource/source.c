@@ -765,6 +765,7 @@ resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
 size_t
 resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
 	size_t numdeps = 0;
+	size_t outdeps = 0;
 
 	if (resource_remote_sourced_is_connected())
 		return resource_remote_sourced_dependencies(uuid, platform, deps, capacity);
@@ -777,12 +778,12 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
 				if (idep < capacity)
-					deps[idep] = depuuid;
+					deps[outdeps++] = depuuid;
 			}
 		}
 	}
 	stream_deallocate(stream);
-	return numdeps;
+	return outdeps;
 }
 
 void
@@ -801,10 +802,16 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 		if (platform == depplatform) {
 			//Replace line with new line at end
 			size_t toread = size - endofs;
-			char* remain = memory_allocate(HASH_RESOURCE, toread, 0, MEMORY_PERSISTENT);
-			size_t read = stream_read(stream, remain, toread);
-			stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
-			stream_write(stream, remain, read);
+			if (toread) {
+				char* remain = memory_allocate(HASH_RESOURCE, toread, 0, MEMORY_PERSISTENT);
+				size_t read = stream_read(stream, remain, toread);
+				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+				stream_write(stream, remain, read);
+				memory_deallocate(remain);
+			}
+			else {
+				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+			}
 			break;
 		}
 	}
