@@ -187,7 +187,13 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 			process_set_executable_path(&proc, STRING_ARGS(fullpath));
 
 			string_const_t* args = nullptr;
+			char platformarr[34];
 			array_push(args, string_to_const(uuidstr));
+			if (platform) {
+				string_t platformstr = string_from_uint(platformarr, sizeof(platformarr), platform, true, 0, 0);
+				array_push(args, string_const(STRING_CONST("--platform")));
+				array_push(args, string_to_const(platformstr));
+			}
 			array_push(args, string_const(STRING_CONST("--")));
 
 			const string_const_t* local_paths = resource_local_paths();
