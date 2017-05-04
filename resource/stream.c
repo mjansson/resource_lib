@@ -30,15 +30,15 @@ resource_stream_open_static(const uuid_t res, uint64_t platform) {
 
 	if (resource_autoimport_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
-		log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (open static)"),
-		           STRING_FORMAT(uuidstr));
+		log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (platform 0x%" PRIx64 ") (open static)"),
+		           STRING_FORMAT(uuidstr), platform);
 		resource_autoimport(res);
 	}
 
 	if (resource_compile_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
-		log_debugf(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s (open static)"),
-		           STRING_FORMAT(uuidstr));
+		log_debugf(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s (platform 0x%" PRIx64 ") (open static)"),
+		           STRING_FORMAT(uuidstr), platform);
 		resource_compile(res, platform);
 	}
 
@@ -48,8 +48,8 @@ resource_stream_open_static(const uuid_t res, uint64_t platform) {
 
 	string_const_t uuidstr = string_from_uuid_static(res);
 	log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-	          STRING_CONST("Unable to open static stream for resource: %.*s"),
-	          STRING_FORMAT(uuidstr));
+	          STRING_CONST("Unable to open static stream for resource: %.*s (platform 0x%" PRIx64 ")"),
+	          STRING_FORMAT(uuidstr), platform);
 
 	return 0;
 }

@@ -56,7 +56,8 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s"), STRING_FORMAT(uuidstr));
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s (platform 0x%" PRIx64")"),
+	           STRING_FORMAT(uuidstr), platform);
 
 	source_hash = resource_source_read_hash(uuid, platform);
 	if (uint256_is_null(source_hash)) {
@@ -102,7 +103,8 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 #else
 	const string_t uuidstr = {0, 0};
 #endif
-	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s"), STRING_FORMAT(uuidstr));
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ")"),
+	           STRING_FORMAT(uuidstr), platform);
 
 	uuid_t localdeps[4];
 	size_t depscapacity = sizeof(localdeps) / sizeof(uuid_t);
@@ -256,12 +258,12 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 
 	if (!success) {
 		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-		          STRING_CONST("Unable to compile: %.*s (%" PRIsize " internal, %" PRIsize " external)"),
-		          STRING_FORMAT(uuidstr),
-		          internal, external);
+		          STRING_CONST("Unable to compile: %.*s (platform 0x%" PRIx64 ") (%" PRIsize " internal, %" PRIsize " external)"),
+		          STRING_FORMAT(uuidstr), platform, internal, external);
 	}
 	else {
-		log_infof(HASH_RESOURCE, STRING_CONST("Compiled: %.*s"), STRING_FORMAT(uuidstr));
+		log_infof(HASH_RESOURCE, STRING_CONST("Compiled: %.*s (platform 0x%" PRIx64 ")"),
+		          STRING_FORMAT(uuidstr), platform);
 	}
 
 	return success;

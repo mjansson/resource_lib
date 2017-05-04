@@ -507,7 +507,7 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s (platform %" PRIx64 ")"),
+	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s (platform 0x%" PRIx64 ")"),
 	           STRING_FORMAT(uuidstr), platform);
 
 	if (!resource_source_read(nullptr, uuid)) {
