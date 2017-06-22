@@ -401,7 +401,7 @@ resource_autoimport_finalize(void) {
 
 static hash_t
 resource_autoimport_token(void) {
-	return (hash_t)atomic_incr64(&_resource_autoimport_token);
+	return (hash_t)atomic_incr64(&_resource_autoimport_token, memory_order_acq_rel);
 }
 
 static string_t

@@ -82,7 +82,8 @@ server_run(unsigned int port) {
 	                  THREAD_PRIORITY_NORMAL, 0);
 
 	/*if (network_supports_ipv4())*/ {
-		network_address_t* address = network_address_ipv4_any();
+		network_address_ipv4_t ipv4_addr;
+		network_address_t* address = network_address_ipv4_initialize(&ipv4_addr);
 		network_address_ip_set_port(address, port);
 		sock[sockets] = tcp_socket_allocate();
 		socket_set_beacon(sock[sockets], &beacon);
@@ -100,7 +101,8 @@ server_run(unsigned int port) {
 		memory_deallocate(address);
 	}
 	if (network_supports_ipv6()) {
-		network_address_t* address = network_address_ipv6_any();
+		network_address_ipv6_t ipv6_addr;
+		network_address_t* address = network_address_ipv6_initialize(&ipv6_addr);
 		network_address_ip_set_port(address, port);
 		sock[sockets] = tcp_socket_allocate();
 		socket_set_beacon(sock[sockets], &beacon);
