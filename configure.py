@@ -31,6 +31,10 @@ if not target.is_ios() and not target.is_android() and not target.is_tizen():
     generator.bin('sourced', ['main.c', 'server.c'], 'sourced', basepath = 'tools', implicit_deps = [resource_lib], libs = ['resource', 'network', 'foundation'] + network_libs, configs = configs )
     generator.bin('compiled', ['main.c', 'server.c'], 'compiled', basepath = 'tools', implicit_deps = [resource_lib], libs = ['resource', 'network', 'foundation'] + network_libs, configs = configs )
 
+#No test cases if we're a submodule
+if generator.is_subninja():
+  sys.exit()
+
 includepaths = generator.test_includepaths()
 
 test_cases = [
