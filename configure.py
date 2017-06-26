@@ -27,9 +27,9 @@ if target.is_windows():
 if not target.is_ios() and not target.is_android() and not target.is_tizen():
   configs = [config for config in toolchain.configs if config not in ['profile', 'deploy']]
   if not configs == []:
-    generator.bin('resource', ['main.c'], 'resource', basepath = 'tools', implicit_deps = [resource_lib], libs = ['resource', 'network', 'foundation'] + network_libs, configs = configs )
-    generator.bin('sourced', ['main.c', 'server.c'], 'sourced', basepath = 'tools', implicit_deps = [resource_lib], libs = ['resource', 'network', 'foundation'] + network_libs, configs = configs )
-    generator.bin('compiled', ['main.c', 'server.c'], 'compiled', basepath = 'tools', implicit_deps = [resource_lib], libs = ['resource', 'network', 'foundation'] + network_libs, configs = configs )
+    generator.bin('resource', ['main.c'], 'resource', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = ['resource'] + network_libs, configs = configs )
+    generator.bin('sourced', ['main.c', 'server.c'], 'sourced', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = ['resource'] + network_libs, configs = configs )
+    generator.bin('compiled', ['main.c', 'server.c'], 'compiled', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = ['resource'] + network_libs, configs = configs )
 
 #No test cases if we're a submodule
 if generator.is_subninja():
