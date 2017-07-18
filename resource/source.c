@@ -766,6 +766,7 @@ size_t
 resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
 	size_t numdeps = 0;
 	size_t outdeps = 0;
+	size_t depcount = 0;
 
 	if (resource_remote_sourced_is_connected())
 		return resource_remote_sourced_dependencies(uuid, platform, deps, capacity);
@@ -777,13 +778,14 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 		for (size_t idep = 0; idep < numdeps; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
-				if (idep < capacity)
+				if (outdeps < capacity)
 					deps[outdeps++] = depuuid;
+				++depcount;
 			}
 		}
 	}
 	stream_deallocate(stream);
-	return outdeps;
+	return depcount;
 }
 
 void
