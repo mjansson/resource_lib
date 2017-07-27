@@ -41,6 +41,7 @@ typedef struct {
 	resource_op_t*    op;
 	bool              collapse;
 	bool              clearblobs;
+	bool              cformat;
 	bool              dump;
 } resource_input_t;
 
@@ -132,7 +133,8 @@ main_run(void* main_arg) {
 	event_stream_set_beacon(system_event_stream(), &beacon);
 
 	thread_t runner;
-	thread_initialize(&runner, resource_run, &input, STRING_CONST("resource-runner"), THREAD_PRIORITY_NORMAL, 0);
+	thread_initialize(&runner, resource_run, &input, STRING_CONST("resource-runner"),
+	                  THREAD_PRIORITY_NORMAL, 0);
 	thread_start(&runner);
 
 	bool terminate = false;
@@ -197,7 +199,8 @@ resource_run(void* arg) {
 		need_source = true;
 
 	bool already_help = input->display_help;
-	if (!already_help && need_source && !resource_source_path().length && !resource_remote_sourced().length) {
+	if (!already_help && need_source && !resource_source_path().length &&
+	        !resource_remote_sourced().length) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input->display_help = true;
 	}
@@ -267,6 +270,37 @@ resource_run(void* arg) {
 			result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
 		}
 	}
+	else {
+		char buffer[64];
+		string_const_t uuidstr = string_from_uuid_static(input->uuid);
+		const error_level_t saved_level = log_suppress(0);
+		log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
+		if (input->cformat) {
+			typedef struct {
+				uint32_t       data1;
+				uint16_t       data2;
+				uint16_t       data3;
+				uint8_t        data4[8];
+			} uuid_raw_t;
+
+			typedef union {
+				uuid_raw_t     raw;
+				uuid_t         uuid;
+			} uuid_convert_t;
+
+			uuid_convert_t convert;
+			convert.uuid = input->uuid;
+			string_t cformatstr =
+			    string_format(buffer, sizeof(buffer),
+			                  STRING_CONST("uuid_make(0x%04x%04x%08x, 0x%02x%02x%02x%02x%02x%02x%02x%02x)"),
+			                  convert.raw.data3, convert.raw.data2, convert.raw.data1,
+			                  convert.raw.data4[7], convert.raw.data4[6], convert.raw.data4[5], convert.raw.data4[4],
+			                  convert.raw.data4[3], convert.raw.data4[2], convert.raw.data4[1], convert.raw.data4[0]);
+			uuidstr = string_const(STRING_ARGS(cformatstr));
+		}
+		log_infof(HASH_RESOURCE, STRING_CONST("UUID: %.*s"), STRING_FORMAT(uuidstr));
+		log_set_suppress(HASH_RESOURCE, saved_level);
+	}
 
 	if (input->dump) {
 		//...
@@ -281,13 +315,15 @@ exit:
 	return (void*)(intptr_t)result;
 }
 
-static resource_change_t* 
+static resource_change_t*
 resource_dump_fn(resource_change_t* change, resource_change_t* best, void* data) {
 	FOUNDATION_UNUSED(data);
 	FOUNDATION_UNUSED(best);
 	if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
-		log_infof(HASH_RESOURCE, STRING_CONST("BLOB %" PRItick " %" PRIhash " %" PRIx64 " : %" PRIhash " (%" PRIsize ")"),
-		          change->timestamp, change->hash, change->platform, change->value.blob.checksum, change->value.blob.size);
+		log_infof(HASH_RESOURCE, STRING_CONST("BLOB %" PRItick " %" PRIhash " %" PRIx64 " : %" PRIhash " (%"
+		                                      PRIsize ")"),
+		          change->timestamp, change->hash, change->platform, change->value.blob.checksum,
+		          change->value.blob.size);
 	else if (change->flags & RESOURCE_SOURCEFLAG_VALUE)
 		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64 " : %.*s"),
 		          change->timestamp, change->hash, change->platform, STRING_FORMAT(change->value.value));
@@ -408,6 +444,9 @@ resource_parse_command_line(const string_const_t* cmdline) {
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--dump"))) {
 			input.dump = true;
 		}
+		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--cformat"))) {
+			input.cformat = true;
+		}
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_NONE);
@@ -435,7 +474,8 @@ resource_print_usage(void) {
 	             "           [--set <key> <value>] [--blob <key> <file>] [--unset <key>]\n"
 	             "           [--platform <id>]\n"
 	             "           [--collapse] [--clearblobs]\n"
-	             "           [--binary] [--ascii] [--dump] [--debug] [--help] [--]\n"
+	             "           [--binary] [--ascii] [--dump]\n"
+	             "           [--cformat] [--debug] [--help] [--]\n"
 	             "    Resource specification arguments:\n"
 	             "      --source <path>        Set resource file repository to <path>\n"
 	             "      --config <path> ...    Read and parse config file given by <path>\n"
@@ -455,6 +495,7 @@ resource_print_usage(void) {
 	             "      --binary               Write binary file\n"
 	             "      --ascii                Write ASCII file (default)\n"
 	             "      --dump                 Dump file output resource to stdout\n"
+	             "      --cformat              Format UUIDs as C uuid_make() declarations\n"
 	             "      --debug                Enable debug output\n"
 	             "      --help                 Display this help message\n"
 	             "      --                     Stop processing command line arguments"
