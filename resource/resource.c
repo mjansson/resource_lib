@@ -166,10 +166,10 @@ resource_module_parse_config(const char* path, size_t path_size,
 			        (restok < num_tokens); restok = tokens[restok].sibling) {
 
 				string_const_t resid = json_token_identifier(buffer, tokens + restok);
+				hash_t idhash = hash(STRING_ARGS(resid));
+				string_const_t sourcedir = path_directory_name(path, path_size);
 				if (tokens[restok].type == JSON_STRING) {
 					string_const_t value = json_token_value(buffer, tokens + restok);
-					hash_t idhash = hash(STRING_ARGS(resid));
-					string_const_t sourcedir = path_directory_name(path, path_size);
 
 					string_t fullpath;
 					if (!path_is_absolute(STRING_ARGS(value))) {
@@ -195,6 +195,27 @@ resource_module_parse_config(const char* path, size_t path_size,
 					else if (idhash == HASH_TOOL_PATH) {
 						resource_import_register_path(STRING_ARGS(fullpath));
 						resource_compile_register_path(STRING_ARGS(fullpath));
+					}
+				}
+				else if (tokens[restok].type == JSON_ARRAY) {
+					if (idhash == HASH_AUTOIMPORT_PATH) {
+						size_t arrtok = tokens[restok].child;
+						while (arrtok) {
+							if (tokens[arrtok].type == JSON_STRING) {
+								string_const_t import_path = json_token_value(buffer, tokens + arrtok);
+								string_t fullpath;
+								if (!path_is_absolute(STRING_ARGS(import_path))) {
+									fullpath = path_concat(pathbuf, sizeof(pathbuf), STRING_ARGS(sourcedir), STRING_ARGS(import_path));
+									fullpath = path_absolute(STRING_ARGS(fullpath), sizeof(pathbuf));
+								}
+								else {
+									fullpath = string_copy(pathbuf, sizeof(pathbuf), STRING_ARGS(import_path));
+								}
+								log_infof(0, STRING_CONST("Autoimport path: %.*s"), STRING_FORMAT(fullpath));
+								resource_autoimport_watch(STRING_ARGS(fullpath));
+							}
+							arrtok = tokens[arrtok].sibling;
+						}
 					}
 				}
 			}
