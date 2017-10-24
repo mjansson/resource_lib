@@ -211,7 +211,6 @@ resource_module_parse_config(const char* path, size_t path_size,
 								else {
 									fullpath = string_copy(pathbuf, sizeof(pathbuf), STRING_ARGS(import_path));
 								}
-								log_infof(0, STRING_CONST("Autoimport path: %.*s"), STRING_FORMAT(fullpath));
 								resource_autoimport_watch(STRING_ARGS(fullpath));
 							}
 							arrtok = tokens[arrtok].sibling;

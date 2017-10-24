@@ -161,12 +161,15 @@ server_run(unsigned int port) {
 				switch (event->id) {
 				case RESOURCEEVENT_CREATE:
 				case RESOURCEEVENT_MODIFY:
+				case RESOURCEEVENT_DEPENDS:
 				case RESOURCEEVENT_DELETE:
 					message.message = SERVER_MESSAGE_BROADCAST_NOTIFY;
 					if (event->id == RESOURCEEVENT_CREATE)
 						message.id = SOURCED_NOTIFY_CREATE;
 					else if (event->id == RESOURCEEVENT_MODIFY)
 						message.id = SOURCED_NOTIFY_MODIFY;
+					else if (event->id == RESOURCEEVENT_DEPENDS)
+						message.id = SOURCED_NOTIFY_DEPENDS;
 					else if (event->id == RESOURCEEVENT_DELETE)
 						message.id = SOURCED_NOTIFY_DELETE;
 					message.uuid = resource_event_uuid(event);
@@ -352,6 +355,7 @@ server_handle(socket_t* sock) {
 	case SOURCED_READ_BLOB_RESULT:
 	case SOURCED_NOTIFY_CREATE:
 	case SOURCED_NOTIFY_MODIFY:
+	case SOURCED_NOTIFY_DEPENDS:
 	case SOURCED_NOTIFY_DELETE:
 	default:
 		break;

@@ -26,8 +26,13 @@
 #define RESOURCE_PLATFORM_ALL ((uint64_t)-1)
 
 typedef enum resource_event_id {
+	/*! Resource was created */
 	RESOURCEEVENT_CREATE = 0,
+	/*! Resource source was modified */
 	RESOURCEEVENT_MODIFY,
+	/*! Resource dependency was modified */
+	RESOURCEEVENT_DEPENDS,
+	/*! Resource was deleted */
 	RESOURCEEVENT_DELETE,
 	RESOURCEEVENT_LAST_RESERVED = 32
 } resource_event_id;

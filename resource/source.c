@@ -793,12 +793,21 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
                                  size_t num) {
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
+	uuid_t* olddeps = nullptr;
+	unsigned int numdeps = 0;
+	unsigned int idep, iotherdep;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
-		unsigned int numdeps = stream_read_uint32(stream);
+		numdeps = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		for (unsigned int idep = 0; idep < numdeps; ++idep)
-			stream_read_uuid(stream);
+		if (platform == depplatform)
+			olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+		for (idep = 0; idep < numdeps; ++idep) {
+			if (platform == depplatform)
+				olddeps[idep] = stream_read_uuid(stream);
+			else
+				stream_read_uuid(stream);
+		}
 		stream_skip_whitespace(stream);
 		size_t endofs = stream_tell(stream);
 		if (platform == depplatform) {
@@ -820,13 +829,30 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 	stream_write_uint32(stream, (uint32_t)num);
 	stream_write_separator(stream);
 	stream_write_uint64(stream, platform);
-	for (unsigned int idep = 0; idep < num; ++idep) {
+	for (idep = 0; idep < num; ++idep) {
 		stream_write_separator(stream);
 		stream_write_uuid(stream, deps[idep]);
 	}
 	stream_write_endl(stream);
 	stream_truncate(stream, stream_tell(stream));
 	stream_deallocate(stream);
+
+	for (idep = 0; idep < numdeps; ++idep) {
+		for (iotherdep = 0; iotherdep < numdeps; ++iotherdep) {
+			if (uuid_equal(olddeps[iotherdep], deps[idep])) {
+				olddeps[iotherdep] = nullptr;
+				break;
+			}
+		}
+		if (iotherdep == numdeps)
+			resource_source_add_reverse_dependency(deps[idep], uuid);
+	}
+	for (iotherdep = 0; iotherdep < numdeps; ++iotherdep) {
+		if (olddeps[iotherdep])
+			resource_source_remove_reverse_dependency(olddeps[iotherdep], uuid);
+	}
+
+	memory_deallocate(olddeps);
 }
 
 #else

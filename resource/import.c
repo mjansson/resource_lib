@@ -653,7 +653,7 @@ resource_autoimport_event_handle(event_t* event) {
 	if (!resource_module_config().enable_local_autoimport)
 		return;
 
-	if (event->id != FOUNDATIONEVENT_FILE_MODIFIED)
+	if ((event->id != FOUNDATIONEVENT_FILE_MODIFIED) && (event->id != FOUNDATIONEVENT_FILE_CREATED))
 		return;
 
 	const string_const_t path = fs_event_path(event);
@@ -671,9 +671,19 @@ resource_autoimport_event_handle(event_t* event) {
 					_resource_autoimport_last_hash = newhash;
 
 					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
+					hash_t token = resource_autoimport_token();
 					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s)"),
 					           STRING_FORMAT(path), STRING_FORMAT(uuidstr));
-					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, resource_autoimport_token());
+					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, token);
+
+					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, platform);
+					if (num_reverse) {
+						uuid_t* reverse_deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * num_reverse, 0, MEMORY_PERSISTENT);
+						num_reverse = resource_source_reverse_dependencies(sig.uuid, platform, reverse_deps, num_reverse);
+						for (size_t idep = 0; idep < num_reverse; ++idep)
+							resource_event_post(RESOURCEEVENT_DEPENDS, reverse_deps[idep], token);
+						memory_deallocate(reverse_deps);
+					}
 				}
 			}
 		}

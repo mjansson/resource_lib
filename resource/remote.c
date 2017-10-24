@@ -413,6 +413,9 @@ resource_sourced_read_notify(remote_context_t* context, remote_header_t msg) {
 		case SOURCED_NOTIFY_MODIFY:
 			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.token);
 			break;
+		case SOURCED_NOTIFY_DEPENDS:
+			resource_event_post(RESOURCEEVENT_DEPENDS, notify.uuid, notify.token);
+			break;
 		case SOURCED_NOTIFY_DELETE:
 			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
 			break;
@@ -442,6 +445,7 @@ resource_sourced_read(remote_context_t* context, remote_header_t msg, remote_mes
 
 	case SOURCED_NOTIFY_CREATE:
 	case SOURCED_NOTIFY_MODIFY:
+	case SOURCED_NOTIFY_DEPENDS:
 	case SOURCED_NOTIFY_DELETE:
 		return resource_sourced_read_notify(context, msg);
 
@@ -909,6 +913,9 @@ resource_compiled_read_notify(remote_context_t* context, remote_header_t msg) {
 		case COMPILED_NOTIFY_MODIFY:
 			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.token);
 			break;
+		case COMPILED_NOTIFY_DEPENDS:
+			resource_event_post(RESOURCEEVENT_DEPENDS, notify.uuid, notify.token);
+			break;
 		case COMPILED_NOTIFY_DELETE:
 			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
 			break;
@@ -929,6 +936,7 @@ resource_compiled_read(remote_context_t* context, remote_header_t msg, remote_me
 
 	case COMPILED_NOTIFY_CREATE:
 	case COMPILED_NOTIFY_MODIFY:
+	case COMPILED_NOTIFY_DEPENDS:
 	case COMPILED_NOTIFY_DELETE:
 		return resource_compiled_read_notify(context, msg);
 

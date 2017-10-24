@@ -384,6 +384,7 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				++arg;
 				string_t cleanpath = string_copy(buffer, sizeof(buffer), STRING_ARGS(cmdline[arg]));
 				cleanpath = path_clean(STRING_ARGS(cleanpath), sizeof(buffer));
+				log_debugf(HASH_RESOURCE, STRING_CONST("Lookup path: %.*s"), STRING_FORMAT(cleanpath));
 				input.lookup_path = string_clone(STRING_ARGS(cleanpath));
 			}
 		}
