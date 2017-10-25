@@ -676,10 +676,10 @@ resource_autoimport_event_handle(event_t* event) {
 					           STRING_FORMAT(path), STRING_FORMAT(uuidstr));
 					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, token);
 
-					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, platform);
+					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, 0);
 					if (num_reverse) {
 						uuid_t* reverse_deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * num_reverse, 0, MEMORY_PERSISTENT);
-						num_reverse = resource_source_reverse_dependencies(sig.uuid, platform, reverse_deps, num_reverse);
+						num_reverse = resource_source_reverse_dependencies(sig.uuid, 0, reverse_deps, num_reverse);
 						for (size_t idep = 0; idep < num_reverse; ++idep)
 							resource_event_post(RESOURCEEVENT_DEPENDS, reverse_deps[idep], token);
 						memory_deallocate(reverse_deps);

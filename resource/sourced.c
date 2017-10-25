@@ -234,10 +234,10 @@ sourced_write_hash_reply(socket_t* sock, uint256_t hash) {
 	return -1;
 }
 
-int
-sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform) {
+static int
+sourced_write_dependencies_impl(socket_t* sock, uuid_t uuid, uint64_t platform, uint32_t msgid) {
 	sourced_dependencies_t msg = {
-		SOURCED_DEPENDENCIES,
+		msgid,
 		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)),
 		uuid,
 		platform
@@ -247,11 +247,11 @@ sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform) {
 	return -1;
 }
 
-int
-sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
+static int
+sourced_write_dependencies_reply_impl(socket_t* sock, uuid_t* deps, size_t numdeps, uint32_t msgid) {
 	size_t reply_size = sizeof(sourced_dependencies_result_t) + sizeof(uuid_t) * numdeps;
 	sourced_message_t msg = {
-		SOURCED_DEPENDENCIES_RESULT,
+		msgid,
 		(uint32_t)reply_size
 	};
 	sourced_dependencies_result_t* reply = memory_allocate(HASH_RESOURCE, reply_size, 0, MEMORY_PERSISTENT);
@@ -266,8 +266,8 @@ sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
 	return -1;
 }
 
-int
-sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+static int
+sourced_read_dependencies_reply_impl(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
 	sourced_reply_t header;
 	size_t read = socket_read(sock, &header, sizeof(header));
 	if (read != sizeof(header)) {
@@ -314,6 +314,36 @@ sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_
 	}
 
 	return 0;
+}
+
+int
+sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform) {
+	return sourced_write_dependencies_impl(sock, uuid, platform, SOURCED_DEPENDENCIES);
+}
+
+int
+sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
+	return sourced_write_dependencies_reply_impl(sock, deps, numdeps, SOURCED_DEPENDENCIES_RESULT);
+}
+
+int
+sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+	return sourced_read_dependencies_reply_impl(sock, size, deps, capacity, count);
+}
+
+int
+sourced_write_reverse_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform) {
+	return sourced_write_dependencies_impl(sock, uuid, platform, SOURCED_REVERSE_DEPENDENCIES);
+}
+
+int
+sourced_write_reverse_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
+	return sourced_write_dependencies_reply_impl(sock, deps, numdeps, SOURCED_REVERSE_DEPENDENCIES_RESULT);
+}
+
+int
+sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+	return sourced_read_dependencies_reply_impl(sock, size, deps, capacity, count);
 }
 
 int

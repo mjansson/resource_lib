@@ -124,3 +124,16 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 
 RESOURCE_API void
 resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num);
+
+RESOURCE_API size_t
+resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform);
+
+RESOURCE_API size_t
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+
+RESOURCE_API void
+resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep);
+
+RESOURCE_API void
+resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep);
+

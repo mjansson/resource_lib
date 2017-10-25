@@ -51,6 +51,9 @@ enum sourced_message_id {
 	
 	SOURCED_DEPENDENCIES,
 	SOURCED_DEPENDENCIES_RESULT,
+
+	SOURCED_REVERSE_DEPENDENCIES,
+	SOURCED_REVERSE_DEPENDENCIES_RESULT,
 	
 	SOURCED_READ_BLOB,
 	SOURCED_READ_BLOB_RESULT,
@@ -309,6 +312,15 @@ sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps);
 
 int
 sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count);
+
+int
+sourced_write_reverse_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform);
+
+int
+sourced_write_reverse_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps);
+
+int
+sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count);
 
 int
 sourced_write_read_blob(socket_t* sock, uuid_t uuid, uint64_t platform, hash_t key);

@@ -43,6 +43,9 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform);
 RESOURCE_API size_t
 resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
 
+RESOURCE_API size_t
+resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+
 RESOURCE_API bool
 resource_remote_sourced_read(resource_source_t* source, uuid_t uuid);
 

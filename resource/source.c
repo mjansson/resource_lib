@@ -87,6 +87,19 @@ resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
 }
 
 static stream_t*
+resource_source_open_reverse_deps(const uuid_t uuid, unsigned int mode) {
+	char buffer[BUILD_MAX_PATHLEN];
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer),
+	                                          STRING_ARGS(_resource_source_path), uuid);
+	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".revdeps"));
+	if (mode & STREAM_OUT) {
+		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
+		fs_make_directory(STRING_ARGS(dir_path));
+	}
+	return stream_open(STRING_ARGS(path), mode);
+}
+
+static stream_t*
 resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform,
                           hash_t checksum, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
@@ -825,6 +838,9 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 			}
 			break;
 		}
+		else {
+			numdeps = 0;
+		}
 	}
 	stream_write_uint32(stream, (uint32_t)num);
 	stream_write_separator(stream);
@@ -840,18 +856,176 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 	for (idep = 0; idep < numdeps; ++idep) {
 		for (iotherdep = 0; iotherdep < numdeps; ++iotherdep) {
 			if (uuid_equal(olddeps[iotherdep], deps[idep])) {
-				olddeps[iotherdep] = nullptr;
+				olddeps[iotherdep] = uuid_null();
 				break;
 			}
 		}
 		if (iotherdep == numdeps)
-			resource_source_add_reverse_dependency(deps[idep], uuid);
+			resource_source_add_reverse_dependency(deps[idep], platform, uuid);
 	}
 	for (iotherdep = 0; iotherdep < numdeps; ++iotherdep) {
-		if (olddeps[iotherdep])
-			resource_source_remove_reverse_dependency(olddeps[iotherdep], uuid);
+		if (!uuid_is_null(olddeps[iotherdep]))
+			resource_source_remove_reverse_dependency(olddeps[iotherdep], platform, uuid);
 	}
 
+	memory_deallocate(olddeps);
+}
+
+size_t
+resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
+	return resource_source_reverse_dependencies(uuid, platform, nullptr, 0);
+}
+
+size_t
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+	size_t numdeps = 0;
+	size_t outdeps = 0;
+	size_t depcount = 0;
+
+	if (resource_remote_sourced_is_connected())
+		return resource_remote_sourced_reverse_dependencies(uuid, platform, deps, capacity);
+
+	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN);
+	while (stream && !stream_eos(stream)) {
+		numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		for (size_t idep = 0; idep < numdeps; ++idep) {
+			uuid_t depuuid = stream_read_uuid(stream);
+			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
+				if (outdeps < capacity)
+					deps[outdeps++] = depuuid;
+				++depcount;
+			}
+		}
+	}
+	stream_deallocate(stream);
+	return depcount;
+}
+
+void
+resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
+	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
+	size_t size = stream_size(stream);
+	uuid_t* olddeps = nullptr;
+	unsigned int numdeps = 0;
+	unsigned int idep;
+	bool hasdep = false;
+	while (!stream_eos(stream)) {
+		ssize_t startofs = (ssize_t)stream_tell(stream);
+		numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		if (platform == depplatform)
+			olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+		for (idep = 0; idep < numdeps; ++idep) {
+			if (platform == depplatform) {
+				olddeps[idep] = stream_read_uuid(stream);
+				if (uuid_equal(olddeps[idep], dep))
+					hasdep = true;
+			}
+			else
+				stream_read_uuid(stream);
+		}
+		stream_skip_whitespace(stream);
+		size_t endofs = stream_tell(stream);
+		if (platform == depplatform) {
+			if (hasdep)
+				break;
+
+			//Replace line with new line at end
+			size_t toread = size - endofs;
+			if (toread) {
+				char* remain = memory_allocate(HASH_RESOURCE, toread, 0, MEMORY_PERSISTENT);
+				size_t read = stream_read(stream, remain, toread);
+				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+				stream_write(stream, remain, read);
+				memory_deallocate(remain);
+			}
+			else {
+				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+			}
+			break;
+		}
+		else {
+			numdeps = 0;
+		}
+	}
+	if (!hasdep) {
+		stream_write_uint32(stream, (uint32_t)numdeps + 1);
+		stream_write_separator(stream);
+		stream_write_uint64(stream, platform);
+		for (idep = 0; idep < numdeps; ++idep) {
+			stream_write_separator(stream);
+			stream_write_uuid(stream, olddeps[idep]);
+		}
+		stream_write_separator(stream);
+		stream_write_uuid(stream, dep);
+		stream_write_endl(stream);
+		stream_truncate(stream, stream_tell(stream));
+	}
+	stream_deallocate(stream);
+	memory_deallocate(olddeps);
+}
+
+void
+resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
+	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
+	size_t size = stream_size(stream);
+	uuid_t* olddeps = nullptr;
+	unsigned int numdeps = 0;
+	unsigned int idep;
+	bool hasdep = false;
+	while (!stream_eos(stream)) {
+		ssize_t startofs = (ssize_t)stream_tell(stream);
+		numdeps = stream_read_uint32(stream);
+		uint64_t depplatform = stream_read_uint64(stream);
+		if (platform == depplatform)
+			olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+		for (idep = 0; idep < numdeps; ++idep) {
+			if (platform == depplatform) {
+				olddeps[idep] = stream_read_uuid(stream);
+				if (uuid_equal(olddeps[idep], dep))
+					hasdep = true;
+			}
+			else
+				stream_read_uuid(stream);
+		}
+		stream_skip_whitespace(stream);
+		size_t endofs = stream_tell(stream);
+		if (platform == depplatform) {
+			if (!hasdep)
+				break;
+			//Replace line with new line at end
+			size_t toread = size - endofs;
+			if (toread) {
+				char* remain = memory_allocate(HASH_RESOURCE, toread, 0, MEMORY_PERSISTENT);
+				size_t read = stream_read(stream, remain, toread);
+				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+				stream_write(stream, remain, read);
+				memory_deallocate(remain);
+			}
+			else {
+				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
+			}
+			break;
+		}
+		else {
+			numdeps = 0;
+		}
+	}
+	if (hasdep && (numdeps > 1)) {
+		stream_write_uint32(stream, (uint32_t)numdeps - 1);
+		stream_write_separator(stream);
+		stream_write_uint64(stream, platform);
+		for (idep = 0; idep < numdeps; ++idep) {
+			if (!uuid_equal(olddeps[idep], dep)) {
+				stream_write_separator(stream);
+				stream_write_uuid(stream, olddeps[idep]);
+			}
+		}
+		stream_write_endl(stream);
+		stream_truncate(stream, stream_tell(stream));
+	}
+	stream_deallocate(stream);
 	memory_deallocate(olddeps);
 }
 
@@ -1046,6 +1220,36 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
 	FOUNDATION_UNUSED(num);
+}
+
+size_t
+resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	return 0;
+}
+
+size_t
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(deps);
+	FOUNDATION_UNUSED(capacity);
+	return 0;
+}
+
+void
+resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(dep);
+}
+
+void
+resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
+	FOUNDATION_UNUSED(uuid);
+	FOUNDATION_UNUSED(platform);
+	FOUNDATION_UNUSED(dep);
 }
 
 #endif
