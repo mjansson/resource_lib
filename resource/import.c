@@ -672,11 +672,11 @@ resource_autoimport_event_handle(event_t* event) {
 
 					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
 					hash_t token = resource_autoimport_token();
-					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s)"),
-					           STRING_FORMAT(path), STRING_FORMAT(uuidstr));
+					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, 0);
+					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s) : %" PRIsize " revdeps"),
+					           STRING_FORMAT(path), STRING_FORMAT(uuidstr), num_reverse);
 					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, token);
 
-					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, 0);
 					if (num_reverse) {
 						uuid_t* reverse_deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * num_reverse, 0, MEMORY_PERSISTENT);
 						num_reverse = resource_source_reverse_dependencies(sig.uuid, 0, reverse_deps, num_reverse);
