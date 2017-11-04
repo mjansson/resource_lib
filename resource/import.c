@@ -437,12 +437,7 @@ resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capac
 					string_const_t linepath = string_substr(STRING_ARGS(line), 119, line.length);
 					string_const_t mapdir = stream_path(map);
 					mapdir = path_directory_name(STRING_ARGS(mapdir));
-
 					result = path_concat(buffer, capacity, STRING_ARGS(mapdir), STRING_ARGS(linepath));
-
-					string_const_t uuidstr = string_from_uuid_static(uuid);
-					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport reversed lookup: %.*s -> %.*s"),
-					           STRING_FORMAT(uuidstr), STRING_FORMAT(result));
 					break;
 				}
 			}
@@ -463,20 +458,22 @@ resource_autoimport(const uuid_t uuid) {
 	if (!resource_module_config().enable_local_autoimport)
 		return false;
 
-	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s"), STRING_FORMAT(uuidstr));
-
 	mutex_lock(_resource_autoimport_lock);
 	char buffer[BUILD_MAX_PATHLEN];
 	string_t path = resource_autoimport_reverse_lookup(uuid, buffer, sizeof(buffer));
 	mutex_unlock(_resource_autoimport_lock);
+
+	string_const_t uuidstr = string_from_uuid_static(uuid);
+	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s -> %.*s"),
+	           STRING_FORMAT(uuidstr), STRING_FORMAT(path));
+
 	if (path.length)
 		return resource_import(STRING_ARGS(path), uuid);
 	return false;
 }
 
 static bool
-resource_autoimport_source_changed(uuid_t uuid, const char* path, size_t length,
+resource_autoimport_source_changed(const char* path, size_t length,
                                    uint256_t curhash, uint256_t* newhash) {
 	stream_t* stream = stream_open(path, length, STREAM_IN);
 	if (!stream)
@@ -485,20 +482,15 @@ resource_autoimport_source_changed(uuid_t uuid, const char* path, size_t length,
 	stream_deallocate(stream);
 	if (newhash)
 		*newhash = testhash;
-	if (!uint256_equal(curhash, testhash)) {
-		string_const_t uuidstr = string_from_uuid_static(uuid);
-		log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check, source hash changed: %.*s"),
-		           STRING_FORMAT(uuidstr));
-		return true;
-	}
-	return false;
+	return !uint256_equal(curhash, testhash);
 }
 
 bool
 resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
+	FOUNDATION_UNUSED(platform);
 	union {
 		char path[BUILD_MAX_PATHLEN];
-		uuid_t deps[BUILD_MAX_PATHLEN/sizeof(uuid_t)];
+		resource_dependency_t deps[BUILD_MAX_PATHLEN/sizeof(resource_dependency_t)];
 	} buffer;
 
 	if (!resource_module_config().enable_local_autoimport)
@@ -506,12 +498,8 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	if (resource_remote_sourced_is_connected())
 		return false;
 
-	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport check: %.*s (platform 0x%" PRIx64 ")"),
-	           STRING_FORMAT(uuidstr), platform);
-
 	if (!resource_source_read(nullptr, uuid)) {
-		uuidstr = string_from_uuid_static(uuid);
+		string_const_t uuidstr = string_from_uuid_static(uuid);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source file missing: %.*s"),
 		           STRING_FORMAT(uuidstr));
 		return true;
@@ -522,37 +510,14 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	mutex_unlock(_resource_autoimport_lock);
 	if (path.length) {
 		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
-		if (resource_autoimport_source_changed(uuid, STRING_ARGS(path), sig.hash, nullptr))
+		if (resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, nullptr)) {
+			string_const_t uuidstr = string_from_uuid_static(uuid);
+			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source hash changed: %.*s"),
+			           STRING_FORMAT(uuidstr));
 			return true;
-
-		uuid_t* localdeps = buffer.deps;
-		size_t capacity = sizeof(buffer.deps) / sizeof(uuid_t);
-		size_t numdeps = resource_source_num_dependencies(uuid, platform);
-		if (numdeps) {
-			bool need_import = false;
-			uuid_t* deps = localdeps;
-			log_debugf(HASH_RESOURCE,
-			           STRING_CONST("Autoimport check, %" PRIsize " source dependency checks for platform: %.*s (%" PRIx64 ")"),
-			           numdeps, STRING_FORMAT(uuidstr), platform);
-			if (numdeps > capacity)
-				deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
-			numdeps = resource_source_dependencies(uuid, platform, deps, numdeps);
-			for (size_t idep = 0; idep < numdeps; ++idep) {
-				if (resource_autoimport_need_update(deps[idep], platform)) {
-					need_import = true;
-					uuidstr = string_from_uuid_static(uuid);
-					string_t depstr = string_from_uuid(buffer.path, sizeof(buffer.path), deps[idep]);
-					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source dependency changed for platform: %.*s <- %.*s (%" PRIx64 ")"),
-					           STRING_FORMAT(uuidstr), STRING_FORMAT(depstr), platform);
-					break;
-				}
-			}
-			if (deps != localdeps)
-				memory_deallocate(deps);
-			if (need_import)
-				return true;
 		}
 	}
+
 	return false;
 }
 
@@ -657,13 +622,12 @@ resource_autoimport_event_handle(event_t* event) {
 		return;
 
 	const string_const_t path = fs_event_path(event);
-
 	for (size_t ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
 		if (path_subpath(STRING_ARGS(path), STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
 			const resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
 			uint256_t newhash;
 			if (!uuid_is_null(sig.uuid) &&
-			        resource_autoimport_source_changed(sig.uuid, STRING_ARGS(path), sig.hash, &newhash)) {
+			        resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, &newhash)) {
 				//Suppress multiple events on same file in sequence
 				if (!uuid_equal(sig.uuid, _resource_autoimport_last_uuid) ||
 				        !uint256_equal(newhash, _resource_autoimport_last_hash)) {
@@ -672,18 +636,13 @@ resource_autoimport_event_handle(event_t* event) {
 
 					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
 					hash_t token = resource_autoimport_token();
+#if BUILD_ENABLE_DEBUG_LOG
 					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, 0);
-					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s) : %" PRIsize " revdeps"),
+					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s) : %" PRIsize " reverse dependencies"),
 					           STRING_FORMAT(path), STRING_FORMAT(uuidstr), num_reverse);
-					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, token);
-
-					if (num_reverse) {
-						uuid_t* reverse_deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * num_reverse, 0, MEMORY_PERSISTENT);
-						num_reverse = resource_source_reverse_dependencies(sig.uuid, 0, reverse_deps, num_reverse);
-						for (size_t idep = 0; idep < num_reverse; ++idep)
-							resource_event_post(RESOURCEEVENT_DEPENDS, reverse_deps[idep], token);
-						memory_deallocate(reverse_deps);
-					}
+#endif
+					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, 0, token);
+					resource_event_post_depends(sig.uuid, 0, token);
 				}
 			}
 		}

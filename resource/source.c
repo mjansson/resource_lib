@@ -674,7 +674,7 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 }
 
 uint256_t
-resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
+resource_source_hash(const uuid_t uuid, uint64_t platform) {
 	uint256_t hash = uint256_null();
 
 	if (resource_remote_sourced_is_connected()) {
@@ -692,16 +692,17 @@ resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
 	stream_deallocate(stream);
 
 	//TODO: Implement adding dependency resource hashes based on platform
-	uuid_t localdeps[16];
+	resource_dependency_t localdeps[4];
 	size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
 	size_t numdeps = resource_source_num_dependencies(uuid, platform);
 	if (numdeps) {
-		uuid_t* deps = localdeps;
+		resource_dependency_t* deps = localdeps;
 		if (numdeps > capacity)
-			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
+			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 16,
+			                       MEMORY_PERSISTENT);
 		resource_source_dependencies(uuid, platform, deps, numdeps);
 		for (size_t idep = 0; idep < numdeps; ++idep) {
-			uint256_t dephash = resource_source_read_hash(deps[idep], platform);
+			uint256_t dephash = resource_source_hash(deps[idep].uuid, platform);
 			hash.word[0] ^= dephash.word[0];
 			hash.word[1] ^= dephash.word[1];
 			hash.word[2] ^= dephash.word[2];
@@ -776,7 +777,8 @@ resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
+                             size_t capacity) {
 	size_t numdeps = 0;
 	size_t outdeps = 0;
 	size_t depcount = 0;
@@ -791,8 +793,11 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 		for (size_t idep = 0; idep < numdeps; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
-				if (outdeps < capacity)
-					deps[outdeps++] = depuuid;
+				if (outdeps < capacity) {
+					deps[outdeps].uuid = depuuid;
+					deps[outdeps].platform = depplatform;
+					++outdeps;
+				}
 				++depcount;
 			}
 		}
@@ -802,24 +807,28 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 }
 
 void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps,
-                                 size_t num) {
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
+                                 const resource_dependency_t* deps, size_t num) {
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
-	uuid_t* olddeps = nullptr;
+	resource_dependency_t basedeps[8];
+	resource_dependency_t* olddeps = basedeps;
 	unsigned int numdeps = 0;
+	unsigned int numolddeps = 0;
 	unsigned int idep, iotherdep;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
 		numdeps = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		if (platform == depplatform)
-			olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+		if (platform == depplatform) {
+			if (numdeps > (sizeof(basedeps) / sizeof(basedeps[0])))
+				olddeps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 0, MEMORY_PERSISTENT);
+			numolddeps = numdeps;
+		}
 		for (idep = 0; idep < numdeps; ++idep) {
+			uuid_t depuuid = stream_read_uuid(stream);
 			if (platform == depplatform)
-				olddeps[idep] = stream_read_uuid(stream);
-			else
-				stream_read_uuid(stream);
+				olddeps[idep].uuid = depuuid;
 		}
 		stream_skip_whitespace(stream);
 		size_t endofs = stream_tell(stream);
@@ -847,28 +856,29 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uui
 	stream_write_uint64(stream, platform);
 	for (idep = 0; idep < num; ++idep) {
 		stream_write_separator(stream);
-		stream_write_uuid(stream, deps[idep]);
+		stream_write_uuid(stream, deps[idep].uuid);
 	}
 	stream_write_endl(stream);
 	stream_truncate(stream, stream_tell(stream));
 	stream_deallocate(stream);
 
-	for (idep = 0; idep < numdeps; ++idep) {
-		for (iotherdep = 0; iotherdep < numdeps; ++iotherdep) {
-			if (uuid_equal(olddeps[iotherdep], deps[idep])) {
-				olddeps[iotherdep] = uuid_null();
+	for (idep = 0; idep < num; ++idep) {
+		for (iotherdep = 0; iotherdep < numolddeps; ++iotherdep) {
+			if (uuid_equal(olddeps[iotherdep].uuid, deps[idep].uuid)) {
+				olddeps[iotherdep].uuid = uuid_null();
 				break;
 			}
 		}
-		if (iotherdep == numdeps)
-			resource_source_add_reverse_dependency(deps[idep], platform, uuid);
+		if (iotherdep == numolddeps)
+			resource_source_add_reverse_dependency(deps[idep].uuid, platform, uuid);
 	}
-	for (iotherdep = 0; iotherdep < numdeps; ++iotherdep) {
-		if (!uuid_is_null(olddeps[iotherdep]))
-			resource_source_remove_reverse_dependency(olddeps[iotherdep], platform, uuid);
+	for (iotherdep = 0; iotherdep < numolddeps; ++iotherdep) {
+		if (!uuid_is_null(olddeps[iotherdep].uuid))
+			resource_source_remove_reverse_dependency(olddeps[iotherdep].uuid, platform, uuid);
 	}
 
-	memory_deallocate(olddeps);
+	if (olddeps != basedeps)
+		memory_deallocate(olddeps);
 }
 
 size_t
@@ -877,7 +887,8 @@ resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform,
+                                     resource_dependency_t* deps, size_t capacity) {
 	size_t numdeps = 0;
 	size_t outdeps = 0;
 	size_t depcount = 0;
@@ -891,9 +902,12 @@ resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_
 		uint64_t depplatform = stream_read_uint64(stream);
 		for (size_t idep = 0; idep < numdeps; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
-			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
-				if (outdeps < capacity)
-					deps[outdeps++] = depuuid;
+			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(depplatform, platform)) {
+				if (outdeps < capacity) {
+					deps[outdeps].uuid = depuuid;
+					deps[outdeps].platform = depplatform;
+					++outdeps;
+				}
 				++depcount;
 			}
 		}
@@ -906,24 +920,28 @@ void
 resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
 	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
-	uuid_t* olddeps = nullptr;
+	resource_dependency_t basedeps[8];
+	resource_dependency_t* olddeps = basedeps;
 	unsigned int numdeps = 0;
+	unsigned int numolddeps = 0;
 	unsigned int idep;
 	bool hasdep = false;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
 		numdeps = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		if (platform == depplatform)
-			olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+		if (platform == depplatform) {
+			if (numdeps > (sizeof(basedeps) / sizeof(basedeps[0])))
+				olddeps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 0, MEMORY_PERSISTENT);
+			numolddeps = numdeps;
+		}
 		for (idep = 0; idep < numdeps; ++idep) {
+			uuid_t depuuid = stream_read_uuid(stream);
 			if (platform == depplatform) {
-				olddeps[idep] = stream_read_uuid(stream);
-				if (uuid_equal(olddeps[idep], dep))
+				olddeps[idep].uuid = depuuid;
+				if (uuid_equal(olddeps[idep].uuid, dep))
 					hasdep = true;
 			}
-			else
-				stream_read_uuid(stream);
 		}
 		stream_skip_whitespace(stream);
 		size_t endofs = stream_tell(stream);
@@ -945,17 +963,14 @@ resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, con
 			}
 			break;
 		}
-		else {
-			numdeps = 0;
-		}
 	}
 	if (!hasdep) {
-		stream_write_uint32(stream, (uint32_t)numdeps + 1);
+		stream_write_uint32(stream, (uint32_t)numolddeps + 1);
 		stream_write_separator(stream);
 		stream_write_uint64(stream, platform);
-		for (idep = 0; idep < numdeps; ++idep) {
+		for (idep = 0; idep < numolddeps; ++idep) {
 			stream_write_separator(stream);
-			stream_write_uuid(stream, olddeps[idep]);
+			stream_write_uuid(stream, olddeps[idep].uuid);
 		}
 		stream_write_separator(stream);
 		stream_write_uuid(stream, dep);
@@ -963,31 +978,37 @@ resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, con
 		stream_truncate(stream, stream_tell(stream));
 	}
 	stream_deallocate(stream);
-	memory_deallocate(olddeps);
+
+	if (olddeps != basedeps)
+		memory_deallocate(olddeps);
 }
 
 void
 resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
 	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
-	uuid_t* olddeps = nullptr;
+	uuid_t basedeps[8];
+	uuid_t* olddeps = basedeps;
 	unsigned int numdeps = 0;
+	unsigned int numolddeps = 0;
 	unsigned int idep;
 	bool hasdep = false;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
 		numdeps = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		if (platform == depplatform)
-			olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+		if (platform == depplatform) {
+			if (numdeps > (sizeof(basedeps) / sizeof(basedeps[0])))
+				olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
+			numolddeps = numdeps;
+		}
 		for (idep = 0; idep < numdeps; ++idep) {
+			uuid_t depuuid = stream_read_uuid(stream);
 			if (platform == depplatform) {
-				olddeps[idep] = stream_read_uuid(stream);
+				olddeps[idep] = depuuid;
 				if (uuid_equal(olddeps[idep], dep))
 					hasdep = true;
 			}
-			else
-				stream_read_uuid(stream);
 		}
 		stream_skip_whitespace(stream);
 		size_t endofs = stream_tell(stream);
@@ -1008,15 +1029,12 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 			}
 			break;
 		}
-		else {
-			numdeps = 0;
-		}
 	}
-	if (hasdep && (numdeps > 1)) {
-		stream_write_uint32(stream, (uint32_t)numdeps - 1);
+	if (hasdep && (numolddeps > 1)) {
+		stream_write_uint32(stream, (uint32_t)numolddeps - 1);
 		stream_write_separator(stream);
 		stream_write_uint64(stream, platform);
-		for (idep = 0; idep < numdeps; ++idep) {
+		for (idep = 0; idep < numolddeps; ++idep) {
 			if (!uuid_equal(olddeps[idep], dep)) {
 				stream_write_separator(stream);
 				stream_write_uuid(stream, olddeps[idep]);
@@ -1026,7 +1044,9 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 		stream_truncate(stream, stream_tell(stream));
 	}
 	stream_deallocate(stream);
-	memory_deallocate(olddeps);
+
+	if (olddeps != basedeps)
+		memory_deallocate(olddeps);
 }
 
 #else
@@ -1044,7 +1064,7 @@ resource_source_set_path(const char* path, size_t length) {
 }
 
 uint256_t
-resource_source_read_hash(const uuid_t uuid, uint64_t platform) {
+resource_source_hash(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	return uint256_null();
@@ -1215,7 +1235,8 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 }
 
 void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num) {
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps,
+                                 size_t num) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
@@ -1230,7 +1251,8 @@ resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform,
+                                     resource_uuid_plaform_t* deps, size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);

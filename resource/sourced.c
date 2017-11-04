@@ -248,8 +248,8 @@ sourced_write_dependencies_impl(socket_t* sock, uuid_t uuid, uint64_t platform, 
 }
 
 static int
-sourced_write_dependencies_reply_impl(socket_t* sock, uuid_t* deps, size_t numdeps, uint32_t msgid) {
-	size_t reply_size = sizeof(sourced_dependencies_result_t) + sizeof(uuid_t) * numdeps;
+sourced_write_dependencies_reply_impl(socket_t* sock, resource_dependency_t* deps, size_t numdeps, uint32_t msgid) {
+	size_t reply_size = sizeof(sourced_dependencies_result_t) + sizeof(resource_dependency_t) * numdeps;
 	sourced_message_t msg = {
 		msgid,
 		(uint32_t)reply_size
@@ -258,7 +258,7 @@ sourced_write_dependencies_reply_impl(socket_t* sock, uuid_t* deps, size_t numde
 	reply->result = SOURCED_OK;
 	reply->flags = 0;
 	reply->num_deps = numdeps;
-	memcpy(reply->deps, deps, sizeof(uuid_t) * numdeps);
+	memcpy(reply->deps, deps, sizeof(resource_dependency_t) * numdeps);
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
 		if (socket_write(sock, &reply, reply_size) == reply_size)
 			return 0;
@@ -267,7 +267,7 @@ sourced_write_dependencies_reply_impl(socket_t* sock, uuid_t* deps, size_t numde
 }
 
 static int
-sourced_read_dependencies_reply_impl(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+sourced_read_dependencies_reply_impl(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count) {
 	sourced_reply_t header;
 	size_t read = socket_read(sock, &header, sizeof(header));
 	if (read != sizeof(header)) {
@@ -278,14 +278,14 @@ sourced_read_dependencies_reply_impl(socket_t* sock, size_t size, uuid_t* deps, 
 	}
 
 	size -= sizeof(header);
-	size_t pending = size / sizeof(uuid_t);
+	size_t pending = size / sizeof(resource_dependency_t);
 	size_t limit = pending;
 	if (limit > capacity)
 		limit = capacity;
 	*count = limit;
 
 	read = 0;
-	limit *= sizeof(uuid_t);
+	limit *= sizeof(resource_dependency_t);
 	while (read < limit) {
 		size_t want_read = limit - read;
 		size_t this_read = socket_read(sock, pointer_offset(deps, read), want_read);
@@ -322,12 +322,12 @@ sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform) {
 }
 
 int
-sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
+sourced_write_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t numdeps) {
 	return sourced_write_dependencies_reply_impl(sock, deps, numdeps, SOURCED_DEPENDENCIES_RESULT);
 }
 
 int
-sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+sourced_read_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count) {
 	return sourced_read_dependencies_reply_impl(sock, size, deps, capacity, count);
 }
 
@@ -337,12 +337,12 @@ sourced_write_reverse_dependencies(socket_t* sock, uuid_t uuid, uint64_t platfor
 }
 
 int
-sourced_write_reverse_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps) {
+sourced_write_reverse_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t numdeps) {
 	return sourced_write_dependencies_reply_impl(sock, deps, numdeps, SOURCED_REVERSE_DEPENDENCIES_RESULT);
 }
 
 int
-sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count) {
+sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count) {
 	return sourced_read_dependencies_reply_impl(sock, size, deps, capacity, count);
 }
 
@@ -427,11 +427,12 @@ sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_repl
 }
 
 int
-sourced_write_notify(socket_t* sock, sourced_message_id id, uuid_t uuid, hash_t token) {
+sourced_write_notify(socket_t* sock, sourced_message_id id, uuid_t uuid, uint64_t platform, hash_t token) {
 	sourced_notify_t msg = {
 		id,
-		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t)),
+		(uint32_t)(sizeof(uuid_t) + sizeof(uint64_t) + sizeof(uint64_t)),
 		uuid,
+		platform,
 		token
 	};
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg))
@@ -441,7 +442,7 @@ sourced_write_notify(socket_t* sock, sourced_message_id id, uuid_t uuid, hash_t 
 
 int
 sourced_read_notify(socket_t* sock, size_t size, sourced_notify_t* notify) {
-	const size_t expected = sizeof(uuid_t) + sizeof(uint64_t);
+	const size_t expected = sizeof(uuid_t) + sizeof(uint64_t) + sizeof(uint64_t);
 	if (size != expected)
 		return -1;
 	if (socket_read(sock, &notify->uuid, expected) == expected)

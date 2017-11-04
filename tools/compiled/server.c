@@ -33,6 +33,7 @@ struct server_message_t {
 	void* data;
 	unsigned int id;
 	uuid_t uuid;
+	uint64_t platform;
 	hash_t token;
 };
 
@@ -54,7 +55,7 @@ static int
 server_write_stream_to_socket(stream_t* stream, socket_t* sock);
 
 static int
-server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, hash_t token);
+server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, uint64_t platform, hash_t token);
 
 void
 server_run(unsigned int port) {
@@ -168,6 +169,7 @@ server_run(unsigned int port) {
 					else if (event->id == RESOURCEEVENT_DELETE)
 						message.id = COMPILED_NOTIFY_DELETE;
 					message.uuid = resource_event_uuid(event);
+					message.platform = resource_event_platform(event);
 					message.token = resource_event_token(event);
 					udp_socket_sendto(&local_socket[0], &message, sizeof(message),
 					                  socket_address_local(&local_socket[1]));
@@ -254,7 +256,7 @@ server_serve(void* arg) {
 					break;
 
 				case SERVER_MESSAGE_BROADCAST_NOTIFY:
-					server_broadcast_notify(clients, message.id, message.uuid, message.token);
+					server_broadcast_notify(clients, message.id, message.uuid, message.platform, message.token);
 					break;
 				}
 			}
@@ -432,8 +434,8 @@ server_write_stream_to_socket(stream_t* stream, socket_t* sock) {
 }
 
 static int
-server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, hash_t token) {
+server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, uint64_t platform, hash_t token) {
 	for (size_t isock = 0, send = array_size(sockets); isock < send; ++isock)
-		compiled_write_notify(sockets[isock], msg, uuid, token);
+		compiled_write_notify(sockets[isock], msg, uuid, platform, token);
 	return 0;
 }

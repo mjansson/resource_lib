@@ -274,6 +274,7 @@ struct sourced_read_blob_reply_t {
 struct sourced_notify_t {
 	SOURCED_DECLARE_MESSAGE;
 	uuid_t uuid;
+	uint64_t platform;
 	uint64_t token;
 };
 
@@ -308,19 +309,19 @@ int
 sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform);
 
 int
-sourced_write_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps);
+sourced_write_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t numdeps);
 
 int
-sourced_read_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count);
+sourced_read_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count);
 
 int
 sourced_write_reverse_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform);
 
 int
-sourced_write_reverse_dependencies_reply(socket_t* sock, uuid_t* deps, size_t numdeps);
+sourced_write_reverse_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t numdeps);
 
 int
-sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, uuid_t* deps, size_t capacity, uint64_t* count);
+sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count);
 
 int
 sourced_write_read_blob(socket_t* sock, uuid_t uuid, uint64_t platform, hash_t key);
@@ -332,7 +333,7 @@ int
 sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_reply_t* reply, void* store, size_t capacity);
 
 int
-sourced_write_notify(socket_t* sock, sourced_message_id id, uuid_t uuid, hash_t token);
+sourced_write_notify(socket_t* sock, sourced_message_id id, uuid_t uuid, uint64_t platform, hash_t token);
 
 int
 sourced_read_notify(socket_t* sock, size_t size, sourced_notify_t* notify);

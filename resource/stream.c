@@ -35,6 +35,7 @@ resource_stream_open_static(const uuid_t res, uint64_t platform) {
 		resource_autoimport(res);
 	}
 
+	log_debug(HASH_RESOURCE, STRING_CONST("Open static compile check"));
 	if (resource_compile_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s (platform 0x%" PRIx64 ") (open static)"),
@@ -69,6 +70,7 @@ resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 		resource_autoimport(res);
 	}
 
+	log_debug(HASH_RESOURCE, STRING_CONST("Open dynamic compile check"));
 	if (resource_compile_need_update(res, platform)) {
 		string_const_t uuidstr = string_from_uuid_static(res);
 		log_debugf(HASH_RESOURCE, STRING_CONST("Recompiling resource %.*s (platform 0x%" PRIx64 ") (open dynamic)"),

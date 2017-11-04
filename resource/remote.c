@@ -421,16 +421,16 @@ resource_sourced_read_notify(remote_context_t* context, remote_header_t msg) {
 	if (ret >= 0) {
 		switch (msg.id) {
 		case SOURCED_NOTIFY_CREATE:
-			resource_event_post(RESOURCEEVENT_CREATE, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_CREATE, notify.uuid, notify.platform, notify.token);
 			break;
 		case SOURCED_NOTIFY_MODIFY:
-			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.platform, notify.token);
 			break;
 		case SOURCED_NOTIFY_DEPENDS:
-			resource_event_post(RESOURCEEVENT_DEPENDS, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_DEPENDS, notify.uuid, notify.platform, notify.token);
 			break;
 		case SOURCED_NOTIFY_DELETE:
-			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.platform, notify.token);
 			break;
 		}
 		return 1; //Don't clear waiting message on notifies
@@ -642,7 +642,7 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps,
+resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
                                      size_t capacity) {
 	if (!_sourced_initialized)
 		return 0;
@@ -666,8 +666,8 @@ resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* dep
 }
 
 size_t
-resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps,
-                                             size_t capacity) {
+resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform,
+                                             resource_dependency_t* deps, size_t capacity) {
 	if (!_sourced_initialized)
 		return 0;
 
@@ -966,16 +966,16 @@ resource_compiled_read_notify(remote_context_t* context, remote_header_t msg) {
 	if (ret >= 0) {
 		switch (msg.id) {
 		case COMPILED_NOTIFY_CREATE:
-			resource_event_post(RESOURCEEVENT_CREATE, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_CREATE, notify.uuid, notify.platform, notify.token);
 			break;
 		case COMPILED_NOTIFY_MODIFY:
-			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_MODIFY, notify.uuid, notify.platform, notify.token);
 			break;
 		case COMPILED_NOTIFY_DEPENDS:
-			resource_event_post(RESOURCEEVENT_DEPENDS, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_DEPENDS, notify.uuid, notify.platform, notify.token);
 			break;
 		case COMPILED_NOTIFY_DELETE:
-			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.token);
+			resource_event_post(RESOURCEEVENT_DELETE, notify.uuid, notify.platform, notify.token);
 			break;
 		}
 		return 1; //Don't clear waiting message on notifies

@@ -53,6 +53,7 @@ typedef struct resource_blob_t              resource_blob_t;
 typedef struct resource_platform_t          resource_platform_t;
 typedef struct resource_header_t            resource_header_t;
 typedef struct resource_signature_t         resource_signature_t;
+typedef struct resource_dependency_t        resource_dependency_t;
 
 typedef int (* resource_import_fn)(stream_t*, const uuid_t);
 typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t, const char*, size_t);
@@ -74,6 +75,7 @@ struct resource_config_t {
 	bool enable_remote_compiled;
 };
 
+/*! Decomposed platform specification */
 struct resource_platform_t {
 	//! Platform identifier, 8 bits, [0..254]
 	int platform;
@@ -87,6 +89,14 @@ struct resource_platform_t {
 	int quality_level;
 	//! Custom identifier, 8 bits, [0..254]
 	int custom;
+};
+
+/*! Dependency data for a resource to another resource */
+struct resource_dependency_t {
+	//! Dependent resource UUID
+	uuid_t uuid;
+	//! Resource platform
+	uint64_t platform;
 };
 
 /*! Representation of metadata for a binary data blob */

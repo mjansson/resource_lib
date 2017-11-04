@@ -59,7 +59,35 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s (platform 0x%" PRIx64")"),
 	           STRING_FORMAT(uuidstr), platform);
 
-	source_hash = resource_source_read_hash(uuid, platform);
+	resource_dependency_t localdeps[8];
+	size_t depscapacity = sizeof(localdeps) / sizeof(localdeps[0]);
+	size_t numdeps = resource_source_num_dependencies(uuid, platform);
+	if (numdeps) {
+		bool depsuccess = true;
+		resource_dependency_t* deps = localdeps;
+		if (numdeps > depscapacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, numdeps);
+		for (size_t idep = 0; idep < numdeps; ++idep) {
+			log_debug(HASH_RESOURCE, STRING_CONST("Dependent resource compile check:"));
+			if (resource_compile_need_update(deps[idep].uuid, platform)) {
+				if (!resource_compile(deps[idep].uuid, platform))
+					depsuccess = false;
+			}
+		}
+		if (deps != localdeps)
+			memory_deallocate(deps);
+
+		if (!depsuccess) {
+			error_context_pop();
+			return false;
+		}
+	}
+
+	if (resource_autoimport_need_update(uuid, platform))
+		resource_autoimport(uuid);
+
+	source_hash = resource_source_hash(uuid, platform);
 	if (uint256_is_null(source_hash)) {
 		log_debug(HASH_RESOURCE, STRING_CONST("  no source hash"));
 		return true;
@@ -96,31 +124,33 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	        !resource_module_config().enable_remote_sourced)
 		return false;
 
-#if BUILD_ENABLE_DEBUG_LOG || BUILD_ENABLE_ERROR_CONTEXT
 	char uuidbuf[40];
 	const string_t uuidstr = string_from_uuid(uuidbuf, sizeof(uuidbuf), uuid);
 	error_context_push(STRING_CONST("compiling resource"), STRING_ARGS(uuidstr));
-#else
-	const string_t uuidstr = {0, 0};
-#endif
-	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ")"),
-	           STRING_FORMAT(uuidstr), platform);
 
-	uuid_t localdeps[4];
-	size_t depscapacity = sizeof(localdeps) / sizeof(uuid_t);
 	size_t numdeps = resource_source_num_dependencies(uuid, platform);
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ") %" PRIsize " dependencies"),
+	           STRING_FORMAT(uuidstr), platform, numdeps);
+
+	resource_dependency_t localdeps[8];
+	size_t depscapacity = sizeof(localdeps) / sizeof(localdeps[0]);
 	if (numdeps) {
 		bool depsuccess = true;
-		uuid_t* deps = localdeps;
-		log_debugf(HASH_RESOURCE, STRING_CONST("Dependency compile check: %.*s"), STRING_FORMAT(uuidstr));
+		resource_dependency_t* deps = localdeps;
 		if (numdeps > depscapacity)
-			deps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 16, MEMORY_PERSISTENT);
+			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 16, MEMORY_PERSISTENT);
 		resource_source_dependencies(uuid, platform, deps, numdeps);
 		for (size_t idep = 0; idep < numdeps; ++idep) {
-			if (resource_compile_need_update(deps[idep], platform)) {
-				if (!resource_compile(deps[idep], platform))
+			char depuuidbuf[40];
+			const string_t depuuidstr = string_from_uuid(depuuidbuf, sizeof(depuuidbuf), deps[idep].uuid);
+			log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s dependency: %.*s"),
+			           STRING_FORMAT(uuidstr), STRING_FORMAT(depuuidstr));
+			error_context_push(STRING_CONST("compiling dependent resource"), STRING_ARGS(depuuidstr));
+			if (resource_compile_need_update(deps[idep].uuid, platform)) {
+				if (!resource_compile(deps[idep].uuid, platform))
 					depsuccess = false;
 			}
+			error_context_pop();
 		}
 		if (deps != localdeps)
 			memory_deallocate(deps);
@@ -149,11 +179,11 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		uint256_t source_hash;
 		resource_change_t* change;
 
-		source_hash = resource_source_read_hash(uuid, platform);
+		source_hash = resource_source_hash(uuid, platform);
 		if (uint256_is_null(source_hash) && resource_module_config().enable_local_source) {
 			//Recreate source hash data
 			resource_source_write(&source, uuid, source.read_binary);
-			source_hash = resource_source_read_hash(uuid, platform);
+			source_hash = resource_source_hash(uuid, platform);
 		}
 
 		resource_source_collapse_history(&source);

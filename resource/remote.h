@@ -41,10 +41,10 @@ RESOURCE_API uint256_t
 resource_remote_sourced_hash(uuid_t uuid, uint64_t platform);
 
 RESOURCE_API size_t
-resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API size_t
-resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API bool
 resource_remote_sourced_read(resource_source_t* source, uuid_t uuid);
@@ -64,6 +64,12 @@ resource_remote_compiled_disconnect(void);
 
 RESOURCE_API bool
 resource_remote_compiled_is_connected(void);
+
+RESOURCE_API size_t
+resource_remote_compiled_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
+
+RESOURCE_API size_t
+resource_remote_compiled_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform);

@@ -82,6 +82,7 @@ struct compiled_open_result_t {
 struct compiled_notify_t {
 	COMPILED_DECLARE_MESSAGE;
 	uuid_t uuid;
+	uint64_t platform;
 	uint64_t token;
 };
 
@@ -104,7 +105,7 @@ int
 compiled_write_open_dynamic_reply(socket_t* sock, bool success, size_t size);
 
 int
-compiled_write_notify(socket_t* sock, compiled_message_id id, uuid_t uuid, hash_t token);
+compiled_write_notify(socket_t* sock, compiled_message_id id, uuid_t uuid, uint64_t platform, hash_t token);
 
 int
 compiled_read_notify(socket_t* sock, size_t size, compiled_notify_t* notify);

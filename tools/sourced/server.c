@@ -32,6 +32,7 @@ struct server_message_t {
 	void* data;
 	unsigned int id;
 	uuid_t uuid;
+	uint64_t platform;
 	hash_t token;
 };
 
@@ -59,7 +60,7 @@ static int
 server_handle_read_blob(socket_t* sock, size_t msgsize);
 
 static int
-server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, hash_t token);
+server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, uint64_t platform, hash_t token);
 
 void
 server_run(unsigned int port) {
@@ -173,6 +174,7 @@ server_run(unsigned int port) {
 					else if (event->id == RESOURCEEVENT_DELETE)
 						message.id = SOURCED_NOTIFY_DELETE;
 					message.uuid = resource_event_uuid(event);
+					message.platform = resource_event_platform(event);
 					message.token = resource_event_token(event);
 					udp_socket_sendto(&local_socket[0], &message, sizeof(message),
 					                  socket_address_local(&local_socket[1]));
@@ -259,7 +261,7 @@ server_serve(void* arg) {
 					break;
 
 				case SERVER_MESSAGE_BROADCAST_NOTIFY:
-					server_broadcast_notify(clients, message.id, message.uuid, message.token);
+					server_broadcast_notify(clients, message.id, message.uuid, message.platform, message.token);
 					break;
 				}
 			}
@@ -416,7 +418,7 @@ server_handle_read(socket_t* sock, size_t msgsize) {
 			resource_autoimport(readmsg.uuid);
 		}
 		if (resource_source_read(&source, readmsg.uuid)) {
-			ret = sourced_write_read_reply(sock, &source, resource_source_read_hash(readmsg.uuid, 0));
+			ret = sourced_write_read_reply(sock, &source, resource_source_hash(readmsg.uuid, 0));
 			log_infof(HASH_RESOURCE, STRING_CONST("  read resource successfully, wrote reply"));
 		}
 		else {
@@ -452,7 +454,7 @@ server_handle_hash(socket_t* sock, size_t msgsize) {
 			           STRING_FORMAT(uuidstr));
 			resource_autoimport(hashmsg.uuid);
 		}
-		uint256_t hash = resource_source_read_hash(hashmsg.uuid, hashmsg.platform);
+		uint256_t hash = resource_source_hash(hashmsg.uuid, hashmsg.platform);
 		return sourced_write_hash_reply(sock, hash);
 	}
 	if (read != 0) {
@@ -475,13 +477,13 @@ server_handle_dependencies(socket_t* sock, size_t msgsize) {
 	sourced_dependencies_t depmsg;
 	size_t read = socket_read(sock, &depmsg.uuid, expected_size);
 	if (read == expected_size) {
-		uuid_t localdeps[16];
-		uuid_t* deps = localdeps;
+		resource_dependency_t localdeps[8];
+		resource_dependency_t* deps = localdeps;
 		size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
 		size_t numdeps = resource_source_dependencies(depmsg.uuid, depmsg.platform, localdeps, capacity);
 		if (numdeps > capacity) {
 			capacity = numdeps;
-			deps = memory_allocate(HASH_RESOURCE, capacity * sizeof(uuid_t), 0, MEMORY_PERSISTENT);
+			deps = memory_allocate(HASH_RESOURCE, capacity * sizeof(resource_dependency_t), 0, MEMORY_PERSISTENT);
 			numdeps = resource_source_dependencies(depmsg.uuid, depmsg.platform, deps, capacity);
 		}
 		int ret = sourced_write_dependencies_reply(sock, deps, numdeps);
@@ -551,8 +553,8 @@ server_handle_read_blob(socket_t* sock, size_t msgsize) {
 }
 
 static int
-server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, hash_t token) {
+server_broadcast_notify(socket_t** sockets, unsigned int msg, uuid_t uuid, uint64_t platform, hash_t token) {
 	for (size_t isock = 0, send = array_size(sockets); isock < send; ++isock)
-		sourced_write_notify(sockets[isock], msg, uuid, token);
+		sourced_write_notify(sockets[isock], msg, uuid, platform, token);
 	return 0;
 }

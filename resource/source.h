@@ -29,7 +29,7 @@ RESOURCE_API bool
 resource_source_set_path(const char* path, size_t length);
 
 RESOURCE_API uint256_t
-resource_source_read_hash(const uuid_t uuid, uint64_t platform);
+resource_source_hash(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API resource_source_t*
 resource_source_allocate(void);
@@ -120,16 +120,16 @@ RESOURCE_API size_t
 resource_source_num_dependencies(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API size_t
-resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps, size_t num);
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const resource_dependency_t* deps, size_t num);
 
 RESOURCE_API size_t
 resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API size_t
-resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity);
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API void
 resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep);

@@ -25,6 +25,9 @@
 RESOURCE_API bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform);
 
+RESOURCE_API uint256_t
+resource_compile_hash(const uuid_t uuid, uint64_t platform);
+
 RESOURCE_API bool
 resource_compile(const uuid_t uuid, uint64_t platform);
 
