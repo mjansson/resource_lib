@@ -634,10 +634,10 @@ resource_autoimport_event_handle(event_t* event) {
 					_resource_autoimport_last_uuid = sig.uuid;
 					_resource_autoimport_last_hash = newhash;
 
-					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
 					hash_t token = resource_autoimport_token();
 #if BUILD_ENABLE_DEBUG_LOG
 					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, 0);
+					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
 					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s) : %" PRIsize " reverse dependencies"),
 					           STRING_FORMAT(path), STRING_FORMAT(uuidstr), num_reverse);
 #endif
