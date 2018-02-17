@@ -1226,7 +1226,8 @@ resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps, size_t capacity) {
+resource_source_dependencies(const uuid_t uuid, uint64_t platform,
+                             resource_dependency_t* deps, size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
@@ -1235,8 +1236,8 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, uuid_t* deps,
 }
 
 void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const uuid_t* deps,
-                                 size_t num) {
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
+                                 const resource_dependency_t* deps, size_t num) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
@@ -1252,7 +1253,7 @@ resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
 
 size_t
 resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform,
-                                     resource_uuid_plaform_t* deps, size_t capacity) {
+                                     resource_dependency_t* deps, size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);

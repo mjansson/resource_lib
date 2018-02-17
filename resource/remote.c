@@ -774,7 +774,7 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 }
 
 size_t
-resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps,
+resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
                                      size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
@@ -784,7 +784,7 @@ resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, uuid_t* dep
 }
 
 size_t
-resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, uuid_t* deps,
+resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
                                              size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
