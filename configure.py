@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join('build', 'ninja'))
 
 import generator
 
-dependlibs = ['network', 'foundation']
+dependlibs = ['resource', 'network', 'foundation']
 
 generator = generator.Generator(project = 'resource', dependlibs = dependlibs, variables = [('bundleidentifier', 'com.rampantpixels.resource.$(binname)')])
 target = generator.target
@@ -27,9 +27,9 @@ if target.is_windows():
 if not target.is_ios() and not target.is_android() and not target.is_tizen():
   configs = [config for config in toolchain.configs if config not in ['profile', 'deploy']]
   if not configs == []:
-    generator.bin('resource', ['main.c'], 'resource', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = ['resource'] + network_libs, configs = configs)
-    generator.bin('sourced', ['main.c', 'server.c'], 'sourced', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = ['resource'] + network_libs, configs = configs)
-    generator.bin('compiled', ['main.c', 'server.c'], 'compiled', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = ['resource'] + network_libs, configs = configs)
+    generator.bin('resource', ['main.c'], 'resource', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = network_libs, configs = configs)
+    generator.bin('sourced', ['main.c', 'server.c'], 'sourced', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = network_libs, configs = configs)
+    generator.bin('compiled', ['main.c', 'server.c'], 'compiled', basepath = 'tools', implicit_deps = [resource_lib], dependlibs = dependlibs, libs = network_libs, configs = configs)
 
 #No test cases if we're a submodule
 if generator.is_subninja():
@@ -62,15 +62,15 @@ if toolchain.is_monolithic() or target.is_ios() or target.is_android() or target
       'tizen-manifest.xml', os.path.join('res', 'tizenapp.png')
     ]]
   if target.is_macosx() or target.is_ios() or target.is_android() or target.is_tizen():
-    generator.app(module = '', sources = [os.path.join( module, 'main.c') for module in test_cases] + test_extrasources, binname = 'test-all', basepath = 'test', implicit_deps = [resource_lib], libs = ['test', 'resource', 'network', 'foundation'] + network_libs, resources = test_resources, includepaths = includepaths)
+    generator.app(module = '', sources = [os.path.join( module, 'main.c') for module in test_cases] + test_extrasources, binname = 'test-all', basepath = 'test', implicit_deps = [resource_lib], libs = ['test'] + dependlibs + network_libs, resources = test_resources, includepaths = includepaths)
   else:
-    generator.bin(module = '', sources = [os.path.join( module, 'main.c') for module in test_cases] + test_extrasources, binname = 'test-all', basepath = 'test', implicit_deps = [resource_lib], libs = ['test', 'resource', 'network', 'foundation'] + network_libs, resources = test_resources, includepaths = includepaths)
+    generator.bin(module = '', sources = [os.path.join( module, 'main.c') for module in test_cases] + test_extrasources, binname = 'test-all', basepath = 'test', implicit_deps = [resource_lib], libs = ['test'] + dependlibs + network_libs, resources = test_resources, includepaths = includepaths)
 else:
   #Build one binary per test case
   generator.bin(module = 'all', sources = ['main.c'], binname = 'test-all', basepath = 'test', implicit_deps = [resource_lib], libs = ['resource', 'network', 'foundation'] + network_libs, includepaths = includepaths)
   for test in test_cases:
     #if target.is_macosx():
     #  test_resources = [ os.path.join( 'osx', item ) for item in [ 'test-' + test + '.plist', 'Images.xcassets', 'test-' + test + '.xib' ] ]
-    #  generator.app( module = test, sources = [ 'main.c' ], binname = 'test-' + test, basepath = 'test', implicit_deps = [ resource_lib ], libs = [ 'test', 'resource', 'foundation' ], resources = test_resources, includepaths = includepaths )
+    #  generator.app( module = test, sources = [ 'main.c' ], binname = 'test-' + test, basepath = 'test', implicit_deps = [resource_lib], libs = ['test'] + dependlibs + network_libs, resources = test_resources, includepaths = includepaths )
     #else:
-    generator.bin(module = test, sources = ['main.c'], binname = 'test-' + test, basepath = 'test', implicit_deps = [resource_lib], libs = ['test', 'resource', 'network', 'foundation'] + network_libs, includepaths = includepaths)
+    generator.bin(module = test, sources = ['main.c'], binname = 'test-' + test, basepath = 'test', implicit_deps = [resource_lib], libs = ['test'] + dependlibs + network_libs, includepaths = includepaths)
