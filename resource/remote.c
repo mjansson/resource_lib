@@ -837,10 +837,24 @@ FOUNDATION_ALIGNED_STRUCT(compiled_stream_t, 8) {
 	size_t stream_size;
 };
 
+static void
+resource_compiled_stream_finish(compiled_stream_t* stream) {
+	if (!stream->sock)
+		return;
+	network_poll_add_socket(_compiled_context.poll, stream->sock);
+	remote_message_t wakeup;
+	wakeup.message = REMOTE_MESSAGE_WAKEUP;
+	udp_socket_sendto(&_compiled_client, &wakeup, sizeof(wakeup),
+	                  socket_address_local(&_compiled_proxy));
+	stream->sock = 0;
+}
+
 static size_t
 resource_compiled_stream_read(stream_t* rawstream, void* buffer, size_t size) {
 	compiled_stream_t* stream = (compiled_stream_t*)rawstream;
 	size_t total = 0;
+	if (!stream->sock)
+		return total;
 	do {
 		size_t read = socket_read(stream->sock, pointer_offset(buffer, total), size - total);
 		total += read;
@@ -849,16 +863,17 @@ resource_compiled_stream_read(stream_t* rawstream, void* buffer, size_t size) {
 				break;
 			thread_yield();
 		}
-	}
-	while (total < size);
+	} while (total < size);
 	stream->total_read += total;
+	if (stream->total_read >= stream->stream_size)
+		resource_compiled_stream_finish(stream);
 	return total;
 }
 
 static bool
 resource_compiled_stream_eos(stream_t* rawstream) {
 	compiled_stream_t* stream = (compiled_stream_t*)rawstream;
-	if (stream->total_read >= stream->stream_size)
+	if (!stream->sock || (stream->total_read >= stream->stream_size))
 		return true;
 	return (socket_state(stream->sock) != SOCKETSTATE_CONNECTED) &&
 	       (socket_available_read(stream->sock) == 0);
@@ -908,11 +923,7 @@ resource_compiled_stream_allocate(socket_t* sock, size_t size) {
 static void
 resource_compiled_stream_finalize(stream_t* rawstream) {
 	compiled_stream_t* stream = (compiled_stream_t*)rawstream;
-	network_poll_add_socket(_compiled_context.poll, stream->sock);
-	remote_message_t wakeup;
-	wakeup.message = REMOTE_MESSAGE_WAKEUP;
-	udp_socket_sendto(&_compiled_client, &wakeup, sizeof(wakeup),
-	                  socket_address_local(&_compiled_proxy));
+	resource_compiled_stream_finish(stream);
 }
 
 static int
