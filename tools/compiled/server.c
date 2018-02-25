@@ -99,7 +99,6 @@ server_run(unsigned int port) {
 			          network_address_ip_port(socket_address_local(sock[sockets])));
 			++sockets;
 		}
-		memory_deallocate(address);
 	}
 	if (network_supports_ipv6()) {
 		network_address_ipv6_t ipv6_addr;
@@ -118,7 +117,6 @@ server_run(unsigned int port) {
 			          network_address_ip_port(socket_address_local(sock[sockets])));
 			++sockets;
 		}
-		memory_deallocate(address);
 	}
 
 	if (!sockets) {
