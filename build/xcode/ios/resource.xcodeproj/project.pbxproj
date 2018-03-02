@@ -235,8 +235,8 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/debug,
-					../../../../foundation_lib/lib/macosx/debug,
+					../../../lib/macos/debug,
+					../../../../foundation_lib/lib/macos/debug,
 				);
 				SDKROOT = iphoneos;
 				USE_HEADERMAP = NO;
@@ -269,8 +269,8 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/release,
-					../../../../foundation_lib/lib/macosx/release,
+					../../../lib/macos/release,
+					../../../../foundation_lib/lib/macos/release,
 				);
 				LLVM_LTO = YES;
 				SDKROOT = iphoneos;
@@ -321,8 +321,8 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/profile,
-					../../../../foundation_lib/lib/macosx/profile,
+					../../../lib/macos/profile,
+					../../../../foundation_lib/lib/macos/profile,
 				);
 				LLVM_LTO = YES;
 				SDKROOT = iphoneos;
@@ -365,8 +365,8 @@
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/deploy,
-					../../../../foundation_lib/lib/macosx/deploy,
+					../../../lib/macos/deploy,
+					../../../../foundation_lib/lib/macos/deploy,
 				);
 				LLVM_LTO = YES;
 				SDKROOT = iphoneos;

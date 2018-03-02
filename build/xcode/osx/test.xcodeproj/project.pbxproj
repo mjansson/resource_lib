@@ -55,7 +55,7 @@
 		CD5BC2A01D84096100899D05 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../../test/all/main.c; sourceTree = "<group>"; };
 		CD5BC2A81D840FF100899D05 /* test-source */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "test-source"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CD5BC2B11D84101400899D05 /* main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = main.c; path = ../../../../test/source/main.c; sourceTree = "<group>"; };
-		CD5BC2B31D84104200899D05 /* libresource.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresource.a; path = ../../../lib/macosx/debug/libresource.a; sourceTree = "<group>"; };
+		CD5BC2B31D84104200899D05 /* libresource.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libresource.a; path = ../../../lib/macos/debug/libresource.a; sourceTree = "<group>"; };
 		CD5BC2B81D8411E600899D05 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		CD5BC2B91D8411E600899D05 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		CD5BC2BC1D84121100899D05 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
@@ -242,7 +242,7 @@
 				CLANG_ENABLE_MODULES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/debug;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macos/debug;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -264,9 +264,9 @@
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/debug,
-					../../../../foundation_lib/lib/macosx/debug,
-					../../../../network_lib/lib/macosx/debug,
+					../../../lib/macos/debug,
+					../../../../foundation_lib/lib/macos/debug,
+					../../../../network_lib/lib/macos/debug,
 					"$(inherited)",
 				);
 				LLVM_LTO = NO;
@@ -288,7 +288,7 @@
 				CLANG_ENABLE_MODULES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/release;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macos/release;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -310,9 +310,9 @@
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/release,
-					../../../../foundation_lib/lib/macosx/release,
-					../../../../network_lib/lib/macosx/release,
+					../../../lib/macos/release,
+					../../../../foundation_lib/lib/macos/release,
+					../../../../network_lib/lib/macos/release,
 					"$(inherited)",
 				);
 				LLVM_LTO = YES;
@@ -334,7 +334,7 @@
 				CLANG_ENABLE_MODULES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/profile;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macos/profile;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -356,9 +356,9 @@
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/profile,
-					../../../../foundation_lib/lib/macosx/profile,
-					../../../../network_lib/lib/macosx/profile,
+					../../../lib/macos/profile,
+					../../../../foundation_lib/lib/macos/profile,
+					../../../../network_lib/lib/macos/profile,
 					"$(inherited)",
 				);
 				LLVM_LTO = YES;
@@ -380,7 +380,7 @@
 				CLANG_ENABLE_MODULES = NO;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
-				CONFIGURATION_BUILD_DIR = ../../../bin/macosx/deploy;
+				CONFIGURATION_BUILD_DIR = ../../../bin/macos/deploy;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -402,9 +402,9 @@
 					"$(inherited)",
 				);
 				LIBRARY_SEARCH_PATHS = (
-					../../../lib/macosx/deploy,
-					../../../../foundation_lib/lib/macosx/deploy,
-					../../../../network_lib/lib/macosx/deploy,
+					../../../lib/macos/deploy,
+					../../../../foundation_lib/lib/macos/deploy,
+					../../../../network_lib/lib/macos/deploy,
 					"$(inherited)",
 				);
 				LLVM_LTO = YES;
