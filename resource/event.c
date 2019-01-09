@@ -50,7 +50,7 @@ resource_event_token(const event_t* event) {
 void
 resource_event_post(resource_event_id id, uuid_t uuid, uint64_t platform, hash_t token) {
 	resource_event_payload_t payload = {uuid, platform, token};
-	event_post(_resource_event_stream, id, 0, 0, &payload, sizeof(payload));
+	event_post(_resource_event_stream, (int)id, 0, 0, &payload, sizeof(payload));
 }
 
 void
