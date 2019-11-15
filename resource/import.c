@@ -12,7 +12,8 @@
  *
  * https://github.com/rampantpixels/foundation_lib
  *
- * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
+ * This library is put in the public domain; you can redistribute it and/or modify it without any
+ * restrictions.
  *
  */
 
@@ -55,9 +56,9 @@ resource_import_set_base_path(const char* path, size_t length) {
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
 #if FOUNDATION_PLATFORM_WINDOWS
-#  define RESOURCE_IMPORTER_PATTERN "^.*import\\.exe$"
+#define RESOURCE_IMPORTER_PATTERN "^.*import\\.exe$"
 #else
-#  define RESOURCE_IMPORTER_PATTERN "^.*import$"
+#define RESOURCE_IMPORTER_PATTERN "^.*import$"
 #endif
 
 bool
@@ -69,26 +70,34 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 	stream_t* stream = stream_open(path, length, STREAM_IN);
 	if (!stream) {
 		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-		          STRING_CONST("Unable to open input stream for importing: %.*s"), (int)length, path);
+		          STRING_CONST("Unable to open input stream for importing: %.*s"), (int)length,
+		          path);
 		return false;
 	}
-	for (iimp = 0, isize = array_size(_resource_importers); !was_imported && (iimp != isize); ++iimp) {
+
+	size_t streampos = stream_tell(stream);
+	uint256_t import_hash = stream_sha256(stream);
+	stream_seek(stream, streampos, STREAM_SEEK_BEGIN);
+
+	for (iimp = 0, isize = array_size(_resource_importers); !was_imported && (iimp != isize);
+	     ++iimp) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
 		was_imported |= (_resource_importers[iimp](stream, uuid) == 0);
 		++internal;
 	}
 	stream_deallocate(stream);
 
-	//Try external tools
-	for (size_t ipath = 0, psize = array_size(_resource_import_tool_path); !was_imported &&
-	        (ipath != psize); ++ipath) {
+	// Try external tools until imported successfully
+	for (size_t ipath = 0, psize = array_size(_resource_import_tool_path);
+	     !was_imported && (ipath != psize); ++ipath) {
 		string_t* tools = fs_matching_files(STRING_ARGS(_resource_import_tool_path[ipath]),
 		                                    STRING_CONST(RESOURCE_IMPORTER_PATTERN), true);
-		for (size_t itool = 0, tsize = array_size(tools); !was_imported && (itool != tsize); ++itool) {
+		for (size_t itool = 0, tsize = array_size(tools); !was_imported && (itool != tsize);
+		     ++itool) {
 			char buffer[BUILD_MAX_PATHLEN];
-			string_t fullpath = path_concat(buffer, sizeof(buffer),
-			                                STRING_ARGS(_resource_import_tool_path[ipath]),
-			                                STRING_ARGS(tools[itool]));
+			string_t fullpath =
+			    path_concat(buffer, sizeof(buffer), STRING_ARGS(_resource_import_tool_path[ipath]),
+			                STRING_ARGS(tools[itool]));
 
 			process_t proc;
 			process_initialize(&proc);
@@ -121,10 +130,10 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 			while (!stream_eos(err)) {
 				string_t line = stream_read_line_buffer(err, buffer, sizeof(buffer), '\n');
 				if (line.length) {
-					if (line.str[line.length-1] == '\r')
+					if (line.str[line.length - 1] == '\r')
 						--line.length;
 					log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
-						        STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
+					          STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
 				}
 			}
 			int exit_code = process_wait(&proc);
@@ -134,12 +143,12 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 			}
 			if (exit_code == 0) {
 				log_debugf(HASH_RESOURCE, STRING_CONST("Imported with external tool: %.*s"),
-					        STRING_FORMAT(tools[itool]));
+				           STRING_FORMAT(tools[itool]));
 				was_imported = true;
-			}
-			else {
-				log_debugf(HASH_RESOURCE, STRING_CONST("Failed importing with external tool: %.*s (%d)"),
-					        STRING_FORMAT(tools[itool]), exit_code);
+			} else {
+				log_debugf(HASH_RESOURCE,
+				           STRING_CONST("Failed importing with external tool: %.*s (%d)"),
+				           STRING_FORMAT(tools[itool]), exit_code);
 			}
 
 			process_finalize(&proc);
@@ -151,12 +160,12 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 	}
 
 	if (!was_imported) {
-		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-		          STRING_CONST("Unable to import: %.*s (%" PRIsize " internal, %" PRIsize " external)"),
-		          (int)length, path,
-		          internal, external);
-	}
-	else {
+		log_warnf(
+		    HASH_RESOURCE, WARNING_RESOURCE,
+		    STRING_CONST("Unable to import: %.*s (%" PRIsize " internal, %" PRIsize " external)"),
+		    (int)length, path, internal, external);
+	} else {
+		resource_source_set_import_hash(uuid, import_hash);
 		log_infof(HASH_RESOURCE, STRING_CONST("Imported: %.*s"), (int)length, path);
 	}
 	return was_imported;
@@ -218,8 +227,8 @@ resource_import_open_map(const char* cpath, size_t length, bool write) {
 	string_const_t last_path;
 	string_const_t path = path_directory_name(cpath, length);
 	while (path.length > 1) {
-		string_t map_path = path_concat(buffer, sizeof(buffer),
-		                                STRING_ARGS(path), STRING_CONST(RESOURCE_IMPORT_MAP));
+		string_t map_path = path_concat(buffer, sizeof(buffer), STRING_ARGS(path),
+		                                STRING_CONST(RESOURCE_IMPORT_MAP));
 		stream_t* stream = stream_open(STRING_ARGS(map_path), STREAM_IN | (write ? STREAM_OUT : 0));
 		if (stream)
 			return stream;
@@ -230,9 +239,10 @@ resource_import_open_map(const char* cpath, size_t length, bool write) {
 	}
 	if (write) {
 		path = path_directory_name(cpath, length);
-		string_t map_path = path_concat(buffer, sizeof(buffer),
-		                                STRING_ARGS(path), STRING_CONST(RESOURCE_IMPORT_MAP));
-		stream_t* stream = stream_open(STRING_ARGS(map_path), STREAM_IN | STREAM_OUT | STREAM_CREATE);
+		string_t map_path = path_concat(buffer, sizeof(buffer), STRING_ARGS(path),
+		                                STRING_CONST(RESOURCE_IMPORT_MAP));
+		stream_t* stream =
+		    stream_open(STRING_ARGS(map_path), STREAM_IN | STREAM_OUT | STREAM_CREATE);
 		if (stream)
 			return stream;
 	}
@@ -254,10 +264,10 @@ resource_import_map_subpath(stream_t* map, const char* path, size_t length) {
 static FOUNDATION_NOINLINE resource_signature_t
 resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* path, size_t length,
                                     uint256_t update_hash) {
-	char buffer[BUILD_MAX_PATHLEN+64];
+	char buffer[BUILD_MAX_PATHLEN + 64];
 	string_t line;
 	resource_signature_t sig = {uuid_null(), uint256_null()};
-	//TODO: This needs to be a DB as number of imported files grow
+	// TODO: This needs to be a DB as number of imported files grow
 	while (!stream_eos(map) && uuid_is_null(sig.uuid)) {
 		hash_t linehash;
 		string_const_t linepath;
@@ -266,7 +276,7 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 		line = stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
 		if (line.length < 120)
 			continue;
-		if (line.str[line.length-1] == '\r')
+		if (line.str[line.length - 1] == '\r')
 			--line.length;
 
 		linehash = string_to_uint64(STRING_ARGS(line), true);
@@ -339,7 +349,7 @@ resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_
 
 bool
 resource_import_map_purge(const char* path, size_t length) {
-	//TODO: Implement
+	// TODO: Implement
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	return false;
@@ -406,8 +416,8 @@ resource_autoimport_token(void) {
 
 static string_t
 resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capacity) {
-	//TODO: Improve
-	string_t result = (string_t) {buffer, 0};
+	// TODO: Improve
+	string_t result = (string_t){buffer, 0};
 	regex_t* regex;
 	size_t ipath, psize;
 	size_t imap, msize;
@@ -416,20 +426,21 @@ resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capac
 
 	regex = regex_compile(STRING_CONST("^" RESOURCE_IMPORT_MAP "$"));
 
-	for (ipath = 0, psize = array_size(_resource_autoimport_dir);
-	        !result.length && (ipath < psize); ++ipath) {
-
-		string_t* maps = fs_matching_files_regex(STRING_ARGS(_resource_autoimport_dir[ipath]), regex, true);
+	for (ipath = 0, psize = array_size(_resource_autoimport_dir); !result.length && (ipath < psize);
+	     ++ipath) {
+		string_t* maps =
+		    fs_matching_files_regex(STRING_ARGS(_resource_autoimport_dir[ipath]), regex, true);
 		for (imap = 0, msize = array_size(maps); !result.length && (imap < msize); ++imap) {
-			string_t mappath = path_concat(linebuffer, sizeof(linebuffer),
-			                               STRING_ARGS(_resource_autoimport_dir[ipath]), STRING_ARGS(maps[imap]));
+			string_t mappath =
+			    path_concat(linebuffer, sizeof(linebuffer),
+			                STRING_ARGS(_resource_autoimport_dir[ipath]), STRING_ARGS(maps[imap]));
 			stream_t* map = stream_open(STRING_ARGS(mappath), STREAM_IN);
 
 			while (map && !stream_eos(map)) {
 				string_t line = stream_read_line_buffer(map, linebuffer, sizeof(linebuffer), '\n');
 				if (line.length < 120)
 					continue;
-				if (line.str[line.length-1] == '\r')
+				if (line.str[line.length - 1] == '\r')
 					--line.length;
 
 				siguuid = string_to_uuid(line.str + 17, 37);
@@ -437,7 +448,8 @@ resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capac
 					string_const_t linepath = string_substr(STRING_ARGS(line), 119, line.length);
 					string_const_t mapdir = stream_path(map);
 					mapdir = path_directory_name(STRING_ARGS(mapdir));
-					result = path_concat(buffer, capacity, STRING_ARGS(mapdir), STRING_ARGS(linepath));
+					result =
+					    path_concat(buffer, capacity, STRING_ARGS(mapdir), STRING_ARGS(linepath));
 					break;
 				}
 			}
@@ -464,8 +476,8 @@ resource_autoimport(const uuid_t uuid) {
 	mutex_unlock(_resource_autoimport_lock);
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s -> %.*s"),
-	           STRING_FORMAT(uuidstr), STRING_FORMAT(path));
+	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s -> %.*s"), STRING_FORMAT(uuidstr),
+	           STRING_FORMAT(path));
 
 	if (path.length)
 		return resource_import(STRING_ARGS(path), uuid);
@@ -473,8 +485,8 @@ resource_autoimport(const uuid_t uuid) {
 }
 
 static bool
-resource_autoimport_source_changed(const char* path, size_t length,
-                                   uint256_t curhash, uint256_t* newhash) {
+resource_autoimport_source_changed(const char* path, size_t length, uint256_t map_hash,
+                                   uint256_t import_hash, uint256_t* newhash) {
 	stream_t* stream = stream_open(path, length, STREAM_IN);
 	if (!stream)
 		return false;
@@ -482,7 +494,7 @@ resource_autoimport_source_changed(const char* path, size_t length,
 	stream_deallocate(stream);
 	if (newhash)
 		*newhash = testhash;
-	return !uint256_equal(curhash, testhash);
+	return !uint256_equal(map_hash, testhash) || !uint256_equal(import_hash, testhash);
 }
 
 bool
@@ -490,7 +502,7 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(platform);
 	union {
 		char path[BUILD_MAX_PATHLEN];
-		resource_dependency_t deps[BUILD_MAX_PATHLEN/sizeof(resource_dependency_t)];
+		resource_dependency_t deps[BUILD_MAX_PATHLEN / sizeof(resource_dependency_t)];
 	} buffer;
 
 	if (!resource_module_config().enable_local_autoimport)
@@ -510,7 +522,12 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 	mutex_unlock(_resource_autoimport_lock);
 	if (path.length) {
 		resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
-		if (resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, nullptr)) {
+		// Check if import map hash differs from imported asset file hash, or if source
+		// import hash differs from imported asset file hash -> if so, need reimport. This ensures
+		// all three components of the resource (imported asset, import map signature and source)
+		// are up to date and in sync.
+		uint256_t import_hash = resource_source_import_hash(uuid);
+		if (resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, import_hash, nullptr)) {
 			string_const_t uuidstr = string_from_uuid_static(uuid);
 			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source hash changed: %.*s"),
 			           STRING_FORMAT(uuidstr));
@@ -539,22 +556,21 @@ static void
 resource_autoimport_watch_dir(const char* path, size_t length) {
 	size_t ipath, psize;
 	for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
-		//Check if something is already watching this dir or any parent
+		// Check if something is already watching this dir or any parent
 		if (string_equal(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])) ||
-		        path_subpath(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
-			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport already watching dir: %.*s (%.*s)"), (int)length,
-			           path, STRING_FORMAT(_resource_autoimport_dir[ipath]));
+		    path_subpath(path, length, STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
+			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport already watching dir: %.*s (%.*s)"),
+			           (int)length, path, STRING_FORMAT(_resource_autoimport_dir[ipath]));
 			break;
 		}
 	}
 	if (ipath == psize) {
-		//Check if we will replace a more specific monitor
+		// Check if we will replace a more specific monitor
 		for (ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize;) {
 			if (path_subpath(STRING_ARGS(_resource_autoimport_dir[ipath]), path, length).length) {
 				resource_autoimport_unwatch_dir(STRING_ARGS(_resource_autoimport_dir[ipath]));
 				psize = array_size(_resource_autoimport_dir);
-			}
-			else {
+			} else {
 				++ipath;
 			}
 		}
@@ -571,8 +587,7 @@ resource_autoimport_watch(const char* path, size_t length) {
 	mutex_lock(_resource_autoimport_lock);
 	if (fs_is_directory(path, length)) {
 		resource_autoimport_watch_dir(path, length);
-	}
-	else if (fs_is_file(path, length)) {
+	} else if (fs_is_file(path, length)) {
 		string_const_t filename = path_file_name(path, length);
 		if (string_equal(STRING_ARGS(filename), STRING_CONST(RESOURCE_IMPORT_MAP))) {
 			string_const_t dir = path_directory_name(path, length);
@@ -589,8 +604,7 @@ resource_autoimport_unwatch(const char* path, size_t length) {
 	mutex_lock(_resource_autoimport_lock);
 	if (fs_is_directory(path, length)) {
 		resource_autoimport_unwatch_dir(path, length);
-	}
-	else if (fs_is_file(path, length)) {
+	} else if (fs_is_file(path, length)) {
 		string_const_t filename = path_file_name(path, length);
 		if (string_equal(STRING_ARGS(filename), STRING_CONST(RESOURCE_IMPORT_MAP))) {
 			string_const_t dir = path_directory_name(path, length);
@@ -625,12 +639,14 @@ resource_autoimport_event_handle(event_t* event) {
 	for (size_t ipath = 0, psize = array_size(_resource_autoimport_dir); ipath < psize; ++ipath) {
 		if (path_subpath(STRING_ARGS(path), STRING_ARGS(_resource_autoimport_dir[ipath])).length) {
 			const resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
+			uint256_t import_hash = resource_source_import_hash(sig.uuid);
 			uint256_t newhash;
 			if (!uuid_is_null(sig.uuid) &&
-			        resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, &newhash)) {
-				//Suppress multiple events on same file in sequence
+			    resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, import_hash,
+			                                       &newhash)) {
+				// Suppress multiple events on same file in sequence
 				if (!uuid_equal(sig.uuid, _resource_autoimport_last_uuid) ||
-				        !uint256_equal(newhash, _resource_autoimport_last_hash)) {
+				    !uint256_equal(newhash, _resource_autoimport_last_hash)) {
 					_resource_autoimport_last_uuid = sig.uuid;
 					_resource_autoimport_last_hash = newhash;
 
@@ -638,7 +654,9 @@ resource_autoimport_event_handle(event_t* event) {
 #if BUILD_ENABLE_DEBUG_LOG
 					size_t num_reverse = resource_source_num_reverse_dependencies(sig.uuid, 0);
 					const string_const_t uuidstr = string_from_uuid_static(sig.uuid);
-					log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport event trigger: %.*s (%.*s) : %" PRIsize " reverse dependencies"),
+					log_debugf(HASH_RESOURCE,
+					           STRING_CONST("Autoimport event trigger: %.*s (%.*s) : %" PRIsize
+					                        " reverse dependencies"),
 					           STRING_FORMAT(path), STRING_FORMAT(uuidstr), num_reverse);
 #endif
 					resource_event_post(RESOURCEEVENT_MODIFY, sig.uuid, 0, token);

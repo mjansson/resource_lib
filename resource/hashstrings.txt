@@ -9,3 +9,4 @@ HASH_BASE_PATH                             base_path
 HASH_AUTOIMPORT                            autoimport
 HASH_AUTOIMPORT_PATH                       autoimport_path
 HASH_TOOL_PATH                             tool_path
+HASH_IMPORT_HASH                           import_hash

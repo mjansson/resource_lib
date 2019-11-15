@@ -16,3 +16,4 @@
 #define HASH_AUTOIMPORT static_hash_string("autoimport", 10, 0xcb4bb8dba8873846ULL)
 #define HASH_AUTOIMPORT_PATH static_hash_string("autoimport_path", 15, 0xb67cfc7703aa297dULL)
 #define HASH_TOOL_PATH static_hash_string("tool_path", 9, 0x4df162284edf84fbULL)
+#define HASH_IMPORT_HASH static_hash_string("import_hash", 11, 0x67a0a443d0f660bcULL)

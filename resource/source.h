@@ -12,7 +12,8 @@
  *
  * https://github.com/rampantpixels/foundation_lib
  *
- * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
+ * This library is put in the public domain; you can redistribute it and/or modify it without any
+ * restrictions.
  *
  */
 
@@ -27,6 +28,15 @@ resource_source_path(void);
 
 RESOURCE_API bool
 resource_source_set_path(const char* path, size_t length);
+
+RESOURCE_API uint256_t
+resource_source_hash(const uuid_t uuid, uint64_t platform);
+
+RESOURCE_API uint256_t
+resource_source_import_hash(const uuid_t uuid);
+
+RESOURCE_API void
+resource_source_set_import_hash(const uuid_t uuid, const uint256_t import_hash);
 
 RESOURCE_API uint256_t
 resource_source_hash(const uuid_t uuid, uint64_t platform);
@@ -55,27 +65,26 @@ RESOURCE_API bool
 resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary);
 
 RESOURCE_API void
-resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key,
-                    uint64_t platform, const char* value, size_t length);
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
+                    const char* value, size_t length);
 
 RESOURCE_API void
-resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key,
-                      uint64_t platform);
+resource_source_unset(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform);
 
 RESOURCE_API resource_change_t*
 resource_source_get(resource_source_t* source, hash_t key, uint64_t platform);
 
 RESOURCE_API void
-resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key,
-                         uint64_t platform, hash_t checksum, size_t size);
+resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
+                         hash_t checksum, size_t size);
 
 RESOURCE_API bool
-resource_source_read_blob(const uuid_t uuid, hash_t key,
-                          uint64_t platform, hash_t checksum, void* data, size_t capacity);
+resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum,
+                          void* data, size_t capacity);
 
 RESOURCE_API bool
-resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key,
-                           uint64_t platform, hash_t checksum, const void* data, size_t size);
+resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key, uint64_t platform,
+                           hash_t checksum, const void* data, size_t size);
 
 RESOURCE_API void
 resource_source_collapse_history(resource_source_t* source);
@@ -120,20 +129,22 @@ RESOURCE_API size_t
 resource_source_num_dependencies(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API size_t
-resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
+                             size_t capacity);
 
 RESOURCE_API void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const resource_dependency_t* deps, size_t num);
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
+                                 const resource_dependency_t* deps, size_t num);
 
 RESOURCE_API size_t
 resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API size_t
-resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform,
+                                     resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API void
 resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep);
 
 RESOURCE_API void
 resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep);
-
