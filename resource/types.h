@@ -12,7 +12,8 @@
  *
  * https://github.com/rampantpixels/foundation_lib
  *
- * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
+ * This library is put in the public domain; you can redistribute it and/or modify it without any
+ * restrictions.
  *
  */
 
@@ -34,32 +35,35 @@ typedef enum resource_event_id {
 	RESOURCEEVENT_DEPENDS,
 	/*! Resource was deleted */
 	RESOURCEEVENT_DELETE,
+	/*! Resource was successfully compiled */
+	RESOURCEEVENT_COMPILE,
 	RESOURCEEVENT_LAST_RESERVED = 32
 } resource_event_id;
 
 #define RESOURCE_SOURCEFLAG_UNSET 0
 #define RESOURCE_SOURCEFLAG_VALUE 1
-#define RESOURCE_SOURCEFLAG_BLOB  2
+#define RESOURCE_SOURCEFLAG_BLOB 2
 
-typedef struct resource_config_t            resource_config_t;
-typedef union  resource_change_value_t      resource_change_value_t;
-typedef struct resource_change_t            resource_change_t;
-typedef struct resource_change_data_t       resource_change_data_t;
+typedef struct resource_config_t resource_config_t;
+typedef union resource_change_value_t resource_change_value_t;
+typedef struct resource_change_t resource_change_t;
+typedef struct resource_change_data_t resource_change_data_t;
 typedef struct resource_change_data_fixed_t resource_change_data_fixed_t;
-typedef struct resource_change_block_t      resource_change_block_t;
-typedef struct resource_change_map_t        resource_change_map_t;
-typedef struct resource_source_t            resource_source_t;
-typedef struct resource_blob_t              resource_blob_t;
-typedef struct resource_platform_t          resource_platform_t;
-typedef struct resource_header_t            resource_header_t;
-typedef struct resource_signature_t         resource_signature_t;
-typedef struct resource_dependency_t        resource_dependency_t;
+typedef struct resource_change_block_t resource_change_block_t;
+typedef struct resource_change_map_t resource_change_map_t;
+typedef struct resource_source_t resource_source_t;
+typedef struct resource_blob_t resource_blob_t;
+typedef struct resource_platform_t resource_platform_t;
+typedef struct resource_header_t resource_header_t;
+typedef struct resource_signature_t resource_signature_t;
+typedef struct resource_dependency_t resource_dependency_t;
 
-typedef int (* resource_import_fn)(stream_t*, const uuid_t);
-typedef int (* resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t, const char*, size_t);
-typedef resource_change_t* (* resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
-        void*);
-typedef int (* resource_source_map_iterate_fn)(resource_change_t*, void*);
+typedef int (*resource_import_fn)(stream_t*, const uuid_t);
+typedef int (*resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t,
+                                   const char*, size_t);
+typedef resource_change_t* (*resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*,
+                                                            void*);
+typedef int (*resource_source_map_iterate_fn)(resource_change_t*, void*);
 
 /*! Resource library configuration */
 struct resource_config_t {
