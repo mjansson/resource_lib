@@ -1,14 +1,14 @@
-/* change.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* change.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -35,14 +35,14 @@ resource_change_is_blob(resource_change_t* change) {
 
 resource_change_data_t*
 resource_change_data_allocate(size_t size) {
-	resource_change_data_t* data = memory_allocate(HASH_RESOURCE,
-	                                               size + sizeof(resource_change_data_t), 0,
-	                                               MEMORY_PERSISTENT);
+	resource_change_data_t* data =
+	    memory_allocate(HASH_RESOURCE, size + sizeof(resource_change_data_t), 0, MEMORY_PERSISTENT);
 	resource_change_data_initialize(data, pointer_offset(data, sizeof(resource_change_data_t)), size);
 	return data;
 }
 
-void resource_change_data_deallocate(resource_change_data_t* data) {
+void
+resource_change_data_deallocate(resource_change_data_t* data) {
 	resource_change_data_finalize(data);
 	memory_deallocate(data);
 }
@@ -62,8 +62,8 @@ resource_change_data_finalize(resource_change_data_t* data) {
 
 resource_change_block_t*
 resource_change_block_allocate(void) {
-	resource_change_block_t* block = memory_allocate(HASH_RESOURCE, sizeof(resource_change_block_t),
-	                                                 0, MEMORY_PERSISTENT);
+	resource_change_block_t* block =
+	    memory_allocate(HASH_RESOURCE, sizeof(resource_change_block_t), 0, MEMORY_PERSISTENT);
 	resource_change_block_initialize(block);
 	return block;
 }
@@ -114,7 +114,7 @@ resource_change_is_value(resource_change_t* change) {
 bool
 resource_change_is_blob(resource_change_t* change) {
 	FOUNDATION_UNUSED(change);
-	return false;	
+	return false;
 }
 
 resource_change_data_t*

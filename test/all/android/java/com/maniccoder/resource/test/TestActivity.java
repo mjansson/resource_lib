@@ -1,4 +1,4 @@
-package com.rampantpixels.resource.test;
+package com.maniccoder.resource.test;
 
 import android.os.Bundle;
 import android.app.NativeActivity;

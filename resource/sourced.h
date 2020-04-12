@@ -1,18 +1,19 @@
-/* sourced.h  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
+/* sourced.h  -  Resource library  -  Public Domain  -  2016 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
- * https://github.com/rampantpixels/resource_lib
+ * https://github.com/mjansson/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
- * https://github.com/rampantpixels/foundation_lib
+ * https://github.com/mjansson/foundation_lib
  *
- * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
+ * This library is put in the public domain; you can redistribute it and/or modify it without any
+ * restrictions.
  *
  */
 
@@ -26,48 +27,45 @@
 enum sourced_message_id {
 	SOURCED_LOOKUP = 1,
 	SOURCED_LOOKUP_RESULT,
-	
+
 	SOURCED_REVERSE_LOOKUP,
 	SOURCED_REVERSE_LOOKUP_RESULT,
-	
+
 	SOURCED_IMPORT,
 	SOURCED_IMPORT_RESULT,
-	
+
 	SOURCED_GET,
 	SOURCED_GET_RESULT,
 	SOURCED_READ,
 	SOURCED_READ_RESULT,
-	
+
 	SOURCED_SET,
 	SOURCED_SET_RESULT,
 	SOURCED_UNSET,
 	SOURCED_UNSET_RESULT,
-	
+
 	SOURCED_DELETE,
 	SOURCED_DELETE_RESULT,
-	
+
 	SOURCED_HASH,
 	SOURCED_HASH_RESULT,
-	
+
 	SOURCED_DEPENDENCIES,
 	SOURCED_DEPENDENCIES_RESULT,
 
 	SOURCED_REVERSE_DEPENDENCIES,
 	SOURCED_REVERSE_DEPENDENCIES_RESULT,
-	
+
 	SOURCED_READ_BLOB,
 	SOURCED_READ_BLOB_RESULT,
-	
+
 	SOURCED_NOTIFY_CREATE,
 	SOURCED_NOTIFY_MODIFY,
 	SOURCED_NOTIFY_DEPENDS,
 	SOURCED_NOTIFY_DELETE
 };
 
-enum sourced_result_id {
-	SOURCED_OK = 0,
-	SOURCED_FAILED
-};
+enum sourced_result_id { SOURCED_OK = 0, SOURCED_FAILED };
 
 typedef enum sourced_message_id sourced_message_id;
 typedef enum sourced_result_id sourced_result_id;
@@ -101,11 +99,11 @@ typedef struct sourced_delete_result_t sourced_delete_result_t;
 typedef struct sourced_notify_t sourced_notify_t;
 
 #define SOURCED_DECLARE_MESSAGE \
-	uint32_t id; \
+	uint32_t id;                \
 	uint32_t size
 
 #define SOURCED_DECLARE_REPLY \
-	uint32_t result; \
+	uint32_t result;          \
 	uint32_t flags
 
 struct sourced_message_t {
@@ -199,7 +197,7 @@ struct sourced_read_t {
 struct sourced_read_result_t {
 	SOURCED_DECLARE_REPLY;
 	uint256_t hash;
-	uint32_t num_changes;
+	uint32_t changes_count;
 	sourced_change_t payload[FOUNDATION_FLEXIBLE_ARRAY];
 };
 
@@ -254,7 +252,7 @@ struct sourced_dependencies_t {
 
 struct sourced_dependencies_result_t {
 	SOURCED_DECLARE_REPLY;
-	uint64_t num_deps;
+	uint64_t deps_count;
 	uuid_t deps[FOUNDATION_FLEXIBLE_ARRAY];
 };
 
@@ -309,28 +307,31 @@ int
 sourced_write_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform);
 
 int
-sourced_write_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t numdeps);
+sourced_write_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t deps_count);
 
 int
-sourced_read_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count);
+sourced_read_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity,
+                                uint64_t* count);
 
 int
 sourced_write_reverse_dependencies(socket_t* sock, uuid_t uuid, uint64_t platform);
 
 int
-sourced_write_reverse_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t numdeps);
+sourced_write_reverse_dependencies_reply(socket_t* sock, resource_dependency_t* deps, size_t deps_count);
 
 int
-sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity, uint64_t* count);
+sourced_read_reverse_dependencies_reply(socket_t* sock, size_t size, resource_dependency_t* deps, size_t capacity,
+                                        uint64_t* count);
 
 int
 sourced_write_read_blob(socket_t* sock, uuid_t uuid, uint64_t platform, hash_t key);
 
-int 
+int
 sourced_write_read_blob_reply(socket_t* sock, hash_t checksum, void* store, size_t size);
 
-int 
-sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_reply_t* reply, void* store, size_t capacity);
+int
+sourced_read_read_blob_reply(socket_t* sock, size_t size, sourced_read_blob_reply_t* reply, void* store,
+                             size_t capacity);
 
 int
 sourced_write_notify(socket_t* sock, sourced_message_id id, uuid_t uuid, uint64_t platform, hash_t token);

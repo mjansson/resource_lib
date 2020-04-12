@@ -1,18 +1,19 @@
-/* local.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* local.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
- * https://github.com/rampantpixels/resource_lib
+ * https://github.com/mjansson/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
- * https://github.com/rampantpixels/foundation_lib
+ * https://github.com/mjansson/foundation_lib
  *
- * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
+ * This library is put in the public domain; you can redistribute it and/or modify it without any
+ * restrictions.
  *
  */
 
@@ -26,7 +27,7 @@ RESOURCE_API const string_const_t*
 resource_local_paths(void);
 
 RESOURCE_API void
-resource_local_set_paths(const string_const_t* paths, size_t num);
+resource_local_set_paths(const string_const_t* paths, size_t paths_count);
 
 RESOURCE_API void
 resource_local_add_path(const char* path, size_t length);

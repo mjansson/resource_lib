@@ -17,12 +17,12 @@
   "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "build\/xcode\/resource-osx.xcworkspace",
   "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
     {
-      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:rampantpixels\/network_lib.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:mjansson\/resource_lib.git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "A46942855E07B9FEBC964F44F61127F79F38DA03"
     },
     {
-      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:rampantpixels\/resource_lib",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:mjansson\/resource_lib",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
       "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "F6D09804A3EA43CBEA512C14F2C5496CCCAAF41F"
     }

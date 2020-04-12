@@ -1,14 +1,14 @@
-/* server.c  -  Resource library  -  Public Domain  -  2016 Mattias Jansson / Rampant Pixels
+/* server.c  -  Resource library  -  Public Domain  -  2016 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -61,7 +61,7 @@ void
 server_run(unsigned int port) {
 	int slot;
 	beacon_t beacon;
-	socket_t* sock[2] = { nullptr, nullptr };
+	socket_t* sock[2] = {nullptr, nullptr};
 	size_t sockets = 0;
 	bool terminate = false;
 	server_message_t message;
@@ -79,8 +79,7 @@ server_run(unsigned int port) {
 	socket_bind(&local_socket[0], localaddr[0]);
 	socket_bind(&local_socket[1], localaddr[0]);
 
-	thread_initialize(&network_thread, server_serve, local_socket, STRING_CONST("serve"),
-	                  THREAD_PRIORITY_NORMAL, 0);
+	thread_initialize(&network_thread, server_serve, local_socket, STRING_CONST("serve"), THREAD_PRIORITY_NORMAL, 0);
 
 	/*if (network_supports_ipv4())*/ {
 		network_address_ipv4_t ipv4_addr;
@@ -88,13 +87,11 @@ server_run(unsigned int port) {
 		network_address_ip_set_port(address, port);
 		sock[sockets] = tcp_socket_allocate();
 		socket_set_beacon(sock[sockets], &beacon);
-		if (!socket_bind(sock[sockets], address) ||
-		        !tcp_socket_listen(sock[sockets])) {
+		if (!socket_bind(sock[sockets], address) || !tcp_socket_listen(sock[sockets])) {
 			log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Unable to bind IPv4 socket"));
 			socket_deallocate(sock[sockets]);
 			sock[sockets] = nullptr;
-		}
-		else {
+		} else {
 			log_infof(HASH_RESOURCE, STRING_CONST("Listening to IPv4 port %u"),
 			          network_address_ip_port(socket_address_local(sock[sockets])));
 			++sockets;
@@ -106,13 +103,11 @@ server_run(unsigned int port) {
 		network_address_ip_set_port(address, port);
 		sock[sockets] = tcp_socket_allocate();
 		socket_set_beacon(sock[sockets], &beacon);
-		if (!socket_bind(sock[sockets], address) ||
-		        !tcp_socket_listen(sock[sockets])) {
+		if (!socket_bind(sock[sockets], address) || !tcp_socket_listen(sock[sockets])) {
 			log_warn(HASH_RESOURCE, WARNING_SYSTEM_CALL_FAIL, STRING_CONST("Unable to bind IPv6 socket"));
 			socket_deallocate(sock[sockets]);
 			sock[sockets] = nullptr;
-		}
-		else {
+		} else {
 			log_infof(HASH_RESOURCE, STRING_CONST("Listening to IPv6 port %u"),
 			          network_address_ip_port(socket_address_local(sock[sockets])));
 			++sockets;
@@ -122,8 +117,7 @@ server_run(unsigned int port) {
 	if (!sockets) {
 		log_warn(HASH_RESOURCE, WARNING_UNSUPPORTED, STRING_CONST("No IPv4/IPv6 network connection"));
 		terminate = true;
-	}
-	else {
+	} else {
 		thread_start(&network_thread);
 	}
 
@@ -134,12 +128,12 @@ server_run(unsigned int port) {
 			const event_block_t* block = event_stream_process(system_event_stream());
 			while ((event = event_next(block, event))) {
 				switch (event->id) {
-				case FOUNDATIONEVENT_TERMINATE:
-					terminate = true;
-					break;
+					case FOUNDATIONEVENT_TERMINATE:
+						terminate = true;
+						break;
 
-				default:
-					break;
+					default:
+						break;
 				}
 			}
 
@@ -153,46 +147,43 @@ server_run(unsigned int port) {
 			block = event_stream_process(resource_event_stream());
 			while ((event = event_next(block, event))) {
 				switch (event->id) {
-				case RESOURCEEVENT_CREATE:
-				case RESOURCEEVENT_MODIFY:
-				case RESOURCEEVENT_DEPENDS:
-				case RESOURCEEVENT_DELETE:
-					message.message = SERVER_MESSAGE_BROADCAST_NOTIFY;
-					if (event->id == RESOURCEEVENT_CREATE)
-						message.id = COMPILED_NOTIFY_CREATE;
-					else if (event->id == RESOURCEEVENT_MODIFY)
-						message.id = COMPILED_NOTIFY_MODIFY;
-					else if (event->id == RESOURCEEVENT_DEPENDS)
-						message.id = COMPILED_NOTIFY_DEPENDS;
-					else if (event->id == RESOURCEEVENT_DELETE)
-						message.id = COMPILED_NOTIFY_DELETE;
-					message.uuid = resource_event_uuid(event);
-					message.platform = resource_event_platform(event);
-					message.token = resource_event_token(event);
-					udp_socket_sendto(&local_socket[0], &message, sizeof(message),
-					                  socket_address_local(&local_socket[1]));
-					break;
+					case RESOURCEEVENT_CREATE:
+					case RESOURCEEVENT_MODIFY:
+					case RESOURCEEVENT_DEPENDS:
+					case RESOURCEEVENT_DELETE:
+						message.message = SERVER_MESSAGE_BROADCAST_NOTIFY;
+						if (event->id == RESOURCEEVENT_CREATE)
+							message.id = COMPILED_NOTIFY_CREATE;
+						else if (event->id == RESOURCEEVENT_MODIFY)
+							message.id = COMPILED_NOTIFY_MODIFY;
+						else if (event->id == RESOURCEEVENT_DEPENDS)
+							message.id = COMPILED_NOTIFY_DEPENDS;
+						else if (event->id == RESOURCEEVENT_DELETE)
+							message.id = COMPILED_NOTIFY_DELETE;
+						message.uuid = resource_event_uuid(event);
+						message.platform = resource_event_platform(event);
+						message.token = resource_event_token(event);
+						udp_socket_sendto(&local_socket[0], &message, sizeof(message),
+						                  socket_address_local(&local_socket[1]));
+						break;
 
-				default:
-					break;
+					default:
+						break;
 				}
 			}
-		}
-		else {
+		} else {
 			socket_t* listener = sock[slot - 1];
 			socket_t* accepted = tcp_socket_accept(listener, 0);
 			if (accepted) {
 				message.message = SERVER_MESSAGE_CONNECTION;
 				message.data = accepted;
-				udp_socket_sendto(&local_socket[0], &message, sizeof(message),
-				                  socket_address_local(&local_socket[1]));
+				udp_socket_sendto(&local_socket[0], &message, sizeof(message), socket_address_local(&local_socket[1]));
 			}
 		}
 	}
 
 	message.message = SERVER_MESSAGE_TERMINATE;
-	udp_socket_sendto(&local_socket[0], &message, sizeof(message),
-	                  socket_address_local(&local_socket[1]));
+	udp_socket_sendto(&local_socket[0], &message, sizeof(message), socket_address_local(&local_socket[1]));
 
 	thread_finalize(&network_thread);
 	socket_finalize(&local_socket[0]);
@@ -227,8 +218,7 @@ server_serve(void* arg) {
 
 	while (!terminate) {
 		size_t ievt;
-		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]),
-		                            NETWORK_TIMEOUT_INFINITE);
+		size_t count = network_poll(poll, events, sizeof(events) / sizeof(events[0]), NETWORK_TIMEOUT_INFINITE);
 		if (!count)
 			continue;
 
@@ -245,37 +235,34 @@ server_serve(void* arg) {
 				}
 				socket_t* sock;
 				switch (message.message) {
-				case SERVER_MESSAGE_CONNECTION:
-					sock = message.data;
-					sock->id = array_size(clients);
-					socket_set_blocking(sock, false);
-					network_poll_add_socket(poll, sock);
-					array_push(clients, sock);
-					break;
+					case SERVER_MESSAGE_CONNECTION:
+						sock = message.data;
+						sock->id = array_size(clients);
+						socket_set_blocking(sock, false);
+						network_poll_add_socket(poll, sock);
+						array_push(clients, sock);
+						break;
 
-				case SERVER_MESSAGE_BROADCAST_NOTIFY:
-					server_broadcast_notify(clients, message.id, message.uuid, message.platform, message.token);
-					break;
+					case SERVER_MESSAGE_BROADCAST_NOTIFY:
+						server_broadcast_notify(clients, message.id, message.uuid, message.platform, message.token);
+						break;
 				}
-			}
-			else {
+			} else {
 				socket_t* sock = events[ievt].socket;
 				bool disconnect = false;
 				if (events[ievt].event == NETWORKEVENT_DATAIN) {
 					if (server_handle(sock) < 0)
 						disconnect = true;
-				}
-				else if (events[ievt].event == NETWORKEVENT_ERROR) {
+				} else if (events[ievt].event == NETWORKEVENT_ERROR) {
 					log_info(HASH_RESOURCE, STRING_CONST("Socket error, closing connection"));
 					disconnect = true;
-				}
-				else if (events[ievt].event == NETWORKEVENT_HANGUP) {
+				} else if (events[ievt].event == NETWORKEVENT_HANGUP) {
 					log_info(HASH_RESOURCE, STRING_CONST("Socket disconnected"));
 					disconnect = true;
 				}
 				if (disconnect) {
 					unsigned int client = sock->id;
-					array_erase(clients, client); //Swap with last, patch up swapped client
+					array_erase(clients, client);  // Swap with last, patch up swapped client
 					if (array_size(clients) > client)
 						clients[client]->id = client;
 					network_poll_remove_socket(poll, sock);
@@ -292,10 +279,7 @@ server_serve(void* arg) {
 
 static int
 server_handle(socket_t* sock) {
-	compiled_message_t msg = {
-		(uint32_t)sock->data.header.id,
-		(uint32_t)sock->data.header.size
-	};
+	compiled_message_t msg = {(uint32_t)sock->data.header.id, (uint32_t)sock->data.header.size};
 
 	sock->data.header.id = 0;
 
@@ -304,22 +288,22 @@ server_handle(socket_t* sock) {
 		if (!read)
 			return -1;
 		if (read != sizeof(msg)) {
-			log_infof(HASH_RESOURCE, STRING_CONST("Read partial message header: %" PRIsize " of %" PRIsize),
-			          read, sizeof(msg));
+			log_infof(HASH_RESOURCE, STRING_CONST("Read partial message header: %" PRIsize " of %" PRIsize), read,
+			          sizeof(msg));
 			return -1;
 		}
 	}
 
 	switch (msg.id) {
-	case COMPILED_OPEN_STATIC:
-		return server_handle_open_static(sock, msg.size);
-	case COMPILED_OPEN_DYNAMIC:
-		return server_handle_open_dynamic(sock, msg.size);
+		case COMPILED_OPEN_STATIC:
+			return server_handle_open_static(sock, msg.size);
+		case COMPILED_OPEN_DYNAMIC:
+			return server_handle_open_dynamic(sock, msg.size);
 
-	case COMPILED_OPEN_STATIC_RESULT:
-	case COMPILED_OPEN_DYNAMIC_RESULT:
-	default:
-		break;
+		case COMPILED_OPEN_STATIC_RESULT:
+		case COMPILED_OPEN_DYNAMIC_RESULT:
+		default:
+			break;
 	}
 
 	return -1;
@@ -336,21 +320,19 @@ server_handle_open_static(socket_t* sock, size_t msgsize) {
 	if (read == expected_size) {
 		int ret = -1;
 		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
-		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of static resource: %.*s"),
-		          STRING_FORMAT(uuidstr));
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of static resource: %.*s"), STRING_FORMAT(uuidstr));
 		stream_t* stream = resource_stream_open_static(readmsg.uuid, readmsg.platform);
 		if (stream) {
 			compiled_write_open_static_reply(sock, true, stream_size(stream));
 			ret = server_write_stream_to_socket(stream, sock);
-		}
-		else {
+		} else {
 			compiled_write_open_static_reply(sock, false, 0);
 		}
 		return ret;
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial open static message: %" PRIsize " of %"
-		                                      PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial open static message: %" PRIsize " of %" PRIsize), read,
+		          msgsize);
 		return -1;
 	}
 
@@ -370,21 +352,19 @@ server_handle_open_dynamic(socket_t* sock, size_t msgsize) {
 	if (read == expected_size) {
 		int ret = -1;
 		string_const_t uuidstr = string_from_uuid_static(readmsg.uuid);
-		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of dynamic resource: %.*s"),
-		          STRING_FORMAT(uuidstr));
+		log_infof(HASH_RESOURCE, STRING_CONST("Perform read of dynamic resource: %.*s"), STRING_FORMAT(uuidstr));
 		stream_t* stream = resource_stream_open_dynamic(readmsg.uuid, readmsg.platform);
 		if (stream) {
 			compiled_write_open_dynamic_reply(sock, true, stream_size(stream));
 			ret = server_write_stream_to_socket(stream, sock);
-		}
-		else {
+		} else {
 			compiled_write_open_dynamic_reply(sock, false, 0);
 		}
 		return ret;
 	}
 	if (read != 0) {
-		log_infof(HASH_RESOURCE, STRING_CONST("Read partial open dynamic message: %" PRIsize " of %"
-		                                      PRIsize), read, msgsize);
+		log_infof(HASH_RESOURCE, STRING_CONST("Read partial open dynamic message: %" PRIsize " of %" PRIsize), read,
+		          msgsize);
 		return -1;
 	}
 
@@ -414,8 +394,7 @@ server_write_stream_to_socket(stream_t* stream, socket_t* sock) {
 					thread_yield();
 				}
 				total += wrote;
-			}
-			while (total != read);
+			} while (total != read);
 
 			if (total == read)
 				ret = 0;
@@ -425,8 +404,7 @@ server_write_stream_to_socket(stream_t* stream, socket_t* sock) {
 	memory_deallocate(buffer);
 	stream_deallocate(stream);
 
-	log_infof(HASH_RESOURCE, STRING_CONST("Wrote resource stream data: %" PRIsize " (%d)"), written,
-	          ret);
+	log_infof(HASH_RESOURCE, STRING_CONST("Wrote resource stream data: %" PRIsize " (%d)"), written, ret);
 
 	return ret;
 }

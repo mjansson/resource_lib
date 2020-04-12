@@ -280,7 +280,7 @@
 					"-ltest",
 					"-lfoundation",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.rampantpixels.resource.test-all";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.maniccoder.resource.test-all";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -299,7 +299,7 @@
 					"-ltest",
 					"-lfoundation",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.rampantpixels.resource.test-all";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.maniccoder.resource.test-all";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -359,7 +359,7 @@
 					"-ltest",
 					"-lfoundation",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.rampantpixels.resource.test-all";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.maniccoder.resource.test-all";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -419,7 +419,7 @@
 					"-ltest",
 					"-lfoundation",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.rampantpixels.resource.test-all";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.maniccoder.resource.test-all";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};

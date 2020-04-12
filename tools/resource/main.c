@@ -1,14 +1,14 @@
-/* main.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* main.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -23,26 +23,26 @@
 #include "errorcodes.h"
 
 typedef struct {
-	unsigned int      flag;
-	string_const_t    key;
-	string_const_t    value;
+	unsigned int flag;
+	string_const_t key;
+	string_const_t value;
 } resource_op_t;
 
 typedef struct {
-	bool              display_help;
-	int               binary;
-	string_const_t    source_path;
-	string_const_t*   config_files;
-	string_const_t    remote_sourced;
-	uuid_t            uuid;
-	uint256_t         hash;
-	string_t          lookup_path;
-	uint64_t          platform;
-	resource_op_t*    op;
-	bool              collapse;
-	bool              clearblobs;
-	bool              cformat;
-	bool              dump;
+	bool display_help;
+	int binary;
+	string_const_t source_path;
+	string_const_t* config_files;
+	string_const_t remote_sourced;
+	uuid_t uuid;
+	uint256_t hash;
+	string_t lookup_path;
+	uint64_t platform;
+	resource_op_t* op;
+	bool collapse;
+	bool clearblobs;
+	bool cformat;
+	bool dump;
 } resource_input_t;
 
 static resource_input_t
@@ -133,8 +133,7 @@ main_run(void* main_arg) {
 	event_stream_set_beacon(system_event_stream(), &beacon);
 
 	thread_t runner;
-	thread_initialize(&runner, resource_run, &input, STRING_CONST("resource-runner"),
-	                  THREAD_PRIORITY_NORMAL, 0);
+	thread_initialize(&runner, resource_run, &input, STRING_CONST("resource-runner"), THREAD_PRIORITY_NORMAL, 0);
 	thread_start(&runner);
 
 	bool terminate = false;
@@ -145,12 +144,12 @@ main_run(void* main_arg) {
 		event_block_t* const block = event_stream_process(system_event_stream());
 		while ((event = event_next(block, event))) {
 			switch (event->id) {
-			case FOUNDATIONEVENT_TERMINATE:
-				terminate = true;
-				break;
+				case FOUNDATIONEVENT_TERMINATE:
+					terminate = true;
+					break;
 
-			default:
-				break;
+				default:
+					break;
 			}
 		}
 	}
@@ -199,16 +198,14 @@ resource_run(void* arg) {
 		need_source = true;
 
 	bool already_help = input->display_help;
-	if (!already_help && need_source && !resource_source_path().length &&
-	        !resource_remote_sourced().length) {
+	if (!already_help && need_source && !resource_source_path().length && !resource_remote_sourced().length) {
 		log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No source path given"));
 		input->display_help = true;
 	}
 	if (!already_help && uuid_is_null(input->uuid)) {
 		if (lookup_done) {
 			log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("Unable to lookup UUID"));
-		}
-		else {
+		} else {
 			log_errorf(HASH_RESOURCE, ERROR_INVALID_VALUE, STRING_CONST("No UUID given"));
 			input->display_help = true;
 		}
@@ -227,35 +224,32 @@ resource_run(void* arg) {
 	for (iop = 0, opsize = array_size(input->op); iop < opsize; ++iop) {
 		resource_op_t op = input->op[iop];
 		switch (op.flag) {
-		case RESOURCE_SOURCEFLAG_VALUE:
-			resource_source_set(&source, tick++, hash(STRING_ARGS(op.key)), input->platform,
-			                    STRING_ARGS(op.value));
-			break;
+			case RESOURCE_SOURCEFLAG_VALUE:
+				resource_source_set(&source, tick++, hash(STRING_ARGS(op.key)), input->platform, STRING_ARGS(op.value));
+				break;
 
-		case RESOURCE_SOURCEFLAG_UNSET:
-			resource_source_unset(&source, tick++, hash(STRING_ARGS(op.key)), input->platform);
-			break;
+			case RESOURCE_SOURCEFLAG_UNSET:
+				resource_source_unset(&source, tick++, hash(STRING_ARGS(op.key)), input->platform);
+				break;
 
-		case RESOURCE_SOURCEFLAG_BLOB:
-			blobdata = resource_read_file(STRING_ARGS(op.value), &blob);
-			if (blobdata) {
-				if (resource_source_write_blob(input->uuid, tick, hash(STRING_ARGS(op.key)),
-				                               input->platform, blob.checksum, blobdata, blob.size)) {
-					resource_source_set_blob(&source, tick++, hash(STRING_ARGS(op.key)), input->platform,
-					                         blob.checksum, blob.size);
+			case RESOURCE_SOURCEFLAG_BLOB:
+				blobdata = resource_read_file(STRING_ARGS(op.value), &blob);
+				if (blobdata) {
+					if (resource_source_write_blob(input->uuid, tick, hash(STRING_ARGS(op.key)), input->platform,
+					                               blob.checksum, blobdata, blob.size)) {
+						resource_source_set_blob(&source, tick++, hash(STRING_ARGS(op.key)), input->platform,
+						                         blob.checksum, blob.size);
+					} else {
+						log_warnf(HASH_RESOURCE, WARNING_RESOURCE, STRING_CONST("Failed to write blob data for %.*s"),
+						          STRING_FORMAT(op.key));
+					}
+				} else {
+					log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+					          STRING_CONST("Failed to read blob data for %.*s from %.*s"), STRING_FORMAT(op.key),
+					          STRING_FORMAT(op.value));
 				}
-				else {
-					log_warnf(HASH_RESOURCE, WARNING_RESOURCE, STRING_CONST("Failed to write blob data for %.*s"),
-					          STRING_FORMAT(op.key));
-				}
-			}
-			else {
-				log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-				          STRING_CONST("Failed to read blob data for %.*s from %.*s"),
-				          STRING_FORMAT(op.key), STRING_FORMAT(op.value));
-			}
-			memory_deallocate(blobdata);
-			break;
+				memory_deallocate(blobdata);
+				break;
 		}
 	}
 	if (input->collapse)
@@ -269,33 +263,31 @@ resource_run(void* arg) {
 			log_warn(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Unable to write output file"));
 			result = RESOURCE_RESULT_UNABLE_TO_OPEN_OUTPUT_FILE;
 		}
-	}
-	else {
+	} else {
 		char buffer[64];
 		string_const_t uuidstr = string_from_uuid_static(input->uuid);
 		const error_level_t saved_level = log_suppress(0);
 		log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
 		if (input->cformat) {
 			typedef struct {
-				uint32_t       data1;
-				uint16_t       data2;
-				uint16_t       data3;
-				uint8_t        data4[8];
+				uint32_t data1;
+				uint16_t data2;
+				uint16_t data3;
+				uint8_t data4[8];
 			} uuid_raw_t;
 
 			typedef union {
-				uuid_raw_t     raw;
-				uuid_t         uuid;
+				uuid_raw_t raw;
+				uuid_t uuid;
 			} uuid_convert_t;
 
 			uuid_convert_t convert;
 			convert.uuid = input->uuid;
-			string_t cformatstr =
-			    string_format(buffer, sizeof(buffer),
-			                  STRING_CONST("uuid_make(0x%04x%04x%08x, 0x%02x%02x%02x%02x%02x%02x%02x%02x)"),
-			                  convert.raw.data3, convert.raw.data2, convert.raw.data1,
-			                  convert.raw.data4[7], convert.raw.data4[6], convert.raw.data4[5], convert.raw.data4[4],
-			                  convert.raw.data4[3], convert.raw.data4[2], convert.raw.data4[1], convert.raw.data4[0]);
+			string_t cformatstr = string_format(
+			    buffer, sizeof(buffer), STRING_CONST("uuid_make(0x%04x%04x%08x, 0x%02x%02x%02x%02x%02x%02x%02x%02x)"),
+			    convert.raw.data3, convert.raw.data2, convert.raw.data1, convert.raw.data4[7], convert.raw.data4[6],
+			    convert.raw.data4[5], convert.raw.data4[4], convert.raw.data4[3], convert.raw.data4[2],
+			    convert.raw.data4[1], convert.raw.data4[0]);
 			uuidstr = string_const(STRING_ARGS(cformatstr));
 		}
 		log_infof(HASH_RESOURCE, STRING_CONST("UUID: %.*s"), STRING_FORMAT(uuidstr));
@@ -320,16 +312,15 @@ resource_dump_fn(resource_change_t* change, resource_change_t* best, void* data)
 	FOUNDATION_UNUSED(data);
 	FOUNDATION_UNUSED(best);
 	if (change->flags & RESOURCE_SOURCEFLAG_BLOB)
-		log_infof(HASH_RESOURCE, STRING_CONST("BLOB %" PRItick " %" PRIhash " %" PRIx64 " : %" PRIhash " (%"
-		                                      PRIsize ")"),
-		          change->timestamp, change->hash, change->platform, change->value.blob.checksum,
-		          change->value.blob.size);
+		log_infof(
+		    HASH_RESOURCE, STRING_CONST("BLOB %" PRItick " %" PRIhash " %" PRIx64 " : %" PRIhash " (%" PRIsize ")"),
+		    change->timestamp, change->hash, change->platform, change->value.blob.checksum, change->value.blob.size);
 	else if (change->flags & RESOURCE_SOURCEFLAG_VALUE)
-		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64 " : %.*s"),
-		          change->timestamp, change->hash, change->platform, STRING_FORMAT(change->value.value));
+		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64 " : %.*s"), change->timestamp,
+		          change->hash, change->platform, STRING_FORMAT(change->value.value));
 	else
-		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64),
-		          change->timestamp, change->hash, change->platform);
+		log_infof(HASH_RESOURCE, STRING_CONST("SET %" PRItick " %" PRIhash " %" PRIx64), change->timestamp,
+		          change->hash, change->platform);
 	return change;
 }
 
@@ -338,7 +329,7 @@ resource_dump(resource_source_t* source) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map = (hashmap_t*)&fixedmap;
 	const error_level_t saved_level = log_suppress(HASH_RESOURCE);
-	hashmap_initialize(map, sizeof(fixedmap.bucket)/sizeof(fixedmap.bucket[0]), 0);
+	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 0);
 	log_set_suppress(HASH_RESOURCE, ERRORLEVEL_DEBUG);
 	resource_source_map_all(source, map, true);
 	resource_source_map_reduce(source, map, nullptr, resource_dump_fn);
@@ -360,16 +351,13 @@ resource_parse_command_line(const string_const_t* cmdline) {
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--source"))) {
 			if (arg < asize - 1)
 				input.source_path = cmdline[++arg];
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--config"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--config"))) {
 			if (arg < asize - 1)
 				array_push(input.config_files, cmdline[++arg]);
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--remote"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--remote"))) {
 			if (arg < asize - 1)
 				input.remote_sourced = cmdline[++arg];
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--uuid"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--uuid"))) {
 			if (arg < asize - 1) {
 				++arg;
 				input.uuid = string_to_uuid(STRING_ARGS(cmdline[arg]));
@@ -377,8 +365,7 @@ resource_parse_command_line(const string_const_t* cmdline) {
 					log_warnf(HASH_RESOURCE, WARNING_INVALID_VALUE, STRING_CONST("Invalid UUID: %.*s"),
 					          STRING_FORMAT(cmdline[arg]));
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--lookup"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--lookup"))) {
 			if (arg < asize - 1) {
 				char buffer[BUILD_MAX_PATHLEN];
 				++arg;
@@ -387,8 +374,7 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				log_debugf(HASH_RESOURCE, STRING_CONST("Lookup path: %.*s"), STRING_FORMAT(cleanpath));
 				input.lookup_path = string_clone(STRING_ARGS(cleanpath));
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--platform"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--platform"))) {
 			if (arg < asize - 1) {
 				bool hex = false;
 				string_const_t value = cmdline[++arg];
@@ -396,15 +382,13 @@ resource_parse_command_line(const string_const_t* cmdline) {
 					value.str += 2;
 					value.length -= 2;
 					hex = true;
-				}
-				else if (string_find_first_not_of(STRING_ARGS(cmdline[arg]), STRING_CONST("0123456789"),
-				                                  0) != STRING_NPOS) {
+				} else if (string_find_first_not_of(STRING_ARGS(cmdline[arg]), STRING_CONST("0123456789"), 0) !=
+				           STRING_NPOS) {
 					hex = true;
 				}
 				input.platform = string_to_uint64(STRING_ARGS(value), hex);
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--set"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--set"))) {
 			if (arg < asize - 2) {
 				resource_op_t op;
 				op.flag = RESOURCE_SOURCEFLAG_VALUE;
@@ -412,16 +396,14 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				op.value = cmdline[++arg];
 				array_push(input.op, op);
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--unset"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--unset"))) {
 			if (arg < asize - 1) {
 				resource_op_t op;
 				op.flag = RESOURCE_SOURCEFLAG_UNSET;
 				op.key = cmdline[++arg];
 				array_push(input.op, op);
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--blob"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--blob"))) {
 			if (arg < asize - 1) {
 				resource_op_t op;
 				op.flag = RESOURCE_SOURCEFLAG_BLOB;
@@ -429,33 +411,25 @@ resource_parse_command_line(const string_const_t* cmdline) {
 				op.value = cmdline[++arg];
 				array_push(input.op, op);
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--collapse"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--collapse"))) {
 			input.collapse = true;
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--clearblobs"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--clearblobs"))) {
 			input.clearblobs = true;
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--binary"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--binary"))) {
 			input.binary = 1;
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--ascii"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--ascii"))) {
 			input.binary = 0;
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--dump"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--dump"))) {
 			input.dump = true;
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--cformat"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--cformat"))) {
 			input.cformat = true;
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_NONE);
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
-			break; //Stop parsing cmdline options
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
+			break;  // Stop parsing cmdline options
 		else {
-			//Unknown argument, display help
+			// Unknown argument, display help
 			input.display_help = true;
 		}
 	}
@@ -468,38 +442,37 @@ static void
 resource_print_usage(void) {
 	const error_level_t saved_level = log_suppress(0);
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
-	log_info(0, STRING_CONST(
-	             "resource usage:\n"
-	             "  resource [--source <path>] [--config <path>] [--remote <url>]\n"
-	             "           [--uuid <uuid>] [--lookup <path>]\n"
-	             "           [--set <key> <value>] [--blob <key> <file>] [--unset <key>]\n"
-	             "           [--platform <id>]\n"
-	             "           [--collapse] [--clearblobs]\n"
-	             "           [--binary] [--ascii] [--dump]\n"
-	             "           [--cformat] [--debug] [--help] [--]\n"
-	             "    Resource specification arguments:\n"
-	             "      --source <path>        Set resource file repository to <path>\n"
-	             "      --config <path> ...    Read and parse config file given by <path>\n"
-	             "                             Loads all .json/.sjson files in <path> if it is a directory\n"
-	             "      --remote <url>         Connect to remote sourced service specified by <url>\n"
-	             "      --uuid <uuid>          Resource UUID\n"
-	             "      --lookup <path>        Resource UUID by lookup of source path <path>\n"
-	             "                             (UUID will be printed to stdout if no other command)\n"
-	             "    Repeatable command arguments:\n"
-	             "      --set <key> <value>    Set <key> to <value> in resource\n"
-	             "      --blob <key> <value>   Set <key> to blob read from <file> in resource\n"
-	             "      --unset <key>          Unset <key> in resource\n"
-	             "    Optional arguments:\n"
-	             "      --platform <id>        Platform specifier\n"
-	             "      --collapse             Collapse history after all commands\n"
-	             "      --clearblobs           Clear unreferenced blobs after all commands\n"
-	             "      --binary               Write binary file\n"
-	             "      --ascii                Write ASCII file (default)\n"
-	             "      --dump                 Dump file output resource to stdout\n"
-	             "      --cformat              Format UUIDs as C uuid_make() declarations\n"
-	             "      --debug                Enable debug output\n"
-	             "      --help                 Display this help message\n"
-	             "      --                     Stop processing command line arguments"
-	         ));
+	log_info(0,
+	         STRING_CONST("resource usage:\n"
+	                      "  resource [--source <path>] [--config <path>] [--remote <url>]\n"
+	                      "           [--uuid <uuid>] [--lookup <path>]\n"
+	                      "           [--set <key> <value>] [--blob <key> <file>] [--unset <key>]\n"
+	                      "           [--platform <id>]\n"
+	                      "           [--collapse] [--clearblobs]\n"
+	                      "           [--binary] [--ascii] [--dump]\n"
+	                      "           [--cformat] [--debug] [--help] [--]\n"
+	                      "    Resource specification arguments:\n"
+	                      "      --source <path>        Set resource file repository to <path>\n"
+	                      "      --config <path> ...    Read and parse config file given by <path>\n"
+	                      "                             Loads all .json/.sjson files in <path> if it is a directory\n"
+	                      "      --remote <url>         Connect to remote sourced service specified by <url>\n"
+	                      "      --uuid <uuid>          Resource UUID\n"
+	                      "      --lookup <path>        Resource UUID by lookup of source path <path>\n"
+	                      "                             (UUID will be printed to stdout if no other command)\n"
+	                      "    Repeatable command arguments:\n"
+	                      "      --set <key> <value>    Set <key> to <value> in resource\n"
+	                      "      --blob <key> <value>   Set <key> to blob read from <file> in resource\n"
+	                      "      --unset <key>          Unset <key> in resource\n"
+	                      "    Optional arguments:\n"
+	                      "      --platform <id>        Platform specifier\n"
+	                      "      --collapse             Collapse history after all commands\n"
+	                      "      --clearblobs           Clear unreferenced blobs after all commands\n"
+	                      "      --binary               Write binary file\n"
+	                      "      --ascii                Write ASCII file (default)\n"
+	                      "      --dump                 Dump file output resource to stdout\n"
+	                      "      --cformat              Format UUIDs as C uuid_make() declarations\n"
+	                      "      --debug                Enable debug output\n"
+	                      "      --help                 Display this help message\n"
+	                      "      --                     Stop processing command line arguments"));
 	log_set_suppress(0, saved_level);
 }

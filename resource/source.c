@@ -1,14 +1,14 @@
-/* source.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* source.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -28,19 +28,16 @@ static char _resource_source_path_buffer[BUILD_MAX_PATHLEN];
 static string_t _resource_source_path;
 
 static resource_change_t*
-resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
-                                        uint64_t platform);
+resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best, uint64_t platform);
 
 bool
 resource_source_set_path(const char* path, size_t length) {
 	if (!resource_module_config().enable_local_source)
 		return false;
-	_resource_source_path = string_copy(_resource_source_path_buffer,
-	                                    sizeof(_resource_source_path_buffer), path, length);
 	_resource_source_path =
-	    path_clean(STRING_ARGS(_resource_source_path), sizeof(_resource_source_path_buffer));
-	_resource_source_path =
-	    path_absolute(STRING_ARGS(_resource_source_path), sizeof(_resource_source_path_buffer));
+	    string_copy(_resource_source_path_buffer, sizeof(_resource_source_path_buffer), path, length);
+	_resource_source_path = path_clean(STRING_ARGS(_resource_source_path), sizeof(_resource_source_path_buffer));
+	_resource_source_path = path_absolute(STRING_ARGS(_resource_source_path), sizeof(_resource_source_path_buffer));
 	return true;
 }
 
@@ -52,8 +49,7 @@ resource_source_path(void) {
 static stream_t*
 resource_source_open(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
 		fs_make_directory(STRING_ARGS(dir_path));
@@ -64,8 +60,7 @@ resource_source_open(const uuid_t uuid, unsigned int mode) {
 static stream_t*
 resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".hash"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -77,8 +72,7 @@ resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
 static stream_t*
 resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".deps"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -90,8 +84,7 @@ resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
 static stream_t*
 resource_source_open_reverse_deps(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".revdeps"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -101,15 +94,12 @@ resource_source_open_reverse_deps(const uuid_t uuid, unsigned int mode) {
 }
 
 static stream_t*
-resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum,
-                          unsigned int mode) {
+resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
 	char filename[64];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	string_t file = string_format(filename, sizeof(filename),
-	                              STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"), key,
-	                              platform, checksum);
+	                              STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"), key, platform, checksum);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_ARGS(file));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -128,10 +118,9 @@ resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash
 			memory_deallocate(data);
 		}
 		if (current_checksum != checksum) {
-			log_warnf(
-			    HASH_RESOURCE, WARNING_RESOURCE,
-			    STRING_CONST("Invalid blob checksum for %.*s: Wanted %" PRIhash ", got %" PRIhash),
-			    STRING_FORMAT(path), checksum, current_checksum);
+			log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
+			          STRING_CONST("Invalid blob checksum for %.*s: Wanted %" PRIhash ", got %" PRIhash),
+			          STRING_FORMAT(path), checksum, current_checksum);
 			stream_deallocate(stream);
 			stream = nullptr;
 		} else {
@@ -145,20 +134,17 @@ static string_t*
 resource_source_get_all_blobs(const uuid_t uuid) {
 	char buffer[BUILD_MAX_PATHLEN];
 	char patbuffer[128];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	string_const_t pathname = path_directory_name(STRING_ARGS(path));
 	string_const_t filename = path_file_name(STRING_ARGS(path));
-	string_t pattern =
-	    string_concat_varg(patbuffer, sizeof(patbuffer), STRING_CONST("^"), STRING_ARGS(filename),
-	                       STRING_CONST(".*\\.blob$"), nullptr);
+	string_t pattern = string_concat_varg(patbuffer, sizeof(patbuffer), STRING_CONST("^"), STRING_ARGS(filename),
+	                                      STRING_CONST(".*\\.blob$"), nullptr);
 	return fs_matching_files(STRING_ARGS(pathname), STRING_ARGS(pattern), false);
 }
 
 resource_source_t*
 resource_source_allocate(void) {
-	resource_source_t* source =
-	    memory_allocate(HASH_RESOURCE, sizeof(resource_source_t), 0, MEMORY_PERSISTENT);
+	resource_source_t* source = memory_allocate(HASH_RESOURCE, sizeof(resource_source_t), 0, MEMORY_PERSISTENT);
 	resource_source_initialize(source);
 	return source;
 }
@@ -195,9 +181,8 @@ resource_source_change_grab(resource_change_block_t** block) {
 }
 
 static void
-resource_source_change_set(resource_change_block_t* block, resource_change_t* change,
-                           tick_t timestamp, hash_t key, uint64_t platform, const char* value,
-                           size_t length) {
+resource_source_change_set(resource_change_block_t* block, resource_change_t* change, tick_t timestamp, hash_t key,
+                           uint64_t platform, const char* value, size_t length) {
 	resource_change_data_t* data = block->current_data;
 	if (length > (data->size - data->used)) {
 		data = &block->fixed.data;
@@ -226,8 +211,8 @@ resource_source_change_set(resource_change_block_t* block, resource_change_t* ch
 }
 
 static void
-resource_source_change_set_blob(resource_change_t* change, tick_t timestamp, hash_t key,
-                                uint64_t platform, hash_t checksum, size_t size) {
+resource_source_change_set_blob(resource_change_t* change, tick_t timestamp, hash_t key, uint64_t platform,
+                                hash_t checksum, size_t size) {
 	change->timestamp = timestamp;
 	change->hash = key;
 	change->platform = platform;
@@ -237,16 +222,16 @@ resource_source_change_set_blob(resource_change_t* change, tick_t timestamp, has
 }
 
 void
-resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
-                    const char* value, size_t length) {
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform, const char* value,
+                    size_t length) {
 	resource_change_block_t* block = source->current;
 	resource_change_t* change = resource_source_change_grab(&source->current);
 	resource_source_change_set(block, change, timestamp, key, platform, value, length);
 }
 
 void
-resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
-                         hash_t checksum, size_t size) {
+resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform, hash_t checksum,
+                         size_t size) {
 	resource_change_t* change = resource_source_change_grab(&source->current);
 	resource_source_change_set_blob(change, timestamp, key, platform, checksum, size);
 }
@@ -313,8 +298,7 @@ resource_source_map_all(resource_source_t* source, hashmap_t* map, bool all_time
 				resource_change_t* previous = stored;
 				if (!all_timestamps && (previous->platform == change->platform)) {
 					if (previous->timestamp < change->timestamp)
-						hashmap_insert(map, change->hash,
-						               (change->flags != RESOURCE_SOURCEFLAG_UNSET) ? change : 0);
+						hashmap_insert(map, change->hash, (change->flags != RESOURCE_SOURCEFLAG_UNSET) ? change : 0);
 				} else {
 					resource_change_t** newarr = 0;
 					array_push(newarr, previous);
@@ -332,7 +316,7 @@ resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* dat
                             resource_source_map_iterate_fn iterate) {
 	size_t ibucket, bsize;
 	FOUNDATION_UNUSED(source);
-	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+	for (ibucket = 0, bsize = map->bucket_count; ibucket < bsize; ++ibucket) {
 		size_t inode, nsize;
 		hashmap_node_t* bucket = map->bucket[ibucket];
 		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
@@ -341,8 +325,7 @@ resource_source_map_iterate(resource_source_t* source, hashmap_t* map, void* dat
 			if (!stored)
 				continue;
 			else if ((uintptr_t)stored & 1) {
-				resource_change_t** maparr =
-				    (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
 				size_t imap, msize;
 				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
 					change = maparr[imap];
@@ -368,7 +351,7 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
 	size_t ibucket, bsize;
 	resource_change_t* best;
 	FOUNDATION_UNUSED(source);
-	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+	for (ibucket = 0, bsize = map->bucket_count; ibucket < bsize; ++ibucket) {
 		size_t inode, nsize;
 		hashmap_node_t* bucket = map->bucket[ibucket];
 		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
@@ -377,8 +360,7 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
 			if (!stored)
 				continue;
 			else if ((uintptr_t)stored & 1) {
-				resource_change_t** maparr =
-				    (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
 				size_t imap, msize;
 				best = 0;
 				for (imap = 0, msize = array_size(maparr); imap < msize; ++imap) {
@@ -407,7 +389,7 @@ resource_source_map_reduce(resource_source_t* source, hashmap_t* map, void* data
 void
 resource_source_map_clear(hashmap_t* map) {
 	size_t ibucket, bsize;
-	for (ibucket = 0, bsize = map->num_buckets; ibucket < bsize; ++ibucket) {
+	for (ibucket = 0, bsize = map->bucket_count; ibucket < bsize; ++ibucket) {
 		size_t inode, nsize;
 		hashmap_node_t* bucket = map->bucket[ibucket];
 		for (inode = 0, nsize = array_size(bucket); inode < nsize; ++inode) {
@@ -415,8 +397,7 @@ resource_source_map_clear(hashmap_t* map) {
 			if (!stored)
 				continue;
 			else if ((uintptr_t)stored & 1) {
-				resource_change_t** maparr =
-				    (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
+				resource_change_t** maparr = (resource_change_t**)((uintptr_t)stored & ~(uintptr_t)1);
 				array_deallocate(maparr);
 			}
 		}
@@ -493,11 +474,9 @@ resource_source_clear_blob_reduce(resource_change_t* change, resource_change_t* 
 		return change;
 
 	if (change->flags & RESOURCE_SOURCEFLAG_BLOB) {
-		string_t blobfile =
-		    string_format(clear->blobname, sizeof(clear->blobname),
-		                  STRING_CONST("%.*s.%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"),
-		                  STRING_FORMAT(clear->uuidstr), change->hash, change->platform,
-		                  change->value.blob.checksum);
+		string_t blobfile = string_format(
+		    clear->blobname, sizeof(clear->blobname), STRING_CONST("%.*s.%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"),
+		    STRING_FORMAT(clear->uuidstr), change->hash, change->platform, change->value.blob.checksum);
 		size_t ifile, fsize;
 		for (ifile = 0, fsize = array_size(clear->blobfiles); ifile < fsize; ++ifile) {
 			if (string_equal(STRING_ARGS(clear->blobfiles[ifile]), STRING_ARGS(blobfile))) {
@@ -526,13 +505,11 @@ resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid)
 	resource_source_map_reduce(source, map, &clear, resource_source_clear_blob_reduce);
 
 	for (ifile = 0, fsize = array_size(clear.blobfiles); ifile < fsize; ++ifile) {
-		string_t path = resource_stream_make_path(buffer, sizeof(buffer),
-		                                          STRING_ARGS(_resource_source_path), uuid);
+		string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 		string_const_t pathname = path_directory_name(STRING_ARGS(path));
 		ptrdiff_t offset = pointer_diff(pathname.str, buffer);
-		string_t fullname =
-		    path_append(buffer + offset, pathname.length, sizeof(buffer) - (size_t)offset,
-		                STRING_ARGS(clear.blobfiles[ifile]));
+		string_t fullname = path_append(buffer + offset, pathname.length, sizeof(buffer) - (size_t)offset,
+		                                STRING_ARGS(clear.blobfiles[ifile]));
 		fs_remove_file(STRING_ARGS(fullname));
 	}
 
@@ -588,8 +565,7 @@ exit:
 
 bool
 resource_source_read(resource_source_t* source, const uuid_t uuid) {
-	if (source && resource_remote_sourced_is_connected() &&
-	    resource_remote_sourced_read(source, uuid))
+	if (source && resource_remote_sourced_is_connected() && resource_remote_sourced_read(source, uuid))
 		return true;
 
 	return resource_source_read_local(source, uuid);
@@ -634,8 +610,7 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 					stream_write_separator(stream);
 					stream_write_uint64(stream, change->value.blob.size);
 
-					sha256_digest(&sha, &change->value.blob.checksum,
-					              sizeof(change->value.blob.checksum));
+					sha256_digest(&sha, &change->value.blob.checksum, sizeof(change->value.blob.checksum));
 					sha256_digest(&sha, &change->value.blob.size, sizeof(change->value.blob.size));
 				} else {
 					stream_write(stream, &op_set, 1);
@@ -688,14 +663,13 @@ resource_source_hash(const uuid_t uuid, uint64_t platform) {
 	// TODO: Implement adding dependency resource hashes based on platform
 	resource_dependency_t localdeps[4];
 	size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
-	size_t numdeps = resource_source_num_dependencies(uuid, platform);
-	if (numdeps) {
+	size_t deps_count = resource_source_dependencies_count(uuid, platform);
+	if (deps_count) {
 		resource_dependency_t* deps = localdeps;
-		if (numdeps > capacity)
-			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 16,
-			                       MEMORY_PERSISTENT);
-		resource_source_dependencies(uuid, platform, deps, numdeps);
-		for (size_t idep = 0; idep < numdeps; ++idep) {
+		if (deps_count > capacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * deps_count, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, deps_count);
+		for (size_t idep = 0; idep < deps_count; ++idep) {
 			uint256_t dephash = resource_source_hash(deps[idep].uuid, platform);
 			hash.word[0] ^= dephash.word[0];
 			hash.word[1] ^= dephash.word[1];
@@ -710,8 +684,7 @@ resource_source_hash(const uuid_t uuid, uint64_t platform) {
 }
 
 static resource_change_t*
-resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best,
-                                        uint64_t platform) {
+resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best, uint64_t platform) {
 	if ((change->flags != RESOURCE_SOURCEFLAG_UNSET) &&
 	    // Change must be superset of requested platform
 	    resource_platform_is_equal_or_more_specific(platform, change->platform) &&
@@ -719,16 +692,14 @@ resource_source_change_platform_compare(resource_change_t* change, resource_chan
 	    //  previous best is platform superset of change platform and
 	    //    either platforms are different (change is exclusively more specific), or
 	    ///   change is newer (and platforms are equal)
-	    (!best ||
-	     (resource_platform_is_equal_or_more_specific(change->platform, best->platform) &&
-	      ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
+	    (!best || (resource_platform_is_equal_or_more_specific(change->platform, best->platform) &&
+	               ((change->platform != best->platform) || (change->timestamp > best->timestamp)))))
 		return change;
 	return best;
 }
 
 static resource_change_t*
-resource_source_map_platform_reduce(resource_change_t* change, resource_change_t* best,
-                                    void* data) {
+resource_source_map_platform_reduce(resource_change_t* change, resource_change_t* best, void* data) {
 	return resource_source_change_platform_compare(change, best, *(uint64_t*)data);
 }
 
@@ -739,8 +710,8 @@ resource_source_map(resource_source_t* source, uint64_t platform, hashmap_t* map
 }
 
 bool
-resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum,
-                          void* data, size_t capacity) {
+resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum, void* data,
+                          size_t capacity) {
 	if (resource_remote_sourced_is_connected() &&
 	    resource_remote_sourced_read_blob(uuid, key, platform, checksum, data, capacity))
 		return true;
@@ -754,8 +725,8 @@ resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash
 }
 
 bool
-resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key, uint64_t platform,
-                           hash_t checksum, const void* data, size_t size) {
+resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key, uint64_t platform, hash_t checksum,
+                           const void* data, size_t size) {
 	unsigned int mode = STREAM_OUT | STREAM_BINARY | STREAM_CREATE | STREAM_TRUNCATE;
 	stream_t* stream = resource_source_open_blob(uuid, key, platform, checksum, mode);
 	FOUNDATION_UNUSED(timestamp);
@@ -767,62 +738,59 @@ resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key, uint
 }
 
 size_t
-resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
+resource_source_dependencies_count(const uuid_t uuid, uint64_t platform) {
 	return resource_source_dependencies(uuid, platform, nullptr, 0);
 }
 
 size_t
-resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
-                             size_t capacity) {
-	size_t numdeps = 0;
-	size_t outdeps = 0;
-	size_t depcount = 0;
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity) {
+	size_t deps_count_read = 0;
+	size_t deps_stored = 0;
+	size_t deps_count = 0;
 
 	if (resource_remote_sourced_is_connected())
 		return resource_remote_sourced_dependencies(uuid, platform, deps, capacity);
 
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN);
 	while (stream && !stream_eos(stream)) {
-		numdeps = stream_read_uint32(stream);
+		deps_count_read = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		for (size_t idep = 0; idep < numdeps; ++idep) {
+		for (size_t idep = 0; idep < deps_count_read; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
-			if (!uuid_is_null(depuuid) &&
-			    resource_platform_is_equal_or_more_specific(platform, depplatform)) {
-				if (outdeps < capacity) {
-					deps[outdeps].uuid = depuuid;
-					deps[outdeps].platform = depplatform;
-					++outdeps;
+			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(platform, depplatform)) {
+				if (deps_stored < capacity) {
+					deps[deps_stored].uuid = depuuid;
+					deps[deps_stored].platform = depplatform;
+					++deps_stored;
 				}
-				++depcount;
+				++deps_count;
 			}
 		}
 	}
 	stream_deallocate(stream);
-	return depcount;
+	return deps_count;
 }
 
 void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
-                                 const resource_dependency_t* deps, size_t num) {
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const resource_dependency_t* deps,
+                                 size_t deps_count) {
 	stream_t* stream = resource_source_open_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
 	resource_dependency_t basedeps[8];
 	resource_dependency_t* olddeps = basedeps;
-	unsigned int numdeps = 0;
-	unsigned int numolddeps = 0;
+	unsigned int deps_count_old = 0;
 	unsigned int idep, iotherdep;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
-		numdeps = stream_read_uint32(stream);
+		unsigned int deps_count_read = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
 		if (platform == depplatform) {
-			if (numdeps > (sizeof(basedeps) / sizeof(basedeps[0])))
-				olddeps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 0,
+			if (deps_count_read > (sizeof(basedeps) / sizeof(basedeps[0])))
+				olddeps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * deps_count_read, 0,
 				                          MEMORY_PERSISTENT);
-			numolddeps = numdeps;
+			deps_count_old = deps_count_read;
 		}
-		for (idep = 0; idep < numdeps; ++idep) {
+		for (idep = 0; idep < deps_count_read; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (platform == depplatform)
 				olddeps[idep].uuid = depuuid;
@@ -842,14 +810,12 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
 				stream_seek(stream, startofs, STREAM_SEEK_BEGIN);
 			}
 			break;
-		} else {
-			numdeps = 0;
 		}
 	}
-	stream_write_uint32(stream, (uint32_t)num);
+	stream_write_uint32(stream, (uint32_t)deps_count);
 	stream_write_separator(stream);
 	stream_write_uint64(stream, platform);
-	for (idep = 0; idep < num; ++idep) {
+	for (idep = 0; idep < deps_count; ++idep) {
 		stream_write_separator(stream);
 		stream_write_uuid(stream, deps[idep].uuid);
 	}
@@ -857,17 +823,17 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
 	stream_truncate(stream, stream_tell(stream));
 	stream_deallocate(stream);
 
-	for (idep = 0; idep < num; ++idep) {
-		for (iotherdep = 0; iotherdep < numolddeps; ++iotherdep) {
+	for (idep = 0; idep < deps_count; ++idep) {
+		for (iotherdep = 0; iotherdep < deps_count_old; ++iotherdep) {
 			if (uuid_equal(olddeps[iotherdep].uuid, deps[idep].uuid)) {
 				olddeps[iotherdep].uuid = uuid_null();
 				break;
 			}
 		}
-		if (iotherdep == numolddeps)
+		if (iotherdep == deps_count_old)
 			resource_source_add_reverse_dependency(deps[idep].uuid, platform, uuid);
 	}
-	for (iotherdep = 0; iotherdep < numolddeps; ++iotherdep) {
+	for (iotherdep = 0; iotherdep < deps_count_old; ++iotherdep) {
 		if (!uuid_is_null(olddeps[iotherdep].uuid))
 			resource_source_remove_reverse_dependency(olddeps[iotherdep].uuid, platform, uuid);
 	}
@@ -877,63 +843,60 @@ resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
 }
 
 size_t
-resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
+resource_source_reverse_dependencies_count(const uuid_t uuid, uint64_t platform) {
 	return resource_source_reverse_dependencies(uuid, platform, nullptr, 0);
 }
 
 size_t
-resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform,
-                                     resource_dependency_t* deps, size_t capacity) {
-	size_t numdeps = 0;
-	size_t outdeps = 0;
-	size_t depcount = 0;
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
+                                     size_t capacity) {
+	size_t deps_count_read = 0;
+	size_t deps_stored = 0;
+	size_t deps_count = 0;
 
 	if (resource_remote_sourced_is_connected())
 		return resource_remote_sourced_reverse_dependencies(uuid, platform, deps, capacity);
 
 	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN);
 	while (stream && !stream_eos(stream)) {
-		numdeps = stream_read_uint32(stream);
+		deps_count_read = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
-		for (size_t idep = 0; idep < numdeps; ++idep) {
+		for (size_t idep = 0; idep < deps_count_read; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
-			if (!uuid_is_null(depuuid) &&
-			    resource_platform_is_equal_or_more_specific(depplatform, platform)) {
-				if (outdeps < capacity) {
-					deps[outdeps].uuid = depuuid;
-					deps[outdeps].platform = depplatform;
-					++outdeps;
+			if (!uuid_is_null(depuuid) && resource_platform_is_equal_or_more_specific(depplatform, platform)) {
+				if (deps_stored < capacity) {
+					deps[deps_stored].uuid = depuuid;
+					deps[deps_stored].platform = depplatform;
+					++deps_stored;
 				}
-				++depcount;
+				++deps_count;
 			}
 		}
 	}
 	stream_deallocate(stream);
-	return depcount;
+	return deps_count;
 }
 
 void
 resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
-	stream_t* stream =
-	    resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
+	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
 	resource_dependency_t basedeps[8];
 	resource_dependency_t* olddeps = basedeps;
-	unsigned int numdeps = 0;
-	unsigned int numolddeps = 0;
+	unsigned int deps_count_old = 0;
 	unsigned int idep;
 	bool hasdep = false;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
-		numdeps = stream_read_uint32(stream);
+		unsigned int deps_count_read = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
 		if (platform == depplatform) {
-			if (numdeps > (sizeof(basedeps) / sizeof(basedeps[0])))
-				olddeps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 0,
+			if (deps_count_read > (sizeof(basedeps) / sizeof(basedeps[0])))
+				olddeps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * deps_count_read, 0,
 				                          MEMORY_PERSISTENT);
-			numolddeps = numdeps;
+			deps_count_old = deps_count_read;
 		}
-		for (idep = 0; idep < numdeps; ++idep) {
+		for (idep = 0; idep < deps_count_read; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (platform == depplatform) {
 				olddeps[idep].uuid = depuuid;
@@ -962,10 +925,10 @@ resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, con
 		}
 	}
 	if (!hasdep) {
-		stream_write_uint32(stream, (uint32_t)numolddeps + 1);
+		stream_write_uint32(stream, (uint32_t)deps_count_old + 1);
 		stream_write_separator(stream);
 		stream_write_uint64(stream, platform);
-		for (idep = 0; idep < numolddeps; ++idep) {
+		for (idep = 0; idep < deps_count_old; ++idep) {
 			stream_write_separator(stream);
 			stream_write_uuid(stream, olddeps[idep].uuid);
 		}
@@ -982,26 +945,23 @@ resource_source_add_reverse_dependency(const uuid_t uuid, uint64_t platform, con
 
 void
 resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, const uuid_t dep) {
-	stream_t* stream =
-	    resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
+	stream_t* stream = resource_source_open_reverse_deps(uuid, STREAM_IN | STREAM_OUT | STREAM_CREATE);
 	size_t size = stream_size(stream);
 	uuid_t basedeps[8];
 	uuid_t* olddeps = basedeps;
-	unsigned int numdeps = 0;
-	unsigned int numolddeps = 0;
+	unsigned int deps_count_old = 0;
 	unsigned int idep;
 	bool hasdep = false;
 	while (!stream_eos(stream)) {
 		ssize_t startofs = (ssize_t)stream_tell(stream);
-		numdeps = stream_read_uint32(stream);
+		unsigned int deps_count_read = stream_read_uint32(stream);
 		uint64_t depplatform = stream_read_uint64(stream);
 		if (platform == depplatform) {
-			if (numdeps > (sizeof(basedeps) / sizeof(basedeps[0])))
-				olddeps =
-				    memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * numdeps, 0, MEMORY_PERSISTENT);
-			numolddeps = numdeps;
+			if (deps_count_read > (sizeof(basedeps) / sizeof(basedeps[0])))
+				olddeps = memory_allocate(HASH_RESOURCE, sizeof(uuid_t) * deps_count_read, 0, MEMORY_PERSISTENT);
+			deps_count_old = deps_count_read;
 		}
-		for (idep = 0; idep < numdeps; ++idep) {
+		for (idep = 0; idep < deps_count_read; ++idep) {
 			uuid_t depuuid = stream_read_uuid(stream);
 			if (platform == depplatform) {
 				olddeps[idep] = depuuid;
@@ -1028,11 +988,11 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 			break;
 		}
 	}
-	if (hasdep && (numolddeps > 1)) {
-		stream_write_uint32(stream, (uint32_t)numolddeps - 1);
+	if (hasdep && (deps_count_old > 1)) {
+		stream_write_uint32(stream, (uint32_t)deps_count_old - 1);
 		stream_write_separator(stream);
 		stream_write_uint64(stream, platform);
-		for (idep = 0; idep < numolddeps; ++idep) {
+		for (idep = 0; idep < deps_count_old; ++idep) {
 			if (!uuid_equal(olddeps[idep], dep)) {
 				stream_write_separator(stream);
 				stream_write_uuid(stream, olddeps[idep]);
@@ -1050,8 +1010,7 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 uint256_t
 resource_source_import_hash(const uuid_t uuid) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".importhash"));
 	stream_t* hash_stream = stream_open(STRING_ARGS(path), STREAM_IN);
 	uint256_t import_hash = uint256_null();
@@ -1064,11 +1023,9 @@ resource_source_import_hash(const uuid_t uuid) {
 void
 resource_source_set_import_hash(const uuid_t uuid, const uint256_t import_hash) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path =
-	    resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".importhash"));
-	stream_t* hash_stream =
-	    stream_open(STRING_ARGS(path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
+	stream_t* hash_stream = stream_open(STRING_ARGS(path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (hash_stream)
 		stream_write_uint256(hash_stream, import_hash);
 	stream_deallocate(hash_stream);
@@ -1131,8 +1088,8 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 }
 
 void
-resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
-                    const char* value, size_t length) {
+resource_source_set(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform, const char* value,
+                    size_t length) {
 	FOUNDATION_UNUSED(source);
 	FOUNDATION_UNUSED(timestamp);
 	FOUNDATION_UNUSED(key);
@@ -1158,8 +1115,8 @@ resource_source_get(resource_source_t* source, hash_t key, uint64_t platform) {
 }
 
 void
-resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform,
-                         hash_t checksum, size_t size) {
+resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key, uint64_t platform, hash_t checksum,
+                         size_t size) {
 	FOUNDATION_UNUSED(source);
 	FOUNDATION_UNUSED(timestamp);
 	FOUNDATION_UNUSED(key);
@@ -1169,8 +1126,8 @@ resource_source_set_blob(resource_source_t* source, tick_t timestamp, hash_t key
 }
 
 bool
-resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum,
-                          void* data, size_t capacity) {
+resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum, void* data,
+                          size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(key);
 	FOUNDATION_UNUSED(platform);
@@ -1181,8 +1138,8 @@ resource_source_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash
 }
 
 bool
-resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key, uint64_t platform,
-                           hash_t checksum, const void* data, size_t size) {
+resource_source_write_blob(const uuid_t uuid, tick_t timestamp, hash_t key, uint64_t platform, hash_t checksum,
+                           const void* data, size_t size) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(timestamp);
 	FOUNDATION_UNUSED(key);
@@ -1242,15 +1199,14 @@ resource_source_map_clear(hashmap_t* map) {
 }
 
 size_t
-resource_source_num_dependencies(const uuid_t uuid, uint64_t platform) {
+resource_source_dependencies_count(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	return 0;
 }
 
 size_t
-resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
-                             size_t capacity) {
+resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
@@ -1259,24 +1215,24 @@ resource_source_dependencies(const uuid_t uuid, uint64_t platform, resource_depe
 }
 
 void
-resource_source_set_dependencies(const uuid_t uuid, uint64_t platform,
-                                 const resource_dependency_t* deps, size_t num) {
+resource_source_set_dependencies(const uuid_t uuid, uint64_t platform, const resource_dependency_t* deps,
+                                 size_t deps_count) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);
-	FOUNDATION_UNUSED(num);
+	FOUNDATION_UNUSED(deps_count);
 }
 
 size_t
-resource_source_num_reverse_dependencies(const uuid_t uuid, uint64_t platform) {
+resource_source_reverse_dependencies_count(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	return 0;
 }
 
 size_t
-resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform,
-                                     resource_dependency_t* deps, size_t capacity) {
+resource_source_reverse_dependencies(const uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
+                                     size_t capacity) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
 	FOUNDATION_UNUSED(deps);

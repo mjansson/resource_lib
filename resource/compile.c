@@ -1,14 +1,14 @@
-/* compile.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* compile.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -58,25 +58,23 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	stream_t* stream;
 	resource_header_t header;
 
-	if (!resource_module_config().enable_local_source &&
-	    !resource_module_config().enable_remote_sourced)
+	if (!resource_module_config().enable_local_source && !resource_module_config().enable_remote_sourced)
 		return false;
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s (platform 0x%" PRIx64 ")"),
-	           STRING_FORMAT(uuidstr), platform);
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s (platform 0x%" PRIx64 ")"), STRING_FORMAT(uuidstr),
+	           platform);
 
 	resource_dependency_t localdeps[8];
-	size_t depscapacity = sizeof(localdeps) / sizeof(localdeps[0]);
-	size_t numdeps = resource_source_num_dependencies(uuid, platform);
-	if (numdeps) {
+	size_t deps_capacity = sizeof(localdeps) / sizeof(localdeps[0]);
+	size_t deps_count = resource_source_dependencies_count(uuid, platform);
+	if (deps_count) {
 		bool depsuccess = true;
 		resource_dependency_t* deps = localdeps;
-		if (numdeps > depscapacity)
-			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 16,
-			                       MEMORY_PERSISTENT);
-		resource_source_dependencies(uuid, platform, deps, numdeps);
-		for (size_t idep = 0; idep < numdeps; ++idep) {
+		if (deps_count > deps_capacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * deps_count, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, deps_count);
+		for (size_t idep = 0; idep < deps_count; ++idep) {
 			log_debug(HASH_RESOURCE, STRING_CONST("Dependent resource compile check:"));
 			if (resource_compile_need_update(deps[idep].uuid, platform)) {
 				if (!resource_compile(deps[idep].uuid, platform))
@@ -128,36 +126,31 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	resource_source_t source;
 	string_const_t type = string_null();
 	bool success = false;
-	if (!resource_module_config().enable_local_source &&
-	    !resource_module_config().enable_remote_sourced)
+	if (!resource_module_config().enable_local_source && !resource_module_config().enable_remote_sourced)
 		return false;
 
 	char uuidbuf[40];
 	const string_t uuidstr = string_from_uuid(uuidbuf, sizeof(uuidbuf), uuid);
 	error_context_push(STRING_CONST("compiling resource"), STRING_ARGS(uuidstr));
 
-	size_t numdeps = resource_source_num_dependencies(uuid, platform);
-	log_debugf(HASH_RESOURCE,
-	           STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ") %" PRIsize " dependencies"),
-	           STRING_FORMAT(uuidstr), platform, numdeps);
+	size_t deps_count = resource_source_dependencies_count(uuid, platform);
+	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ") %" PRIsize " dependencies"),
+	           STRING_FORMAT(uuidstr), platform, deps_count);
 
 	resource_dependency_t localdeps[8];
-	size_t depscapacity = sizeof(localdeps) / sizeof(localdeps[0]);
-	if (numdeps) {
+	size_t deps_capacity = sizeof(localdeps) / sizeof(localdeps[0]);
+	if (deps_count) {
 		bool depsuccess = true;
 		resource_dependency_t* deps = localdeps;
-		if (numdeps > depscapacity)
-			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * numdeps, 16,
-			                       MEMORY_PERSISTENT);
-		resource_source_dependencies(uuid, platform, deps, numdeps);
-		for (size_t idep = 0; idep < numdeps; ++idep) {
+		if (deps_count > deps_capacity)
+			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * deps_count, 16, MEMORY_PERSISTENT);
+		resource_source_dependencies(uuid, platform, deps, deps_count);
+		for (size_t idep = 0; idep < deps_count; ++idep) {
 			char depuuidbuf[40];
-			const string_t depuuidstr =
-			    string_from_uuid(depuuidbuf, sizeof(depuuidbuf), deps[idep].uuid);
-			log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s dependency: %.*s"),
-			           STRING_FORMAT(uuidstr), STRING_FORMAT(depuuidstr));
-			error_context_push(STRING_CONST("compiling dependent resource"),
-			                   STRING_ARGS(depuuidstr));
+			const string_t depuuidstr = string_from_uuid(depuuidbuf, sizeof(depuuidbuf), deps[idep].uuid);
+			log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s dependency: %.*s"), STRING_FORMAT(uuidstr),
+			           STRING_FORMAT(depuuidstr));
+			error_context_push(STRING_CONST("compiling dependent resource"), STRING_ARGS(depuuidstr));
 			if (resource_compile_need_update(deps[idep].uuid, platform)) {
 				if (!resource_compile(deps[idep].uuid, platform))
 					depsuccess = false;
@@ -199,31 +192,26 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		}
 
 		resource_source_collapse_history(&source);
-		change = resource_source_get(&source, HASH_RESOURCE_TYPE,
-		                             platform != RESOURCE_PLATFORM_ALL ? platform : 0);
+		change = resource_source_get(&source, HASH_RESOURCE_TYPE, platform != RESOURCE_PLATFORM_ALL ? platform : 0);
 		if (change && resource_change_is_value(change)) {
 			type = change->value.value;
 		}
 
-		for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize);
-		     ++icmp) {
-			success = (_resource_compilers[icmp](uuid, platform, &source, source_hash,
-			                                     STRING_ARGS(type)) == 0);
+		for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize); ++icmp) {
+			success = (_resource_compilers[icmp](uuid, platform, &source, source_hash, STRING_ARGS(type)) == 0);
 			++internal;
 		}
 	}
 	resource_source_finalize(&source);
 
 	// Try external tools
-	for (size_t ipath = 0, psize = array_size(_resource_compile_tool_path);
-	     !success && (ipath != psize); ++ipath) {
+	for (size_t ipath = 0, psize = array_size(_resource_compile_tool_path); !success && (ipath != psize); ++ipath) {
 		string_t* tools = fs_matching_files(STRING_ARGS(_resource_compile_tool_path[ipath]),
 		                                    STRING_CONST(RESOURCE_COMPILER_PATTERN), true);
 		for (size_t itool = 0, tsize = array_size(tools); !success && (itool != tsize); ++itool) {
 			char buffer[BUILD_MAX_PATHLEN];
-			string_t fullpath =
-			    path_concat(buffer, sizeof(buffer), STRING_ARGS(_resource_compile_tool_path[ipath]),
-			                STRING_ARGS(tools[itool]));
+			string_t fullpath = path_concat(buffer, sizeof(buffer), STRING_ARGS(_resource_compile_tool_path[ipath]),
+			                                STRING_ARGS(tools[itool]));
 
 			process_t proc;
 			process_initialize(&proc);
@@ -236,8 +224,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 			char platformarr[34];
 			array_push(args, string_to_const(uuidstr));
 			if (platform) {
-				string_t platformstr =
-				    string_from_uint(platformarr, sizeof(platformarr), platform, true, 0, 0);
+				string_t platformstr = string_from_uint(platformarr, sizeof(platformarr), platform, true, 0, 0);
 				array_push(args, string_const(STRING_CONST("--platform")));
 				array_push(args, string_to_const(platformstr));
 			}
@@ -272,8 +259,8 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 				if (line.length) {
 					if (line.str[line.length - 1] == '\r')
 						--line.length;
-					log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"),
-					          STRING_FORMAT(tools[itool]), STRING_FORMAT(line));
+					log_infof(HASH_RESOURCE, STRING_CONST("%.*s: %.*s"), STRING_FORMAT(tools[itool]),
+					          STRING_FORMAT(line));
 				}
 			}
 			int exit_code = process_wait(&proc);
@@ -286,8 +273,7 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 				           STRING_FORMAT(tools[itool]));
 				success = true;
 			} else {
-				log_debugf(HASH_RESOURCE,
-				           STRING_CONST("Failed compiling with external tool: %.*s (%d)"),
+				log_debugf(HASH_RESOURCE, STRING_CONST("Failed compiling with external tool: %.*s (%d)"),
 				           STRING_FORMAT(tools[itool]), exit_code);
 			}
 
@@ -303,12 +289,12 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 
 	if (!success) {
 		log_warnf(HASH_RESOURCE, WARNING_RESOURCE,
-		          STRING_CONST("Unable to compile: %.*s (platform 0x%" PRIx64 ") (%" PRIsize
-		                       " internal, %" PRIsize " external)"),
+		          STRING_CONST("Unable to compile: %.*s (platform 0x%" PRIx64 ") (%" PRIsize " internal, %" PRIsize
+		                       " external)"),
 		          STRING_FORMAT(uuidstr), platform, internal, external);
 	} else {
-		log_infof(HASH_RESOURCE, STRING_CONST("Compiled: %.*s (platform 0x%" PRIx64 ")"),
-		          STRING_FORMAT(uuidstr), platform);
+		log_infof(HASH_RESOURCE, STRING_CONST("Compiled: %.*s (platform 0x%" PRIx64 ")"), STRING_FORMAT(uuidstr),
+		          platform);
 		hash_t token = resource_compile_token();
 		resource_event_post(RESOURCEEVENT_COMPILE, uuid, platform, token);
 	}

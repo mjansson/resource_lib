@@ -1,4 +1,4 @@
-/* main.c  -  Resource source test  -  Public Domain  -  2013 Mattias Jansson / Rampant Pixels
+/* main.c  -  Resource source test  -  Public Domain  -  2013 Mattias Jansson
  *
  * This library provides a cross-platform foundation library in C11 providing basic support
  * data types and functions to write applications and games in a platform-independent fashion.
@@ -61,14 +61,14 @@ DECLARE_TEST(source, set) {
 	hashmap_fixed_t fixedmap;
 	hashmap_t* map;
 	resource_source_t source;
-	
+
 	map = (hashmap_t*)&fixedmap;
 
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
 	resource_source_initialize(&source);
-	
+
 	EXPECT_PTREQ(source.first.next, nullptr);
-	
+
 	resource_change_t* change;
 	resource_source_map(&source, 0, map);
 	change = hashmap_lookup(map, HASH_TEST);
@@ -102,7 +102,7 @@ DECLARE_TEST(source, set) {
 	size_t iloop, lsize;
 	char buffer[1024];
 	for (iloop = 0; iloop < sizeof(buffer); ++iloop)
-		buffer[iloop] = (char)random32_range('a', 'z'+1);
+		buffer[iloop] = (char)random32_range('a', 'z' + 1);
 	timestamp = time_system();
 	for (iloop = 0, lsize = 4096; iloop < lsize; ++iloop) {
 		hash_t hash = random64();
@@ -136,7 +136,7 @@ DECLARE_TEST(source, set) {
 	}
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
-	//log_infof(HASH_TEST, STRING_CONST("Used %" PRIsize "/%" PRIsize " (%.0" PRIREAL "%%)"),
+	// log_infof(HASH_TEST, STRING_CONST("Used %" PRIsize "/%" PRIsize " (%.0" PRIREAL "%%)"),
 	//          used, allocated, REAL_C(100.0) * ((real)used / (real)allocated));
 	EXPECT_REALGT((real)used / (real)allocated, REAL_C(0.7));
 #endif
@@ -158,22 +158,22 @@ DECLARE_TEST(source, unset) {
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
 	resource_source_initialize(&source);
 
-	//Verify platform handling and set/unset logic
-	//Define four platforms, A-D
-	//A-C are specializations in increasing order
-	//D is a separate unrelated platform
-	//In reverse order:
+	// Verify platform handling and set/unset logic
+	// Define four platforms, A-D
+	// A-C are specializations in increasing order
+	// D is a separate unrelated platform
+	// In reverse order:
 	//  Set single key values for default platform and A-D
 	//  then unset for platform B and C
 	//  Set new key value for default platform and C
 	//  Set new key value for platform D
-	//Verify map result for default platform and A-D
+	// Verify map result for default platform and A-D
 	resource_source_initialize(&source);
 
-	uint64_t platformA = resource_platform((resource_platform_t){1,-1,-1,-1,-1,-1});
-	uint64_t platformB = resource_platform((resource_platform_t){1,2,-1,-1,-1,-1});
-	uint64_t platformC = resource_platform((resource_platform_t){1,2,3,-1,-1,-1});
-	uint64_t platformD = resource_platform((resource_platform_t){1,-1,-1,-1,4,-1});
+	uint64_t platformA = resource_platform((resource_platform_t){1, -1, -1, -1, -1, -1});
+	uint64_t platformB = resource_platform((resource_platform_t){1, 2, -1, -1, -1, -1});
+	uint64_t platformC = resource_platform((resource_platform_t){1, 2, 3, -1, -1, -1});
+	uint64_t platformD = resource_platform((resource_platform_t){1, -1, -1, -1, 4, -1});
 
 	hash_t keyOne = HASH_TEST;
 	hash_t keyTwo = HASH_RESOURCE;
@@ -212,7 +212,6 @@ DECLARE_TEST(source, unset) {
 #endif
 	change = hashmap_lookup(map, keyThree);
 	EXPECT_PTREQ(change, nullptr);
-
 
 	resource_source_map(&source, platformA, map);
 #if RESOURCE_ENABLE_LOCAL_SOURCE
@@ -293,16 +292,12 @@ resource_unique_set_per_platform(resource_change_t* change, resource_change_t* b
 	if (change && best) {
 		*result = (change->platform == best->platform) ? -1 : 0;
 		if (*result < 0) {
-			log_infof(HASH_TEST, STRING_CONST("%" PRIfixPTR " : %" PRIfixPTR),
-			          (uintptr_t)change, (uintptr_t)best);
-			log_infof(HASH_TEST, STRING_CONST("%" PRIhash " : %" PRIhash),
-			          change->hash, best->hash);
-			log_infof(HASH_TEST, STRING_CONST("%" PRItick " : %" PRItick),
-			          change->timestamp, best->timestamp);
-			log_infof(HASH_TEST, STRING_CONST("%u : %u"),
-			          change->flags, best->flags);
-			log_infof(HASH_TEST, STRING_CONST("%" PRIsize " : %" PRIsize),
-			          change->value.value.length, best->value.value.length);
+			log_infof(HASH_TEST, STRING_CONST("%" PRIfixPTR " : %" PRIfixPTR), (uintptr_t)change, (uintptr_t)best);
+			log_infof(HASH_TEST, STRING_CONST("%" PRIhash " : %" PRIhash), change->hash, best->hash);
+			log_infof(HASH_TEST, STRING_CONST("%" PRItick " : %" PRItick), change->timestamp, best->timestamp);
+			log_infof(HASH_TEST, STRING_CONST("%u : %u"), change->flags, best->flags);
+			log_infof(HASH_TEST, STRING_CONST("%" PRIsize " : %" PRIsize), change->value.value.length,
+			          best->value.value.length);
 		}
 		EXPECT_TYPENE(change->platform, best->platform, uint64_t, PRIx64);
 	}
@@ -319,16 +314,11 @@ DECLARE_TEST(source, collapse) {
 	hashmap_initialize(map, sizeof(fixedmap.bucket) / sizeof(fixedmap.bucket[0]), 8);
 	resource_source_initialize(&source);
 
-	const hash_t keys[8] = {
-		0, HASH_TEST, HASH_RESOURCE, HASH_DEBUG,
-		HASH_NONE, HASH_TRUE, HASH_FALSE, HASH_SYSTEM
-	};
-	const uint64_t platforms[4] = {
-		resource_platform((resource_platform_t){-1,-1,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,-1,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,2,-1,-1,-1,-1}),
-		resource_platform((resource_platform_t){1,2,3,4,-1,-1})
-	};
+	const hash_t keys[8] = {0, HASH_TEST, HASH_RESOURCE, HASH_DEBUG, HASH_NONE, HASH_TRUE, HASH_FALSE, HASH_SYSTEM};
+	const uint64_t platforms[4] = {resource_platform((resource_platform_t){-1, -1, -1, -1, -1, -1}),
+	                               resource_platform((resource_platform_t){1, -1, -1, -1, -1, -1}),
+	                               resource_platform((resource_platform_t){1, 2, -1, -1, -1, -1}),
+	                               resource_platform((resource_platform_t){1, 2, 3, 4, -1, -1})};
 
 	struct resource_expect_change_t {
 		resource_change_t change;
@@ -341,7 +331,7 @@ DECLARE_TEST(source, collapse) {
 	char buffer[1024];
 	tick_t timestamp = time_system();
 	for (iloop = 0; iloop < sizeof(buffer); ++iloop)
-		buffer[iloop] = (char)random32_range('a', 'z'+1);
+		buffer[iloop] = (char)random32_range('a', 'z' + 1);
 	for (iloop = 0, lsize = 4096; iloop < lsize; ++iloop) {
 		size_t ichg, chgsize;
 		for (ichg = 0, chgsize = 1024; ichg < chgsize; ++ichg) {
@@ -349,8 +339,7 @@ DECLARE_TEST(source, collapse) {
 			hash_t platform = platforms[random32_range(0, 4)];
 			if (random32_range(0, 100) > 75) {
 				resource_source_unset(&source, timestamp++, hash, platform);
-			}
-			else {
+			} else {
 				resource_source_set(&source, timestamp++, hash, platform, buffer, random32_range(10, sizeof(buffer)));
 			}
 		}
@@ -376,8 +365,8 @@ DECLARE_TEST(source, collapse) {
 			}
 		}
 
-		//When mapping without all timestamps there should only be one change for each platform for each key
-		//even before history collapse (it is a local map collapse)
+		// When mapping without all timestamps there should only be one change for each platform for each key
+		// even before history collapse (it is a local map collapse)
 		int result = 0;
 		resource_source_map_all(&source, map, false);
 		resource_source_map_reduce(&source, map, &result, resource_unique_set_per_platform);
@@ -385,7 +374,7 @@ DECLARE_TEST(source, collapse) {
 
 		resource_source_collapse_history(&source);
 
-		//After a history collapse a map of all timestamps should only be one change for each platform for each key
+		// After a history collapse a map of all timestamps should only be one change for each platform for each key
 		resource_source_map_all(&source, map, true);
 		resource_source_map_reduce(&source, map, &result, resource_unique_set_per_platform);
 		EXPECT_EQ(result, 0);
@@ -403,8 +392,7 @@ DECLARE_TEST(source, collapse) {
 					EXPECT_CONSTSTRINGEQ(change->value.value, expected[iplat][ihash].change.value.value);
 #endif
 					string_deallocate((char*)expected[iplat][ihash].value.str);
-				}
-				else {
+				} else {
 					EXPECT_PTREQ(change, nullptr);
 				}
 			}
@@ -467,7 +455,7 @@ DECLARE_TEST(source, blob) {
 	resource_source_write_blob(uuid, timestamp, HASH_TEST, platform, checksum, data, size);
 	resource_source_set_blob(&source, timestamp, HASH_TEST, platform, checksum, size);
 
-	//Verify three blob files exist
+	// Verify three blob files exist
 	files = fs_matching_files(STRING_ARGS(path), STRING_CONST("^.*\\.blob$"), true);
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 	EXPECT_INTEQ(array_size(files), 3);
@@ -476,7 +464,7 @@ DECLARE_TEST(source, blob) {
 
 	resource_source_clear_blob_history(&source, uuid);
 
-	//Verify three blob files exist
+	// Verify three blob files exist
 	files = fs_matching_files(STRING_ARGS(path), STRING_CONST("^.*\\.blob$"), true);
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 	EXPECT_INTEQ(array_size(files), 3);
@@ -493,7 +481,7 @@ DECLARE_TEST(source, blob) {
 
 	resource_source_clear_blob_history(&source, uuid);
 
-	//Verify only one blob file exist, and that it's the correct one
+	// Verify only one blob file exist, and that it's the correct one
 	resource_source_map(&source, platform, map);
 	change = hashmap_lookup(map, HASH_TEST);
 	files = fs_matching_files(STRING_ARGS(path), STRING_CONST("^.*\\.blob$"), true);
@@ -506,11 +494,11 @@ DECLARE_TEST(source, blob) {
 
 	string_t refpath = resource_stream_make_path(data, sizeof(data), STRING_CONST(""), uuid);
 	refpath.str++;
-	refpath.length--; //Make relative
+	refpath.length--;  // Make relative
 	char filename[64];
-	string_t reffile = string_format(filename, sizeof(filename),
-	                                 STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"),
-	                                 HASH_TEST, platform, checksum);
+	string_t reffile =
+	    string_format(filename, sizeof(filename), STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"),
+	                  HASH_TEST, platform, checksum);
 	reffile = string_append(STRING_ARGS(refpath), sizeof(data), STRING_ARGS(reffile));
 	EXPECT_STRINGEQ(files[0], string_to_const(reffile));
 #endif
@@ -537,15 +525,9 @@ test_source_declare(void) {
 	ADD_TEST(source, io);
 }
 
-static test_suite_t test_source_suite = {
-	test_source_application,
-	test_source_memory_system,
-	test_source_config,
-	test_source_declare,
-	test_source_initialize,
-	test_source_finalize,
-	test_source_event
-};
+static test_suite_t test_source_suite = {test_source_application, test_source_memory_system, test_source_config,
+                                         test_source_declare,     test_source_initialize,    test_source_finalize,
+                                         test_source_event};
 
 #if BUILD_MONOLITHIC
 

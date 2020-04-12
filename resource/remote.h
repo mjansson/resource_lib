@@ -1,18 +1,19 @@
-/* remote.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* remote.h  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
- * https://github.com/rampantpixels/resource_lib
+ * https://github.com/mjansson/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
- * https://github.com/rampantpixels/foundation_lib
+ * https://github.com/mjansson/foundation_lib
  *
- * This library is put in the public domain; you can redistribute it and/or modify it without any restrictions.
+ * This library is put in the public domain; you can redistribute it and/or modify it without any
+ * restrictions.
  *
  */
 
@@ -44,14 +45,15 @@ RESOURCE_API size_t
 resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API size_t
-resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
+resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
+                                             size_t capacity);
 
 RESOURCE_API bool
 resource_remote_sourced_read(resource_source_t* source, uuid_t uuid);
 
 RESOURCE_API bool
-resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platform,
-                                  hash_t checksum, void* data, size_t capacity);
+resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum, void* data,
+                                  size_t capacity);
 
 RESOURCE_API string_const_t
 resource_remote_compiled(void);
@@ -69,7 +71,8 @@ RESOURCE_API size_t
 resource_remote_compiled_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
 
 RESOURCE_API size_t
-resource_remote_compiled_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity);
+resource_remote_compiled_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
+                                              size_t capacity);
 
 RESOURCE_API stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform);

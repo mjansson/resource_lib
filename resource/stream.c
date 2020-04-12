@@ -1,14 +1,14 @@
-/* stream.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* stream.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -97,12 +97,10 @@ resource_stream_open_dynamic(const uuid_t res, uint64_t platform) {
 }
 
 string_t
-resource_stream_make_path(char* buffer, size_t capacity, const char* base, size_t base_length,
-                          const uuid_t res) {
+resource_stream_make_path(char* buffer, size_t capacity, const char* base, size_t base_length, const uuid_t res) {
 	string_const_t uuidstr = string_from_uuid_static(res);
-	return string_format(buffer, capacity, STRING_CONST("%.*s/%.2s/%.2s/%.*s"),
-	                     (int)base_length, base, uuidstr.str, uuidstr.str + 2,
-	                     STRING_FORMAT(uuidstr));
+	return string_format(buffer, capacity, STRING_CONST("%.*s/%.2s/%.2s/%.*s"), (int)base_length, base, uuidstr.str,
+	                     uuidstr.str + 2, STRING_FORMAT(uuidstr));
 }
 
 void

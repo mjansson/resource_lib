@@ -1,14 +1,14 @@
-/* main.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson / Rampant Pixels
+/* main.c  -  Resource library  -  Public Domain  -  2014 Mattias Jansson
  *
  * This library provides a cross-platform resource I/O library in C11 providing
  * basic resource loading, saving and streaming functionality for projects based
  * on our foundation library.
  *
- * The latest source code maintained by Rampant Pixels is always available at
+ * The latest source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/resource_lib
  *
- * The foundation library source code maintained by Rampant Pixels is always available at
+ * The foundation library source code maintained by Mattias Jansson is always available at
  *
  * https://github.com/rampantpixels/foundation_lib
  *
@@ -23,11 +23,11 @@
 #include "server.h"
 
 typedef struct {
-	bool              display_help;
-	string_const_t    source_path;
-	string_const_t*   config_files;
-	string_const_t    remote_sourced;
-	unsigned int      port;
+	bool display_help;
+	string_const_t source_path;
+	string_const_t* config_files;
+	string_const_t remote_sourced;
+	unsigned int port;
 } compiled_input_t;
 
 static compiled_input_t input;
@@ -36,9 +36,8 @@ static compiled_input_t
 compiled_parse_command_line(const string_const_t* cmdline);
 
 static void
-compiled_parse_config(const char* path, size_t path_size,
-                     const char* buffer, size_t size,
-                     const json_token_t* tokens, size_t numtokens);
+compiled_parse_config(const char* path, size_t path_size, const char* buffer, size_t size, const json_token_t* tokens,
+                      size_t numtokens);
 
 static void
 compiled_print_usage(void);
@@ -110,7 +109,7 @@ main_run(void* main_arg) {
 		goto exit;
 	}
 
-	//TODO: Run as daemon
+	// TODO: Run as daemon
 
 	server_run(input.port);
 
@@ -131,9 +130,8 @@ main_finalize(void) {
 }
 
 static void
-compiled_parse_config(const char* path, size_t path_size,
-                     const char* buffer, size_t size,
-                     const json_token_t* tokens, size_t numtokens) {
+compiled_parse_config(const char* path, size_t path_size, const char* buffer, size_t size, const json_token_t* tokens,
+                      size_t numtokens) {
 	resource_module_parse_config(path, path_size, buffer, size, tokens, numtokens);
 }
 
@@ -151,28 +149,23 @@ compiled_parse_command_line(const string_const_t* cmdline) {
 		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--source"))) {
 			if (arg < asize - 1)
 				in.source_path = cmdline[++arg];
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--config"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--config"))) {
 			if (arg < asize - 1)
 				array_push(in.config_files, cmdline[++arg]);
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--port"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--port"))) {
 			if (arg < asize - 1) {
 				string_const_t portstr = cmdline[++arg];
 				in.port = string_to_uint(STRING_ARGS(portstr), false);
 			}
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--remote"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--remote"))) {
 			if (arg < asize - 1)
 				in.remote_sourced = cmdline[++arg];
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--debug"))) {
 			log_set_suppress(0, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_NETWORK, ERRORLEVEL_NONE);
 			log_set_suppress(HASH_RESOURCE, ERRORLEVEL_NONE);
-		}
-		else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
-			break; //Stop parsing cmdline options
+		} else if (string_equal(STRING_ARGS(cmdline[arg]), STRING_CONST("--")))
+			break;  // Stop parsing cmdline options
 	}
 	error_context_pop();
 
@@ -185,19 +178,18 @@ compiled_print_usage(void) {
 	log_set_suppress(0, ERRORLEVEL_DEBUG);
 	log_enable_prefix(false);
 	log_info(0, STRING_CONST(
-	             "compiled usage:\n"
-	             "  compiled [--source <path>] [--config <path>] [--port <port>]\n"
-	             "           [--remote <url>] [--debug] [--help] ... [--]\n"
-	             "    Optional arguments:\n"
-	             "      --source <path>              Operate on resource file source structure given by <path>\n"
-	             "      --config <path>              Read and parse config file given by <path>\n"
-	             "                                   Loads all .json/.sjson files in <path> if it is a directory\n"
-	             "      --port <port>                Network port to use\n"
-	             "      --remote <url>               Connect to remote sourced service specified by <url>\n"
-	             "      --debug                      Enable debug output\n"
-	             "      --help                       Display this help message\n"
-	             "      --                           Stop processing command line arguments"
-	         ));
+	                "compiled usage:\n"
+	                "  compiled [--source <path>] [--config <path>] [--port <port>]\n"
+	                "           [--remote <url>] [--debug] [--help] ... [--]\n"
+	                "    Optional arguments:\n"
+	                "      --source <path>              Operate on resource file source structure given by <path>\n"
+	                "      --config <path>              Read and parse config file given by <path>\n"
+	                "                                   Loads all .json/.sjson files in <path> if it is a directory\n"
+	                "      --port <port>                Network port to use\n"
+	                "      --remote <url>               Connect to remote sourced service specified by <url>\n"
+	                "      --debug                      Enable debug output\n"
+	                "      --help                       Display this help message\n"
+	                "      --                           Stop processing command line arguments"));
 	log_set_suppress(0, saved_level);
 	log_enable_prefix(true);
 }
