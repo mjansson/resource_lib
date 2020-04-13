@@ -4,7 +4,7 @@
  * data types and functions to write applications and games in a platform-independent fashion.
  * The latest source code is always available at
  *
- * https://github.com/rampantpixels/foundation_lib
+ * https://github.com/mjansson/foundation_lib
  *
  * This library is put in the public domain; you can redistribute it and/or modify it without
  * any restrictions.
@@ -154,7 +154,7 @@ main_initialize(void) {
 	memset(&application, 0, sizeof(application));
 	application.name = string_const(STRING_CONST("Resource library test suite"));
 	application.short_name = string_const(STRING_CONST("test_all"));
-	application.company = string_const(STRING_CONST("Rampant Pixels"));
+	application.company = string_const(STRING_CONST(""));
 	application.version = resource_module_version();
 	application.flags = APPLICATION_UTILITY;
 	application.exception_handler = test_exception_handler;
