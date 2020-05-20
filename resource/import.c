@@ -76,7 +76,7 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 
 	size_t streampos = stream_tell(stream);
 	uint256_t import_hash = stream_sha256(stream);
-	stream_seek(stream, streampos, STREAM_SEEK_BEGIN);
+	stream_seek(stream, (ssize_t)streampos, STREAM_SEEK_BEGIN);
 
 	for (iimp = 0, isize = array_size(_resource_importers); !was_imported && (iimp != isize); ++iimp) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
