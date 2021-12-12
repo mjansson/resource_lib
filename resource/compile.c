@@ -24,12 +24,6 @@
 
 static resource_compile_fn* _resource_compilers;
 static string_t* _resource_compile_tool_path;
-static atomic64_t _resource_compile_token;
-
-static hash_t
-resource_compile_token(void) {
-	return (hash_t)atomic_incr64(&_resource_compile_token, memory_order_acq_rel);
-}
 
 int
 resource_compile_initialize(void) {
@@ -51,6 +45,13 @@ resource_compile_finalize(void) {
 #else
 #define RESOURCE_COMPILER_PATTERN "^.*compile$"
 #endif
+
+static atomic64_t _resource_compile_token;
+
+static hash_t
+resource_compile_token(void) {
+	return (hash_t)atomic_incr64(&_resource_compile_token, memory_order_acq_rel);
+}
 
 bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
