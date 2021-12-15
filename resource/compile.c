@@ -22,8 +22,8 @@
 
 #include <foundation/foundation.h>
 
-static resource_compile_fn* _resource_compilers;
-static string_t* _resource_compile_tool_path;
+static resource_compile_fn* resource_compilers;
+static string_t* resource_compile_tool_path;
 
 int
 resource_compile_initialize(void) {
@@ -32,10 +32,10 @@ resource_compile_initialize(void) {
 
 void
 resource_compile_finalize(void) {
-	array_deallocate(_resource_compilers);
-	string_array_deallocate(_resource_compile_tool_path);
+	array_deallocate(resource_compilers);
+	string_array_deallocate(resource_compile_tool_path);
 
-	_resource_compilers = 0;
+	resource_compilers = 0;
 }
 
 #if (RESOURCE_ENABLE_LOCAL_SOURCE || RESOURCE_ENABLE_REMOTE_SOURCED) && RESOURCE_ENABLE_LOCAL_CACHE
@@ -46,11 +46,11 @@ resource_compile_finalize(void) {
 #define RESOURCE_COMPILER_PATTERN "^.*compile$"
 #endif
 
-static atomic64_t _resource_compile_token;
+static atomic64_t resource_compile_token_value;
 
 static hash_t
 resource_compile_token(void) {
-	return (hash_t)atomic_incr64(&_resource_compile_token, memory_order_acq_rel);
+	return (hash_t)atomic_incr64(&resource_compile_token_value, memory_order_acq_rel);
 }
 
 bool
@@ -198,20 +198,20 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 			type = change->value.value;
 		}
 
-		for (icmp = 0, isize = array_size(_resource_compilers); !success && (icmp != isize); ++icmp) {
-			success = (_resource_compilers[icmp](uuid, platform, &source, source_hash, STRING_ARGS(type)) == 0);
+		for (icmp = 0, isize = array_size(resource_compilers); !success && (icmp != isize); ++icmp) {
+			success = (resource_compilers[icmp](uuid, platform, &source, source_hash, STRING_ARGS(type)) == 0);
 			++internal;
 		}
 	}
 	resource_source_finalize(&source);
 
 	// Try external tools
-	for (size_t ipath = 0, psize = array_size(_resource_compile_tool_path); !success && (ipath != psize); ++ipath) {
-		string_t* tools = fs_matching_files(STRING_ARGS(_resource_compile_tool_path[ipath]),
+	for (size_t ipath = 0, psize = array_size(resource_compile_tool_path); !success && (ipath != psize); ++ipath) {
+		string_t* tools = fs_matching_files(STRING_ARGS(resource_compile_tool_path[ipath]),
 		                                    STRING_CONST(RESOURCE_COMPILER_PATTERN), true);
 		for (size_t itool = 0, tsize = array_size(tools); !success && (itool != tsize); ++itool) {
 			char buffer[BUILD_MAX_PATHLEN];
-			string_t fullpath = path_concat(buffer, sizeof(buffer), STRING_ARGS(_resource_compile_tool_path[ipath]),
+			string_t fullpath = path_concat(buffer, sizeof(buffer), STRING_ARGS(resource_compile_tool_path[ipath]),
 			                                STRING_ARGS(tools[itool]));
 
 			process_t proc;
@@ -306,11 +306,11 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 void
 resource_compile_register(resource_compile_fn compiler) {
 	size_t icmp, isize;
-	for (icmp = 0, isize = array_size(_resource_compilers); icmp != isize; ++icmp) {
-		if (_resource_compilers[icmp] == compiler)
+	for (icmp = 0, isize = array_size(resource_compilers); icmp != isize; ++icmp) {
+		if (resource_compilers[icmp] == compiler)
 			return;
 	}
-	array_push(_resource_compilers, compiler);
+	array_push(resource_compilers, compiler);
 }
 
 void
@@ -319,20 +319,20 @@ resource_compile_register_path(const char* path, size_t length) {
 	char buffer[BUILD_MAX_PATHLEN];
 	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
 	pathstr = path_clean(STRING_ARGS(pathstr), sizeof(buffer));
-	for (iimp = 0, isize = array_size(_resource_compile_tool_path); iimp != isize; ++iimp) {
-		if (string_equal(STRING_ARGS(_resource_compile_tool_path[iimp]), STRING_ARGS(pathstr)))
+	for (iimp = 0, isize = array_size(resource_compile_tool_path); iimp != isize; ++iimp) {
+		if (string_equal(STRING_ARGS(resource_compile_tool_path[iimp]), STRING_ARGS(pathstr)))
 			return;
 	}
 	pathstr = string_clone(STRING_ARGS(pathstr));
-	array_push(_resource_compile_tool_path, pathstr);
+	array_push(resource_compile_tool_path, pathstr);
 }
 
 void
 resource_compile_unregister(resource_compile_fn compiler) {
 	size_t icmp, isize;
-	for (icmp = 0, isize = array_size(_resource_compilers); icmp != isize; ++icmp) {
-		if (_resource_compilers[icmp] == compiler) {
-			array_erase(_resource_compilers, icmp);
+	for (icmp = 0, isize = array_size(resource_compilers); icmp != isize; ++icmp) {
+		if (resource_compilers[icmp] == compiler) {
+			array_erase(resource_compilers, icmp);
 			return;
 		}
 	}
@@ -344,10 +344,10 @@ resource_compile_unregister_path(const char* path, size_t length) {
 	char buffer[BUILD_MAX_PATHLEN];
 	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
 	pathstr = path_clean(STRING_ARGS(pathstr), sizeof(buffer));
-	for (iimp = 0, isize = array_size(_resource_compile_tool_path); iimp != isize; ++iimp) {
-		if (string_equal(STRING_ARGS(_resource_compile_tool_path[iimp]), STRING_ARGS(pathstr))) {
-			string_deallocate(_resource_compile_tool_path[iimp].str);
-			array_erase(_resource_compile_tool_path, iimp);
+	for (iimp = 0, isize = array_size(resource_compile_tool_path); iimp != isize; ++iimp) {
+		if (string_equal(STRING_ARGS(resource_compile_tool_path[iimp]), STRING_ARGS(pathstr))) {
+			string_deallocate(resource_compile_tool_path[iimp].str);
+			array_erase(resource_compile_tool_path, iimp);
 			break;
 		}
 	}
@@ -355,13 +355,13 @@ resource_compile_unregister_path(const char* path, size_t length) {
 
 void
 resource_compile_clear(void) {
-	array_clear(_resource_compilers);
+	array_clear(resource_compilers);
 }
 
 void
 resource_compile_clear_path(void) {
-	string_array_deallocate_elements(_resource_compile_tool_path);
-	array_clear(_resource_compile_tool_path);
+	string_array_deallocate_elements(resource_compile_tool_path);
+	array_clear(resource_compile_tool_path);
 }
 
 #else

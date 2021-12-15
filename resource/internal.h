@@ -26,7 +26,7 @@
 #include <resource/types.h>
 #include <resource/hashstrings.h>
 
-RESOURCE_EXTERN event_stream_t* _resource_event_stream;
+RESOURCE_EXTERN event_stream_t* resource_event_stream_current;
 
 RESOURCE_API int
 resource_import_initialize(void);

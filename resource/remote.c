@@ -297,12 +297,12 @@ resource_remote_comm(void* arg) {
 
 #include <resource/sourced.h>
 
-static bool _sourced_initialized;
-static string_t _sourced_url;
-static thread_t _sourced_thread;
-static socket_t _sourced_client;
-static socket_t _sourced_proxy;
-static remote_context_t _sourced_context;
+static bool sourced_initialized;
+static string_t sourced_url;
+static thread_t sourced_thread;
+static socket_t sourced_client;
+static socket_t sourced_proxy;
+static remote_context_t sourced_context;
 
 static int
 resource_sourced_read_lookup_result(remote_context_t* context, remote_header_t msg, remote_message_t waiting) {
@@ -508,54 +508,54 @@ resource_sourced_write(remote_context_t* context, remote_message_t waiting) {
 
 static void
 resource_remote_sourced_initialize(const char* url, size_t length) {
-	if (_sourced_initialized)
+	if (sourced_initialized)
 		return;
 	if (!resource_module_config().enable_remote_sourced)
 		return;
 
 	network_address_t** localaddr = network_address_local();
-	udp_socket_initialize(&_sourced_client);
-	udp_socket_initialize(&_sourced_proxy);
-	socket_bind(&_sourced_client, localaddr[0]);
-	socket_bind(&_sourced_proxy, localaddr[0]);
-	socket_set_blocking(&_sourced_client, true);
+	udp_socket_initialize(&sourced_client);
+	udp_socket_initialize(&sourced_proxy);
+	socket_bind(&sourced_client, localaddr[0]);
+	socket_bind(&sourced_proxy, localaddr[0]);
+	socket_set_blocking(&sourced_client, true);
 	network_address_array_deallocate(localaddr);
 
-	_sourced_url = string_clone(url, length);
-	_sourced_initialized = true;
+	sourced_url = string_clone(url, length);
+	sourced_initialized = true;
 
-	_sourced_context.url = string_to_const(_sourced_url);
-	_sourced_context.client = &_sourced_client;
-	_sourced_context.control = &_sourced_proxy;
-	_sourced_context.read = resource_sourced_read;
-	_sourced_context.write = resource_sourced_write;
+	sourced_context.url = string_to_const(sourced_url);
+	sourced_context.client = &sourced_client;
+	sourced_context.control = &sourced_proxy;
+	sourced_context.read = resource_sourced_read;
+	sourced_context.write = resource_sourced_write;
 
-	thread_initialize(&_sourced_thread, resource_remote_comm, &_sourced_context, STRING_CONST("sourced-client"),
+	thread_initialize(&sourced_thread, resource_remote_comm, &sourced_context, STRING_CONST("sourced-client"),
 	                  THREAD_PRIORITY_NORMAL, 0);
-	thread_start(&_sourced_thread);
+	thread_start(&sourced_thread);
 }
 
 static void
 resource_remote_sourced_finalize(void) {
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return;
 
-	_sourced_initialized = false;
+	sourced_initialized = false;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_TERMINATE;
-	udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy));
+	udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy));
 
-	thread_finalize(&_sourced_thread);
-	string_deallocate(_sourced_url.str);
+	thread_finalize(&sourced_thread);
+	string_deallocate(sourced_url.str);
 
-	socket_finalize(&_sourced_client);
-	socket_finalize(&_sourced_proxy);
+	socket_finalize(&sourced_client);
+	socket_finalize(&sourced_proxy);
 }
 
 string_const_t
 resource_remote_sourced(void) {
-	return string_const(STRING_ARGS(_sourced_url));
+	return string_const(STRING_ARGS(sourced_url));
 }
 
 void
@@ -571,26 +571,26 @@ resource_remote_sourced_disconnect(void) {
 
 bool
 resource_remote_sourced_is_connected(void) {
-	return _sourced_url.length > 0;
+	return sourced_url.length > 0;
 }
 
 resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length) {
 	resource_signature_t nullsig = {uuid_null(), uint256_null()};
 	resource_signature_t sig = nullsig;
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return sig;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_LOOKUP;
 	message.data = path;
 	message.size = length;
-	if (udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy)) !=
+	if (udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy)) !=
 	    sizeof(message))
 		return sig;
 
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_sourced_client, &sig, sizeof(sig), &addr) == sizeof(sig))
+	if (udp_socket_recvfrom(&sourced_client, &sig, sizeof(sig), &addr) == sizeof(sig))
 		return sig;
 
 	return nullsig;
@@ -599,19 +599,19 @@ resource_remote_sourced_lookup(const char* path, size_t length) {
 uint256_t
 resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 	uint256_t ret = uint256_null();
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return ret;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_HASH;
 	message.uuid = uuid;
 	message.platform = platform;
-	if (udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy)) !=
+	if (udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy)) !=
 	    sizeof(message))
 		return ret;
 
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
+	if (udp_socket_recvfrom(&sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
 		return ret;
 
 	return uint256_null();
@@ -619,7 +619,7 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 
 size_t
 resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps, size_t capacity) {
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return 0;
 
 	remote_message_t message;
@@ -628,13 +628,13 @@ resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_de
 	message.platform = platform;
 	message.store = deps;
 	message.capacity = capacity;
-	if (udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy)) !=
+	if (udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy)) !=
 	    sizeof(message))
 		return 0;
 
 	uint64_t ret;
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
+	if (udp_socket_recvfrom(&sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
 		return (size_t)ret;
 
 	return 0;
@@ -643,7 +643,7 @@ resource_remote_sourced_dependencies(uuid_t uuid, uint64_t platform, resource_de
 size_t
 resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, resource_dependency_t* deps,
                                              size_t capacity) {
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return 0;
 
 	remote_message_t message;
@@ -652,13 +652,13 @@ resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, res
 	message.platform = platform;
 	message.store = deps;
 	message.capacity = capacity;
-	if (udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy)) !=
+	if (udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy)) !=
 	    sizeof(message))
 		return 0;
 
 	uint64_t ret;
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
+	if (udp_socket_recvfrom(&sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
 		return (size_t)ret;
 
 	return 0;
@@ -666,20 +666,20 @@ resource_remote_sourced_reverse_dependencies(uuid_t uuid, uint64_t platform, res
 
 bool
 resource_remote_sourced_read(resource_source_t* source, uuid_t uuid) {
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return false;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_READ;
 	message.store = source;
 	message.uuid = uuid;
-	if (udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy)) !=
+	if (udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy)) !=
 	    sizeof(message))
 		return false;
 
 	uint32_t status = 0;
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_sourced_client, &status, sizeof(status), &addr) == sizeof(status))
+	if (udp_socket_recvfrom(&sourced_client, &status, sizeof(status), &addr) == sizeof(status))
 		return status > 0;
 
 	return false;
@@ -688,7 +688,7 @@ resource_remote_sourced_read(resource_source_t* source, uuid_t uuid) {
 bool
 resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum, void* data,
                                   size_t capacity) {
-	if (!_sourced_initialized)
+	if (!sourced_initialized)
 		return false;
 
 	remote_message_t message;
@@ -699,13 +699,13 @@ resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platfo
 	message.checksum = checksum;
 	message.store = data;
 	message.capacity = capacity;
-	if (udp_socket_sendto(&_sourced_client, &message, sizeof(message), socket_address_local(&_sourced_proxy)) !=
+	if (udp_socket_sendto(&sourced_client, &message, sizeof(message), socket_address_local(&sourced_proxy)) !=
 	    sizeof(message))
 		return false;
 
 	uint32_t status = 0;
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_sourced_client, &status, sizeof(status), &addr) == sizeof(status))
+	if (udp_socket_recvfrom(&sourced_client, &status, sizeof(status), &addr) == sizeof(status))
 		return status > 0;
 
 	return false;
@@ -792,14 +792,14 @@ resource_remote_sourced_read_blob(const uuid_t uuid, hash_t key, uint64_t platfo
 
 #include <resource/compiled.h>
 
-static bool _compiled_initialized;
-static string_t _compiled_url;
-static thread_t _compiled_thread;
-static socket_t _compiled_client;
-static socket_t _compiled_proxy;
-static remote_context_t _compiled_context;
+static bool compiled_initialized;
+static string_t compiled_url;
+static thread_t compiled_thread;
+static socket_t compiled_client;
+static socket_t compiled_proxy;
+static remote_context_t compiled_context;
 
-static stream_vtable_t _compiled_stream_vtable;
+static stream_vtable_t compiled_stream_vtable;
 
 typedef struct compiled_stream_t compiled_stream_t;
 
@@ -815,10 +815,10 @@ static void
 resource_compiled_stream_finish(compiled_stream_t* stream) {
 	if (!stream->sock)
 		return;
-	network_poll_add_socket(_compiled_context.poll, stream->sock);
+	network_poll_add_socket(compiled_context.poll, stream->sock);
 	remote_message_t wakeup;
 	wakeup.message = REMOTE_MESSAGE_WAKEUP;
-	udp_socket_sendto(&_compiled_client, &wakeup, sizeof(wakeup), socket_address_local(&_compiled_proxy));
+	udp_socket_sendto(&compiled_client, &wakeup, sizeof(wakeup), socket_address_local(&compiled_proxy));
 	stream->sock = 0;
 }
 
@@ -884,7 +884,7 @@ resource_compiled_stream_allocate(socket_t* sock, size_t size) {
 	stream->type = STREAMTYPE_CUSTOM;
 	stream->sequential = 1;
 	stream->mode = STREAM_IN | STREAM_BINARY;
-	stream->vtable = &_compiled_stream_vtable;
+	stream->vtable = &compiled_stream_vtable;
 	stream->sock = sock;
 	stream->total_read = 0;
 	stream->stream_size = size;
@@ -900,14 +900,14 @@ resource_compiled_stream_finalize(stream_t* rawstream) {
 
 static int
 resource_compiled_streams_initialize(void) {
-	memset(&_compiled_stream_vtable, 0, sizeof(_compiled_stream_vtable));
-	_compiled_stream_vtable.read = resource_compiled_stream_read;
-	_compiled_stream_vtable.eos = resource_compiled_stream_eos;
-	_compiled_stream_vtable.size = resource_compiled_stream_size;
-	_compiled_stream_vtable.tell = resource_compiled_stream_tell;
-	_compiled_stream_vtable.lastmod = resource_compiled_stream_last_modified;
-	_compiled_stream_vtable.available_read = resource_compiled_stream_available_read;
-	_compiled_stream_vtable.finalize = resource_compiled_stream_finalize;
+	memset(&compiled_stream_vtable, 0, sizeof(compiled_stream_vtable));
+	compiled_stream_vtable.read = resource_compiled_stream_read;
+	compiled_stream_vtable.eos = resource_compiled_stream_eos;
+	compiled_stream_vtable.size = resource_compiled_stream_size;
+	compiled_stream_vtable.tell = resource_compiled_stream_tell;
+	compiled_stream_vtable.lastmod = resource_compiled_stream_last_modified;
+	compiled_stream_vtable.available_read = resource_compiled_stream_available_read;
+	compiled_stream_vtable.finalize = resource_compiled_stream_finalize;
 	return 0;
 }
 
@@ -1017,54 +1017,54 @@ resource_compiled_write(remote_context_t* context, remote_message_t waiting) {
 
 static void
 resource_remote_compiled_initialize(const char* url, size_t length) {
-	if (_compiled_initialized)
+	if (compiled_initialized)
 		return;
 	if (!resource_module_config().enable_remote_compiled)
 		return;
 
 	network_address_t** localaddr = network_address_local();
-	udp_socket_initialize(&_compiled_client);
-	udp_socket_initialize(&_compiled_proxy);
-	socket_bind(&_compiled_client, localaddr[0]);
-	socket_bind(&_compiled_proxy, localaddr[0]);
-	socket_set_blocking(&_compiled_client, true);
+	udp_socket_initialize(&compiled_client);
+	udp_socket_initialize(&compiled_proxy);
+	socket_bind(&compiled_client, localaddr[0]);
+	socket_bind(&compiled_proxy, localaddr[0]);
+	socket_set_blocking(&compiled_client, true);
 	network_address_array_deallocate(localaddr);
 
-	_compiled_url = string_clone(url, length);
-	_compiled_initialized = true;
+	compiled_url = string_clone(url, length);
+	compiled_initialized = true;
 
-	_compiled_context.url = string_to_const(_compiled_url);
-	_compiled_context.client = &_compiled_client;
-	_compiled_context.control = &_compiled_proxy;
-	_compiled_context.read = resource_compiled_read;
-	_compiled_context.write = resource_compiled_write;
+	compiled_context.url = string_to_const(compiled_url);
+	compiled_context.client = &compiled_client;
+	compiled_context.control = &compiled_proxy;
+	compiled_context.read = resource_compiled_read;
+	compiled_context.write = resource_compiled_write;
 
-	thread_initialize(&_compiled_thread, resource_remote_comm, &_compiled_context, STRING_CONST("compiled-client"),
+	thread_initialize(&compiled_thread, resource_remote_comm, &compiled_context, STRING_CONST("compiled-client"),
 	                  THREAD_PRIORITY_NORMAL, 0);
-	thread_start(&_compiled_thread);
+	thread_start(&compiled_thread);
 }
 
 static void
 resource_remote_compiled_finalize(void) {
-	if (!_compiled_initialized)
+	if (!compiled_initialized)
 		return;
 
-	_compiled_initialized = false;
+	compiled_initialized = false;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_TERMINATE;
-	udp_socket_sendto(&_compiled_client, &message, sizeof(message), socket_address_local(&_compiled_proxy));
+	udp_socket_sendto(&compiled_client, &message, sizeof(message), socket_address_local(&compiled_proxy));
 
-	thread_finalize(&_compiled_thread);
-	string_deallocate(_compiled_url.str);
+	thread_finalize(&compiled_thread);
+	string_deallocate(compiled_url.str);
 
-	socket_finalize(&_compiled_client);
-	socket_finalize(&_compiled_proxy);
+	socket_finalize(&compiled_client);
+	socket_finalize(&compiled_proxy);
 }
 
 string_const_t
 resource_remote_compiled(void) {
-	return string_const(STRING_ARGS(_compiled_url));
+	return string_const(STRING_ARGS(compiled_url));
 }
 
 void
@@ -1080,27 +1080,27 @@ resource_remote_compiled_disconnect(void) {
 
 bool
 resource_remote_compiled_is_connected(void) {
-	return _compiled_url.length > 0;
+	return compiled_url.length > 0;
 }
 
 stream_t*
 resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
-	if (!_compiled_initialized)
+	if (!compiled_initialized)
 		return nullptr;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_OPEN_STATIC;
 	message.uuid = uuid;
 	message.platform = platform;
-	if (udp_socket_sendto(&_compiled_client, &message, sizeof(message), socket_address_local(&_compiled_proxy)) !=
+	if (udp_socket_sendto(&compiled_client, &message, sizeof(message), socket_address_local(&compiled_proxy)) !=
 	    sizeof(message))
 		return nullptr;
 
 	size_t size = 0;
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
+	if (udp_socket_recvfrom(&compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
-			return resource_compiled_stream_allocate(_compiled_context.remote, size);
+			return resource_compiled_stream_allocate(compiled_context.remote, size);
 	}
 
 	return nullptr;
@@ -1108,22 +1108,22 @@ resource_remote_open_static(const uuid_t uuid, uint64_t platform) {
 
 stream_t*
 resource_remote_open_dynamic(const uuid_t uuid, uint64_t platform) {
-	if (!_compiled_initialized)
+	if (!compiled_initialized)
 		return nullptr;
 
 	remote_message_t message;
 	message.message = REMOTE_MESSAGE_OPEN_DYNAMIC;
 	message.uuid = uuid;
 	message.platform = platform;
-	if (udp_socket_sendto(&_compiled_client, &message, sizeof(message), socket_address_local(&_compiled_proxy)) !=
+	if (udp_socket_sendto(&compiled_client, &message, sizeof(message), socket_address_local(&compiled_proxy)) !=
 	    sizeof(message))
 		return nullptr;
 
 	size_t size = 0;
 	const network_address_t* addr;
-	if (udp_socket_recvfrom(&_compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
+	if (udp_socket_recvfrom(&compiled_client, &size, sizeof(size), &addr) == sizeof(size)) {
 		if (size > 0)
-			return resource_compiled_stream_allocate(_compiled_context.remote, size);
+			return resource_compiled_stream_allocate(compiled_context.remote, size);
 	}
 
 	return nullptr;

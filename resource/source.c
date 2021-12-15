@@ -24,8 +24,8 @@
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
-static char _resource_source_path_buffer[BUILD_MAX_PATHLEN];
-static string_t _resource_source_path;
+static char resource_path_buffer[BUILD_MAX_PATHLEN];
+static string_t resource_path_source;
 
 static resource_change_t*
 resource_source_change_platform_compare(resource_change_t* change, resource_change_t* best, uint64_t platform);
@@ -34,22 +34,21 @@ bool
 resource_source_set_path(const char* path, size_t length) {
 	if (!resource_module_config().enable_local_source)
 		return false;
-	_resource_source_path =
-	    string_copy(_resource_source_path_buffer, sizeof(_resource_source_path_buffer), path, length);
-	_resource_source_path = path_clean(STRING_ARGS(_resource_source_path), sizeof(_resource_source_path_buffer));
-	_resource_source_path = path_absolute(STRING_ARGS(_resource_source_path), sizeof(_resource_source_path_buffer));
+	resource_path_source = string_copy(resource_path_buffer, sizeof(resource_path_buffer), path, length);
+	resource_path_source = path_clean(STRING_ARGS(resource_path_source), sizeof(resource_path_buffer));
+	resource_path_source = path_absolute(STRING_ARGS(resource_path_source), sizeof(resource_path_buffer));
 	return true;
 }
 
 string_const_t
 resource_source_path(void) {
-	return string_to_const(_resource_source_path);
+	return string_to_const(resource_path_source);
 }
 
 static stream_t*
 resource_source_open(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
 		fs_make_directory(STRING_ARGS(dir_path));
@@ -60,7 +59,7 @@ resource_source_open(const uuid_t uuid, unsigned int mode) {
 static stream_t*
 resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".hash"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -72,7 +71,7 @@ resource_source_open_hash(const uuid_t uuid, unsigned int mode) {
 static stream_t*
 resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".deps"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -84,7 +83,7 @@ resource_source_open_deps(const uuid_t uuid, unsigned int mode) {
 static stream_t*
 resource_source_open_reverse_deps(const uuid_t uuid, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".revdeps"));
 	if (mode & STREAM_OUT) {
 		string_const_t dir_path = path_directory_name(STRING_ARGS(path));
@@ -97,7 +96,7 @@ static stream_t*
 resource_source_open_blob(const uuid_t uuid, hash_t key, uint64_t platform, hash_t checksum, unsigned int mode) {
 	char buffer[BUILD_MAX_PATHLEN];
 	char filename[64];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	string_t file = string_format(filename, sizeof(filename),
 	                              STRING_CONST(".%" PRIhash ".%" PRIx64 ".%" PRIhash ".blob"), key, platform, checksum);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_ARGS(file));
@@ -134,7 +133,7 @@ static string_t*
 resource_source_get_all_blobs(const uuid_t uuid) {
 	char buffer[BUILD_MAX_PATHLEN];
 	char patbuffer[128];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	string_const_t pathname = path_directory_name(STRING_ARGS(path));
 	string_const_t filename = path_file_name(STRING_ARGS(path));
 	string_t pattern = string_concat_varg(patbuffer, sizeof(patbuffer), STRING_CONST("^"), STRING_ARGS(filename),
@@ -505,7 +504,7 @@ resource_source_clear_blob_history(resource_source_t* source, const uuid_t uuid)
 	resource_source_map_reduce(source, map, &clear, resource_source_clear_blob_reduce);
 
 	for (ifile = 0, fsize = array_size(clear.blobfiles); ifile < fsize; ++ifile) {
-		string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+		string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 		string_const_t pathname = path_directory_name(STRING_ARGS(path));
 		ptrdiff_t offset = pointer_diff(pathname.str, buffer);
 		string_t fullname = path_append(buffer + offset, pathname.length, sizeof(buffer) - (size_t)offset,
@@ -1010,7 +1009,7 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 uint256_t
 resource_source_import_hash(const uuid_t uuid) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".importhash"));
 	stream_t* hash_stream = stream_open(STRING_ARGS(path), STREAM_IN);
 	uint256_t import_hash = uint256_null();
@@ -1023,7 +1022,7 @@ resource_source_import_hash(const uuid_t uuid) {
 void
 resource_source_set_import_hash(const uuid_t uuid, const uint256_t import_hash) {
 	char buffer[BUILD_MAX_PATHLEN];
-	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(_resource_source_path), uuid);
+	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".importhash"));
 	stream_t* hash_stream = stream_open(STRING_ARGS(path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (hash_stream)

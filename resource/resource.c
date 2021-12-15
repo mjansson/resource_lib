@@ -21,36 +21,36 @@
 
 #include <foundation/foundation.h>
 
-static resource_config_t _resource_config;
-static bool _resource_module_initialized;
+static resource_config_t resource_config;
+static bool resource_module_initialized;
 
 static void
 resource_module_initialize_config(const resource_config_t config) {
-	memcpy(&_resource_config, &config, sizeof(resource_config_t));
+	memcpy(&resource_config, &config, sizeof(resource_config_t));
 #if !RESOURCE_ENABLE_LOCAL_SOURCE
-	_resource_config.enable_local_source = false;
+	resource_config.enable_local_source = false;
 #endif
 #if !RESOURCE_ENABLE_LOCAL_CACHE
-	_resource_config.enable_local_cache = false;
+	resource_config.enable_local_cache = false;
 #endif
 #if !RESOURCE_ENABLE_REMOTE_SOURCED
-	_resource_config.enable_remote_sourced = false;
+	resource_config.enable_remote_sourced = false;
 #endif
 #if !RESOURCE_ENABLE_REMOTE_COMPILED
-	_resource_config.enable_remote_compiled = false;
+	resource_config.enable_remote_compiled = false;
 #endif
-	if (!_resource_config.enable_local_source)
-		_resource_config.enable_local_autoimport = false;
+	if (!resource_config.enable_local_source)
+		resource_config.enable_local_autoimport = false;
 }
 
 int
 resource_module_initialize(const resource_config_t config) {
-	if (_resource_module_initialized)
+	if (resource_module_initialized)
 		return 0;
 
 	resource_module_initialize_config(config);
 
-	_resource_event_stream = event_stream_allocate(0);
+	resource_event_stream_current = event_stream_allocate(0);
 
 	size_t iarg, argsize, ipath;
 	const string_const_t* cmdline = environment_command_line();
@@ -96,7 +96,7 @@ resource_module_initialize(const resource_config_t config) {
 	}
 
 	// Make sure we have at least one way of loading resources
-	if (!_resource_config.enable_local_cache && !_resource_config.enable_remote_compiled) {
+	if (!resource_config.enable_local_cache && !resource_config.enable_remote_compiled) {
 		log_error(HASH_RESOURCE, ERROR_INVALID_VALUE,
 		          STRING_CONST("Invalid config, no way of loading compiled resources"));
 		return -1;
@@ -114,14 +114,14 @@ resource_module_initialize(const resource_config_t config) {
 	if (resource_remote_initialize() < 0)
 		return -1;
 
-	_resource_module_initialized = true;
+	resource_module_initialized = true;
 
 	return 0;
 }
 
 void
 resource_module_finalize(void) {
-	if (!_resource_module_initialized)
+	if (!resource_module_initialized)
 		return;
 
 	resource_local_clear_paths();
@@ -131,15 +131,15 @@ resource_module_finalize(void) {
 	resource_import_finalize();
 	resource_compile_finalize();
 
-	event_stream_deallocate(_resource_event_stream);
+	event_stream_deallocate(resource_event_stream_current);
 
-	_resource_event_stream = 0;
-	_resource_module_initialized = false;
+	resource_event_stream_current = 0;
+	resource_module_initialized = false;
 }
 
 bool
 resource_module_is_initialized(void) {
-	return _resource_module_initialized;
+	return resource_module_initialized;
 }
 
 void
@@ -210,5 +210,5 @@ resource_module_parse_config(const char* path, size_t path_size, const char* buf
 
 resource_config_t
 resource_module_config(void) {
-	return _resource_config;
+	return resource_config;
 }

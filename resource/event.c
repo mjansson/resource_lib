@@ -23,7 +23,7 @@
 
 #include <foundation/foundation.h>
 
-event_stream_t* _resource_event_stream = 0;
+event_stream_t* resource_event_stream_current = 0;
 
 typedef struct {
 	uuid_t uuid;
@@ -49,7 +49,7 @@ resource_event_token(const event_t* event) {
 void
 resource_event_post(resource_event_id id, uuid_t uuid, uint64_t platform, hash_t token) {
 	resource_event_payload_t payload = {uuid, platform, token};
-	event_post(_resource_event_stream, (int)id, 0, 0, &payload, sizeof(payload));
+	event_post(resource_event_stream_current, (int)id, 0, 0, &payload, sizeof(payload));
 }
 
 void
@@ -89,7 +89,7 @@ resource_event_post_depends(uuid_t uuid, uint64_t platform, hash_t token) {
 
 event_stream_t*
 resource_event_stream(void) {
-	return _resource_event_stream;
+	return resource_event_stream_current;
 }
 
 void

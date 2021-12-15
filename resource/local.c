@@ -23,18 +23,18 @@
 
 #if RESOURCE_ENABLE_LOCAL_CACHE
 
-static string_t* _resource_local_paths = 0;
+static string_t* resource_paths_local = 0;
 
 const string_const_t*
 resource_local_paths(void) {
-	return (string_const_t*)_resource_local_paths;
+	return (string_const_t*)resource_paths_local;
 }
 
 void
 resource_local_set_paths(const string_const_t* paths, size_t paths_count) {
 	size_t ipath, pathsize;
 
-	string_array_deallocate(_resource_local_paths);
+	string_array_deallocate(resource_paths_local);
 
 	for (ipath = 0, pathsize = paths_count; ipath < pathsize; ++ipath)
 		resource_local_add_path(STRING_ARGS(paths[ipath]));
@@ -48,17 +48,17 @@ resource_local_add_path(const char* path, size_t length) {
 	pathstr = path_clean(STRING_ARGS(pathstr), sizeof(pathbuf));
 	pathstr = path_absolute(STRING_ARGS(pathstr), sizeof(pathbuf));
 	pathstr = string_clone(STRING_ARGS(pathstr));
-	array_push(_resource_local_paths, pathstr);
+	array_push(resource_paths_local, pathstr);
 }
 
 void
 resource_local_remove_path(const char* path, size_t length) {
 	size_t ipath, pathsize;
 
-	for (ipath = 0, pathsize = array_size(_resource_local_paths); ipath < pathsize; ++ipath) {
-		const string_t local_path = _resource_local_paths[ipath];
+	for (ipath = 0, pathsize = array_size(resource_paths_local); ipath < pathsize; ++ipath) {
+		const string_t local_path = resource_paths_local[ipath];
 		if (string_equal(STRING_ARGS(local_path), path, length)) {
-			array_erase(_resource_local_paths, ipath);
+			array_erase(resource_paths_local, ipath);
 			string_deallocate(local_path.str);
 			break;
 		}
@@ -67,14 +67,13 @@ resource_local_remove_path(const char* path, size_t length) {
 
 void
 resource_local_clear_paths(void) {
-	string_array_deallocate(_resource_local_paths);
+	string_array_deallocate(resource_paths_local);
 }
 
 static string_t
 resource_local_make_platform_path(char* buffer, size_t capacity, size_t local_path, const uuid_t uuid,
                                   uint64_t platform, const char* suffix, size_t suffix_length) {
-	string_t curpath =
-	    resource_stream_make_path(buffer, capacity, STRING_ARGS(_resource_local_paths[local_path]), uuid);
+	string_t curpath = resource_stream_make_path(buffer, capacity, STRING_ARGS(resource_paths_local[local_path]), uuid);
 	string_const_t platformstr = string_from_uint_static(platform, true, 0, '0');
 	string_t platformpath = path_append(STRING_ARGS(curpath), capacity, STRING_ARGS(platformstr));
 	if (suffix_length)
@@ -102,7 +101,7 @@ resource_local_open_stream(const uuid_t uuid, uint64_t platform, const char* suf
 	mode &= ~STREAM_CREATE;
 	while (!stream) {
 	retry:
-		for (ipath = 0, pathsize = array_size(_resource_local_paths); !stream && (ipath < pathsize); ++ipath) {
+		for (ipath = 0, pathsize = array_size(resource_paths_local); !stream && (ipath < pathsize); ++ipath) {
 			string_t platformpath =
 			    resource_local_make_platform_path(buffer, sizeof(buffer), ipath, uuid, platform, suffix, suffix_length);
 			if (mode & STREAM_CREATE) {
@@ -139,7 +138,7 @@ resource_local_open_dynamic(const uuid_t uuid, uint64_t platform) {
 #else
 
 const string_const_t*
-resource_local_paths(void) {
+resource_paths_local(void) {
 	return nullptr;
 }
 
