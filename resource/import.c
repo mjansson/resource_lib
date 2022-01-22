@@ -404,7 +404,7 @@ resource_autoimport_token(void) {
 	return (hash_t)atomic_incr64(&resource_autoimport_token_value, memory_order_acq_rel);
 }
 
-static string_t
+string_t
 resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capacity) {
 	// TODO: Improve
 	string_t result = (string_t){buffer, 0};
@@ -462,11 +462,14 @@ resource_autoimport(const uuid_t uuid) {
 	mutex_unlock(resource_autoimport_lock);
 
 	string_const_t uuidstr = string_from_uuid_static(uuid);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s -> %.*s"), STRING_FORMAT(uuidstr), STRING_FORMAT(path));
+	if (!path.length) {
+		log_warnf(HASH_RESOURCE, WARNING_RESOURCE, STRING_CONST("Autoimport failed, no reverse path for %.*s"),
+		          STRING_FORMAT(uuidstr));
+		return false;
+	}
 
-	if (path.length)
-		return resource_import(STRING_ARGS(path), uuid);
-	return false;
+	log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport: %.*s -> %.*s"), STRING_FORMAT(uuidstr), STRING_FORMAT(path));
+	return resource_import(STRING_ARGS(path), uuid);
 }
 
 static bool

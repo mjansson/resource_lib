@@ -62,9 +62,11 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 	if (!resource_module_config().enable_local_source && !resource_module_config().enable_remote_sourced)
 		return false;
 
+#if BUILD_ENABLE_DEBUG_LOG
 	string_const_t uuidstr = string_from_uuid_static(uuid);
 	log_debugf(HASH_RESOURCE, STRING_CONST("Compile check: %.*s (platform 0x%" PRIx64 ")"), STRING_FORMAT(uuidstr),
 	           platform);
+#endif
 
 	resource_dependency_t localdeps[8];
 	size_t deps_capacity = sizeof(localdeps) / sizeof(localdeps[0]);
@@ -135,8 +137,15 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 	error_context_push(STRING_CONST("compiling resource"), STRING_ARGS(uuidstr));
 
 	size_t deps_count = resource_source_dependencies_count(uuid, platform);
-	log_debugf(HASH_RESOURCE, STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ") %" PRIsize " dependencies"),
-	           STRING_FORMAT(uuidstr), platform, deps_count);
+#if BUILD_ENABLE_DEBUG_LOG
+	{
+		char pathbuf[BUILD_MAX_PATHLEN];
+		string_t rev_path = resource_autoimport_reverse_lookup(uuid, pathbuf, sizeof(pathbuf));
+		log_debugf(HASH_RESOURCE,
+		           STRING_CONST("Compile: %.*s (platform 0x%" PRIx64 ") (%.*s) %" PRIsize " dependencies"),
+		           STRING_FORMAT(uuidstr), platform, STRING_FORMAT(rev_path), deps_count);
+	}
+#endif
 
 	resource_dependency_t localdeps[8];
 	size_t deps_capacity = sizeof(localdeps) / sizeof(localdeps[0]);

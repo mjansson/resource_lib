@@ -68,6 +68,9 @@ resource_autoimport_unwatch(const char* path, size_t length);
 RESOURCE_API void
 resource_autoimport_clear(void);
 
+RESOURCE_API string_t
+resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capacity);
+
 /*! Handle foundation events from fs_event_stream event stream.
 No other event types should be passed to this function.
 \param event Foundation event */
