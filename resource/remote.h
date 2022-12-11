@@ -22,6 +22,7 @@
 #include <foundation/platform.h>
 
 #include <resource/types.h>
+#include <blake3/types.h>
 
 RESOURCE_API string_const_t
 resource_remote_sourced(void);
@@ -38,7 +39,7 @@ resource_remote_sourced_is_connected(void);
 RESOURCE_API resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length);
 
-RESOURCE_API uint256_t
+RESOURCE_API blake3_hash_t
 resource_remote_sourced_hash(uuid_t uuid, uint64_t platform);
 
 RESOURCE_API size_t

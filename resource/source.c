@@ -21,6 +21,7 @@
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
+#include <blake3/blake3.h>
 
 #if RESOURCE_ENABLE_LOCAL_SOURCE
 
@@ -641,21 +642,21 @@ resource_source_write(resource_source_t* source, const uuid_t uuid, bool binary)
 	return true;
 }
 
-uint256_t
+blake3_hash_t
 resource_source_hash(const uuid_t uuid, uint64_t platform) {
-	uint256_t hash = uint256_null();
+	blake3_hash_t hash = {0};
 
 	if (resource_remote_sourced_is_connected()) {
 		hash = resource_remote_sourced_hash(uuid, platform);
-		if (!uint256_is_null(hash))
+		if (!blake3_hash_is_null(hash))
 			return hash;
 	}
 
 	stream_t* stream = resource_source_open_hash(uuid, STREAM_IN);
 	if (stream) {
-		char buffer[65];
+		char buffer[BLAKE3_HASH_STRING_LENGTH + 1];
 		string_t value = stream_read_string_buffer(stream, buffer, sizeof(buffer));
-		hash = string_to_uint256(STRING_ARGS(value));
+		hash = string_to_blake3_hash(STRING_ARGS(value));
 	}
 	stream_deallocate(stream);
 
@@ -664,19 +665,20 @@ resource_source_hash(const uuid_t uuid, uint64_t platform) {
 	size_t capacity = sizeof(localdeps) / sizeof(localdeps[0]);
 	size_t deps_count = resource_source_dependencies_count(uuid, platform);
 	if (deps_count) {
+		blake3_hash_state_t* hash_state = blake3_hash_state_allocate();
+		blake3_hash_state_update(hash_state, hash.data, BLAKE3_HASH_LENGTH);
 		resource_dependency_t* deps = localdeps;
 		if (deps_count > capacity)
 			deps = memory_allocate(HASH_RESOURCE, sizeof(resource_dependency_t) * deps_count, 16, MEMORY_PERSISTENT);
 		resource_source_dependencies(uuid, platform, deps, deps_count);
 		for (size_t idep = 0; idep < deps_count; ++idep) {
-			uint256_t dephash = resource_source_hash(deps[idep].uuid, platform);
-			hash.word[0] ^= dephash.word[0];
-			hash.word[1] ^= dephash.word[1];
-			hash.word[2] ^= dephash.word[2];
-			hash.word[3] ^= dephash.word[3];
+			blake3_hash_t dephash = resource_source_hash(deps[idep].uuid, platform);
+			blake3_hash_state_update(hash_state, dephash.data, BLAKE3_HASH_LENGTH);
 		}
 		if (deps != localdeps)
 			memory_deallocate(deps);
+		hash = blake3_hash_state_finalize(hash_state);
+		blake3_hash_state_deallocate(hash_state);
 	}
 
 	return hash;
@@ -1006,27 +1008,27 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 		memory_deallocate(olddeps);
 }
 
-uint256_t
+blake3_hash_t
 resource_source_import_hash(const uuid_t uuid) {
 	char buffer[BUILD_MAX_PATHLEN];
 	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".importhash"));
 	stream_t* hash_stream = stream_open(STRING_ARGS(path), STREAM_IN);
-	uint256_t import_hash = uint256_null();
+	blake3_hash_t import_hash = {0};
 	if (hash_stream)
-		import_hash = stream_read_uint256(hash_stream);
+		stream_read(hash_stream, import_hash.data, BLAKE3_HASH_LENGTH);
 	stream_deallocate(hash_stream);
 	return import_hash;
 }
 
 void
-resource_source_set_import_hash(const uuid_t uuid, const uint256_t import_hash) {
+resource_source_set_import_hash(const uuid_t uuid, const blake3_hash_t import_hash) {
 	char buffer[BUILD_MAX_PATHLEN];
 	string_t path = resource_stream_make_path(buffer, sizeof(buffer), STRING_ARGS(resource_path_source), uuid);
 	path = string_append(STRING_ARGS(path), sizeof(buffer), STRING_CONST(".importhash"));
 	stream_t* hash_stream = stream_open(STRING_ARGS(path), STREAM_OUT | STREAM_CREATE | STREAM_TRUNCATE);
 	if (hash_stream)
-		stream_write_uint256(hash_stream, import_hash);
+		stream_write(hash_stream, import_hash.data, BLAKE3_HASH_LENGTH);
 	stream_deallocate(hash_stream);
 }
 
@@ -1044,11 +1046,11 @@ resource_source_set_path(const char* path, size_t length) {
 	return false;
 }
 
-uint256_t
+blake3_hash_t
 resource_source_hash(const uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
-	return uint256_null();
+	return blake3_hash_null();
 }
 
 resource_source_t*
@@ -1253,14 +1255,14 @@ resource_source_remove_reverse_dependency(const uuid_t uuid, uint64_t platform, 
 	FOUNDATION_UNUSED(dep);
 }
 
-uint256_t
+blake3_hash_t
 resource_source_import_hash(const uuid_t uuid) {
 	FOUNDATION_UNUSED(uuid);
-	return uint256_null();
+	return blake3_hash_null();
 }
 
 void
-resource_source_set_import_hash(const uuid_t uuid, const uint256_t import_hash) {
+resource_source_set_import_hash(const uuid_t uuid, const blake3_hash_t import_hash) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(import_hash);
 }

@@ -48,7 +48,7 @@ RESOURCE_API resource_signature_t
 resource_import_lookup(const char* path, size_t length);
 
 RESOURCE_API uuid_t
-resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash);
+resource_import_map_store(const char* path, size_t length, uuid_t uuid, blake3_hash_t sighash);
 
 RESOURCE_API bool
 resource_import_map_purge(const char* path, size_t length);

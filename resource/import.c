@@ -22,6 +22,8 @@
 
 #include <foundation/foundation.h>
 
+#include <blake3/blake3.h>
+
 static resource_import_fn* resource_importers;
 static string_t resource_import_path_base;
 static string_t* resource_import_path_tool;
@@ -73,10 +75,6 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		          (int)length, path);
 		return false;
 	}
-
-	size_t streampos = stream_tell(stream);
-	uint256_t import_hash = stream_sha256(stream);
-	stream_seek(stream, (ssize_t)streampos, STREAM_SEEK_BEGIN);
 
 	for (iimp = 0, isize = array_size(resource_importers); !was_imported && (iimp != isize); ++iimp) {
 		stream_seek(stream, 0, STREAM_SEEK_BEGIN);
@@ -158,6 +156,7 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		          STRING_CONST("Unable to import: %.*s (%" PRIsize " internal, %" PRIsize " external)"), (int)length,
 		          path, internal, external);
 	} else {
+		blake3_hash_t import_hash = blake3_hash_stream(stream);
 		resource_source_set_import_hash(uuid, import_hash);
 		log_infof(HASH_RESOURCE, STRING_CONST("Imported: %.*s"), (int)length, path);
 	}
@@ -253,10 +252,10 @@ resource_import_map_subpath(stream_t* map, const char* path, size_t length) {
 
 static FOUNDATION_NOINLINE resource_signature_t
 resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* path, size_t length,
-                                    uint256_t update_hash) {
+                                    blake3_hash_t update_hash) {
 	char buffer[BUILD_MAX_PATHLEN + 64];
 	string_t line;
-	resource_signature_t sig = {uuid_null(), uint256_null()};
+	resource_signature_t sig = {uuid_null(), blake3_hash_null()};
 	// TODO: This needs to be a DB as number of imported files grow
 	while (!stream_eos(map) && uuid_is_null(sig.uuid)) {
 		hash_t linehash;
@@ -264,8 +263,6 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 		size_t streampos = stream_tell(map);
 
 		line = stream_read_line_buffer(map, buffer, sizeof(buffer), '\n');
-		if (line.length < 120)
-			continue;
 		if (line.str[line.length - 1] == '\r')
 			--line.length;
 
@@ -273,16 +270,17 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 		if (linehash != pathhash)
 			continue;
 
-		linepath = string_substr(STRING_ARGS(line), 119, line.length);
+		sig.uuid = string_to_uuid(line.str + 17, 37);
+		sig.hash = string_to_blake3_hash(line.str + 54, BLAKE3_HASH_STRING_LENGTH);
+
+		linepath = string_substr(STRING_ARGS(line), 95, line.length);
 		if (!string_equal(STRING_ARGS(linepath), path, length))
 			continue;
 
-		sig.uuid = string_to_uuid(line.str + 17, 37);
-		sig.hash = string_to_uint256(line.str + 54, 64);
-
-		if (!uint256_is_null(update_hash) && !uint256_equal(sig.hash, update_hash)) {
+		if (!blake3_hash_is_null(update_hash) && !blake3_hash_equal(sig.hash, update_hash)) {
 			if (map->mode & STREAM_OUT) {
-				string_const_t token = string_from_uint256_static(update_hash);
+				char hashbuffer[BLAKE3_HASH_STRING_LENGTH + 1];
+				string_const_t token = string_from_blake3_hash(update_hash, hashbuffer, sizeof(hashbuffer));
 				stream_seek(map, (ssize_t)streampos + 54, STREAM_SEEK_BEGIN);
 				stream_write(map, STRING_ARGS(token));
 				sig.hash = update_hash;
@@ -293,7 +291,7 @@ resource_import_map_read_and_update(stream_t* map, hash_t pathhash, const char* 
 }
 
 uuid_t
-resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash) {
+resource_import_map_store(const char* path, size_t length, uuid_t uuid, blake3_hash_t sighash) {
 	string_const_t subpath;
 	hash_t pathhash;
 	resource_signature_t sig;
@@ -322,7 +320,8 @@ resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_
 		stream_write(map, STRING_ARGS(token));
 		stream_write(map, &separator, 1);
 
-		token = string_from_uint256_static(sighash);
+		char hashbuffer[BLAKE3_HASH_STRING_LENGTH + 1];
+		token = string_from_blake3_hash(sighash, hashbuffer, sizeof(hashbuffer));
 		stream_write(map, STRING_ARGS(token));
 		stream_write(map, &separator, 1);
 
@@ -347,7 +346,7 @@ resource_import_map_purge(const char* path, size_t length) {
 
 static resource_signature_t
 resource_import_map_lookup(const char* path, size_t length) {
-	resource_signature_t sig = {uuid_null(), uint256_null()};
+	resource_signature_t sig = {uuid_null(), blake3_hash_null()};
 	char buffer[BUILD_MAX_PATHLEN];
 
 	string_t pathstr = string_copy(buffer, sizeof(buffer), path, length);
@@ -359,7 +358,7 @@ resource_import_map_lookup(const char* path, size_t length) {
 
 	string_const_t subpath = resource_import_map_subpath(map, STRING_ARGS(pathstr));
 	hash_t pathhash = hash(STRING_ARGS(subpath));
-	sig = resource_import_map_read_and_update(map, pathhash, STRING_ARGS(subpath), uint256_null());
+	sig = resource_import_map_read_and_update(map, pathhash, STRING_ARGS(subpath), blake3_hash_null());
 
 	stream_deallocate(map);
 
@@ -473,16 +472,16 @@ resource_autoimport(const uuid_t uuid) {
 }
 
 static bool
-resource_autoimport_source_changed(const char* path, size_t length, uint256_t map_hash, uint256_t import_hash,
-                                   uint256_t* newhash) {
+resource_autoimport_source_changed(const char* path, size_t length, const blake3_hash_t map_hash,
+                                   const blake3_hash_t import_hash, blake3_hash_t* newhash) {
 	stream_t* stream = stream_open(path, length, STREAM_IN);
 	if (!stream)
 		return false;
-	uint256_t testhash = stream_sha256(stream);
+	blake3_hash_t testhash = blake3_hash_stream(stream);
 	stream_deallocate(stream);
 	if (newhash)
 		*newhash = testhash;
-	return !uint256_equal(map_hash, testhash) || !uint256_equal(import_hash, testhash);
+	return !blake3_hash_equal(map_hash, testhash) || !blake3_hash_equal(import_hash, testhash);
 }
 
 bool
@@ -513,7 +512,7 @@ resource_autoimport_need_update(const uuid_t uuid, uint64_t platform) {
 		// import hash differs from imported asset file hash -> if so, need reimport. This ensures
 		// all three components of the resource (imported asset, import map signature and source)
 		// are up to date and in sync.
-		uint256_t import_hash = resource_source_import_hash(uuid);
+		blake3_hash_t import_hash = resource_source_import_hash(uuid);
 		if (resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, import_hash, nullptr)) {
 			string_const_t uuidstr = string_from_uuid_static(uuid);
 			log_debugf(HASH_RESOURCE, STRING_CONST("Autoimport needed, source hash changed: %.*s"),
@@ -612,7 +611,7 @@ resource_autoimport_clear(void) {
 }
 
 static uuid_t resource_autoimport_last_uuid;
-static uint256_t resource_autoimport_last_hash;
+static blake3_hash_t resource_autoimport_last_hash;
 
 void
 resource_autoimport_event_handle(event_t* event) {
@@ -626,13 +625,13 @@ resource_autoimport_event_handle(event_t* event) {
 	for (size_t ipath = 0, psize = array_size(resource_autoimport_dir); ipath < psize; ++ipath) {
 		if (path_subpath(STRING_ARGS(path), STRING_ARGS(resource_autoimport_dir[ipath])).length) {
 			const resource_signature_t sig = resource_import_map_lookup(STRING_ARGS(path));
-			uint256_t import_hash = resource_source_import_hash(sig.uuid);
-			uint256_t newhash;
+			blake3_hash_t import_hash = resource_source_import_hash(sig.uuid);
+			blake3_hash_t newhash;
 			if (!uuid_is_null(sig.uuid) &&
 			    resource_autoimport_source_changed(STRING_ARGS(path), sig.hash, import_hash, &newhash)) {
 				// Suppress multiple events on same file in sequence
 				if (!uuid_equal(sig.uuid, resource_autoimport_last_uuid) ||
-				    !uint256_equal(newhash, resource_autoimport_last_hash)) {
+				    !blake3_hash_equal(newhash, resource_autoimport_last_hash)) {
 					resource_autoimport_last_uuid = sig.uuid;
 					resource_autoimport_last_hash = newhash;
 
@@ -695,7 +694,7 @@ resource_import_unregister_path(const char* path, size_t length) {
 }
 
 uuid_t
-resource_import_map_store(const char* path, size_t length, uuid_t uuid, uint256_t sighash) {
+resource_import_map_store(const char* path, size_t length, uuid_t uuid, blake3_hash_t sighash) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
 	FOUNDATION_UNUSED(uuid);

@@ -20,6 +20,7 @@
 #include <resource/resource.h>
 #include <resource/sourced.h>
 #include <network/network.h>
+#include <blake3/blake3.h>
 
 #include "server.h"
 
@@ -399,7 +400,7 @@ server_handle_read(socket_t* sock, size_t msgsize) {
 			ret = sourced_write_read_reply(sock, &source, resource_source_hash(readmsg.uuid, 0));
 			log_infof(HASH_RESOURCE, STRING_CONST("  read resource successfully, wrote reply"));
 		} else {
-			ret = sourced_write_read_reply(sock, nullptr, uint256_null());
+			ret = sourced_write_read_reply(sock, nullptr, blake3_hash_null());
 			log_infof(HASH_RESOURCE, STRING_CONST("  failed reading resource, wrote reply"));
 		}
 		resource_source_finalize(&source);
@@ -429,7 +430,7 @@ server_handle_hash(socket_t* sock, size_t msgsize) {
 			log_debugf(HASH_RESOURCE, STRING_CONST("Reimporting resource %.*s (read hash)"), STRING_FORMAT(uuidstr));
 			resource_autoimport(hashmsg.uuid);
 		}
-		uint256_t hash = resource_source_hash(hashmsg.uuid, hashmsg.platform);
+		blake3_hash_t hash = resource_source_hash(hashmsg.uuid, hashmsg.platform);
 		return sourced_write_hash_reply(sock, hash);
 	}
 	if (read != 0) {

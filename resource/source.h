@@ -22,6 +22,7 @@
 #include <foundation/platform.h>
 
 #include <resource/types.h>
+#include <blake3/types.h>
 
 RESOURCE_API string_const_t
 resource_source_path(void);
@@ -29,16 +30,16 @@ resource_source_path(void);
 RESOURCE_API bool
 resource_source_set_path(const char* path, size_t length);
 
-RESOURCE_API uint256_t
+RESOURCE_API blake3_hash_t
 resource_source_hash(const uuid_t uuid, uint64_t platform);
 
-RESOURCE_API uint256_t
+RESOURCE_API blake3_hash_t
 resource_source_import_hash(const uuid_t uuid);
 
 RESOURCE_API void
-resource_source_set_import_hash(const uuid_t uuid, const uint256_t import_hash);
+resource_source_set_import_hash(const uuid_t uuid, const blake3_hash_t import_hash);
 
-RESOURCE_API uint256_t
+RESOURCE_API blake3_hash_t
 resource_source_hash(const uuid_t uuid, uint64_t platform);
 
 RESOURCE_API resource_source_t*

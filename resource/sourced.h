@@ -122,7 +122,7 @@ struct sourced_lookup_t {
 struct sourced_lookup_result_t {
 	SOURCED_DECLARE_REPLY;
 	uuid_t uuid;
-	uint256_t hash;
+	blake3_hash_t hash;
 };
 
 struct sourced_reverse_lookup_t {
@@ -196,7 +196,7 @@ struct sourced_read_t {
 
 struct sourced_read_result_t {
 	SOURCED_DECLARE_REPLY;
-	uint256_t hash;
+	blake3_hash_t hash;
 	uint32_t changes_count;
 	sourced_change_t payload[FOUNDATION_FLEXIBLE_ARRAY];
 };
@@ -241,7 +241,7 @@ struct sourced_hash_t {
 
 struct sourced_hash_result_t {
 	SOURCED_DECLARE_REPLY;
-	uint256_t hash;
+	blake3_hash_t hash;
 };
 
 struct sourced_dependencies_t {
@@ -280,7 +280,7 @@ int
 sourced_write_lookup(socket_t* sock, const char* path, size_t length);
 
 int
-sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash);
+sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, blake3_hash_t hash);
 
 int
 sourced_read_lookup_reply(socket_t* sock, size_t size, sourced_lookup_result_t* result);
@@ -289,7 +289,7 @@ int
 sourced_write_read(socket_t* sock, uuid_t uuid);
 
 int
-sourced_write_read_reply(socket_t* sock, resource_source_t* source, uint256_t hash);
+sourced_write_read_reply(socket_t* sock, resource_source_t* source, blake3_hash_t hash);
 
 int
 sourced_read_read_reply(socket_t* sock, size_t size, sourced_read_result_t* result);
@@ -298,7 +298,7 @@ int
 sourced_write_hash(socket_t* sock, uuid_t uuid, uint64_t platform);
 
 int
-sourced_write_hash_reply(socket_t* sock, uint256_t hash);
+sourced_write_hash_reply(socket_t* sock, blake3_hash_t hash);
 
 int
 sourced_read_hash_reply(socket_t* sock, size_t size, sourced_hash_result_t* result);

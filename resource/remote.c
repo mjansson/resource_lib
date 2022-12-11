@@ -21,6 +21,7 @@
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
+#include <blake3/blake3.h>
 
 #if RESOURCE_ENABLE_REMOTE_SOURCED || RESOURCE_ENABLE_REMOTE_COMPILED
 
@@ -454,7 +455,7 @@ resource_sourced_write(remote_context_t* context, remote_message_t waiting) {
 		case REMOTE_MESSAGE_LOOKUP:
 			log_info(HASH_RESOURCE, STRING_CONST("Write lookup message to remote sourced service"));
 			if (sourced_write_lookup(context->remote, waiting.data, waiting.size) < 0) {
-				resource_signature_t sig = {uuid_null(), uint256_null()};
+				resource_signature_t sig = {uuid_null(), blake3_hash_null()};
 				udp_socket_sendto(context->control, &sig, sizeof(sig), socket_address_local(context->client));
 			}
 			break;
@@ -470,7 +471,7 @@ resource_sourced_write(remote_context_t* context, remote_message_t waiting) {
 		case REMOTE_MESSAGE_HASH:
 			log_info(HASH_RESOURCE, STRING_CONST("Write hash message to remote sourced service"));
 			if (sourced_write_hash(context->remote, waiting.uuid, waiting.platform) < 0) {
-				uint256_t result = uint256_null();
+				blake3_hash_t result = blake3_hash_null();
 				udp_socket_sendto(context->control, &result, sizeof(result), socket_address_local(context->client));
 			}
 			break;
@@ -576,7 +577,7 @@ resource_remote_sourced_is_connected(void) {
 
 resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length) {
-	resource_signature_t nullsig = {uuid_null(), uint256_null()};
+	resource_signature_t nullsig = {uuid_null(), blake3_hash_null()};
 	resource_signature_t sig = nullsig;
 	if (!sourced_initialized)
 		return sig;
@@ -596,9 +597,9 @@ resource_remote_sourced_lookup(const char* path, size_t length) {
 	return nullsig;
 }
 
-uint256_t
+blake3_hash_t
 resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
-	uint256_t ret = uint256_null();
+	blake3_hash_t ret = {0};
 	if (!sourced_initialized)
 		return ret;
 
@@ -614,7 +615,7 @@ resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 	if (udp_socket_recvfrom(&sourced_client, &ret, sizeof(ret), &addr) == sizeof(ret))
 		return ret;
 
-	return uint256_null();
+	return blake3_hash_null();
 }
 
 size_t
@@ -737,15 +738,15 @@ resource_signature_t
 resource_remote_sourced_lookup(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
-	resource_signature_t sig = {uuid_null(), uint256_null()};
+	resource_signature_t sig = {uuid_null(), blake3_hash_null()};
 	return sig;
 }
 
-uint256_t
+blake3_hash_t
 resource_remote_sourced_hash(uuid_t uuid, uint64_t platform) {
 	FOUNDATION_UNUSED(uuid);
 	FOUNDATION_UNUSED(platform);
-	return uint256_null();
+	return blake3_hash_null();
 }
 
 size_t

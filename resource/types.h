@@ -21,6 +21,7 @@
 
 #include <foundation/platform.h>
 #include <foundation/types.h>
+#include <blake3/types.h>
 
 #include <resource/build.h>
 
@@ -59,7 +60,8 @@ typedef struct resource_signature_t resource_signature_t;
 typedef struct resource_dependency_t resource_dependency_t;
 
 typedef int (*resource_import_fn)(stream_t*, const uuid_t);
-typedef int (*resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const uint256_t, const char*, size_t);
+typedef int (*resource_compile_fn)(const uuid_t, uint64_t, resource_source_t*, const blake3_hash_t, const char*,
+                                   size_t);
 typedef resource_change_t* (*resource_source_map_reduce_fn)(resource_change_t*, resource_change_t*, void*);
 typedef int (*resource_source_map_iterate_fn)(resource_change_t*, void*);
 
@@ -185,7 +187,7 @@ struct resource_header_t {
 	/*! Version */
 	uint32_t version;
 	/*! Source hash */
-	uint256_t source_hash;
+	blake3_hash_t source_hash;
 };
 
 /*! Signature for a resource source file */
@@ -193,7 +195,7 @@ struct resource_signature_t {
 	/*! Resource UUID */
 	uuid_t uuid;
 	/*! Source file hash */
-	uint256_t hash;
+	blake3_hash_t hash;
 };
 
 static FOUNDATION_FORCEINLINE hash_t

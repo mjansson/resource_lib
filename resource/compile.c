@@ -21,6 +21,7 @@
 #include <resource/internal.h>
 
 #include <foundation/foundation.h>
+#include <blake3/blake3.h>
 
 static resource_compile_fn* resource_compilers;
 static string_t* resource_compile_tool_path;
@@ -55,7 +56,7 @@ resource_compile_token(void) {
 
 bool
 resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
-	uint256_t source_hash;
+	blake3_hash_t source_hash;
 	stream_t* stream;
 	resource_header_t header;
 
@@ -97,7 +98,7 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 		resource_autoimport(uuid);
 
 	source_hash = resource_source_hash(uuid, platform);
-	if (uint256_is_null(source_hash)) {
+	if (blake3_hash_is_null(source_hash)) {
 		log_debug(HASH_RESOURCE, STRING_CONST("  no source hash"));
 		return true;
 	}
@@ -112,13 +113,18 @@ resource_compile_need_update(const uuid_t uuid, uint64_t platform) {
 
 	stream_deallocate(stream);
 
-	string_const_t hashstr = string_from_uint256_static(source_hash);
-	log_debugf(HASH_RESOURCE, STRING_CONST("  source: %.*s"), STRING_FORMAT(hashstr));
-	hashstr = string_from_uint256_static(header.source_hash);
-	log_debugf(HASH_RESOURCE, STRING_CONST("  target: %.*s"), STRING_FORMAT(hashstr));
+#if BUILD_ENABLE_DEBUG_LOG
+	if (log_suppress(HASH_RESOURCE) < ERRORLEVEL_DEBUG) {
+		char hashbuffer[BLAKE3_HASH_STRING_LENGTH];
+		string_const_t hashstr = string_from_blake3_hash(source_hash, hashbuffer, sizeof(hashbuffer));
+		log_debugf(HASH_RESOURCE, STRING_CONST("  source: %.*s"), STRING_FORMAT(hashstr));
+		hashstr = string_from_blake3_hash(header.source_hash, hashbuffer, sizeof(hashbuffer));
+		log_debugf(HASH_RESOURCE, STRING_CONST("  target: %.*s"), STRING_FORMAT(hashstr));
+	}
+#endif
 
 	// TODO: Based on resource_type_hash, check expected version
-	return !uint256_equal(source_hash, header.source_hash);
+	return !blake3_hash_equal(source_hash, header.source_hash);
 }
 
 bool
@@ -191,11 +197,11 @@ resource_compile(const uuid_t uuid, uint64_t platform) {
 		was_read = resource_source_read(&source, uuid);
 	}
 	if (was_read) {
-		uint256_t source_hash;
+		blake3_hash_t source_hash;
 		resource_change_t* change;
 
 		source_hash = resource_source_hash(uuid, platform);
-		if (uint256_is_null(source_hash) && resource_module_config().enable_local_source) {
+		if (blake3_hash_is_null(source_hash) && resource_module_config().enable_local_source) {
 			// Recreate source hash data
 			resource_source_write(&source, uuid, source.read_binary);
 			source_hash = resource_source_hash(uuid, platform);

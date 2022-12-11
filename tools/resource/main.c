@@ -35,7 +35,7 @@ typedef struct {
 	string_const_t* config_files;
 	string_const_t remote_sourced;
 	uuid_t uuid;
-	uint256_t hash;
+	blake3_hash_t hash;
 	string_t lookup_path;
 	uint64_t platform;
 	resource_op_t* op;

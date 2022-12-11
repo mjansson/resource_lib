@@ -33,7 +33,7 @@ sourced_write_lookup(socket_t* sock, const char* path, size_t length) {
 }
 
 int
-sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, uint256_t hash) {
+sourced_write_lookup_reply(socket_t* sock, uuid_t uuid, blake3_hash_t hash) {
 	sourced_message_t msg = {SOURCED_LOOKUP_RESULT, (uint32_t)sizeof(sourced_lookup_result_t)};
 	sourced_lookup_result_t reply = {!uuid_is_null(uuid) ? SOURCED_OK : SOURCED_FAILED, 0, uuid, hash};
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {
@@ -102,7 +102,7 @@ sourced_copy_source(resource_change_t* change, void* data) {
 }
 
 int
-sourced_write_read_reply(socket_t* sock, resource_source_t* source, uint256_t hash) {
+sourced_write_read_reply(socket_t* sock, resource_source_t* source, blake3_hash_t hash) {
 	sourced_message_t msg = {SOURCED_READ_RESULT, 0};
 
 	void* allocated = nullptr;
@@ -192,7 +192,7 @@ sourced_read_hash_reply(socket_t* sock, size_t size, sourced_hash_result_t* resu
 }
 
 int
-sourced_write_hash_reply(socket_t* sock, uint256_t hash) {
+sourced_write_hash_reply(socket_t* sock, blake3_hash_t hash) {
 	sourced_message_t msg = {SOURCED_HASH_RESULT, (uint32_t)sizeof(sourced_hash_result_t)};
 	sourced_hash_result_t reply = {SOURCED_OK, 0, hash};
 	if (socket_write(sock, &msg, sizeof(msg)) == sizeof(msg)) {

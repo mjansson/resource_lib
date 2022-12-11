@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join('build', 'ninja'))
 
 import generator
 
-dependlibs = ['resource', 'network', 'foundation']
+dependlibs = ['resource', 'blake3', 'network', 'foundation']
 
 generator = generator.Generator(project = 'resource', dependlibs = dependlibs, variables = [('bundleidentifier', 'com.maniccoder.resource.$(binname)')])
 target = generator.target
