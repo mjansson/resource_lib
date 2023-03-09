@@ -156,7 +156,9 @@ resource_import(const char* path, size_t length, const uuid_t uuid) {
 		          STRING_CONST("Unable to import: %.*s (%" PRIsize " internal, %" PRIsize " external)"), (int)length,
 		          path, internal, external);
 	} else {
+		stream = stream_open(path, length, STREAM_IN);
 		blake3_hash_t import_hash = blake3_hash_stream(stream);
+		stream_deallocate(stream);
 		resource_source_set_import_hash(uuid, import_hash);
 		log_infof(HASH_RESOURCE, STRING_CONST("Imported: %.*s"), (int)length, path);
 	}
@@ -424,14 +426,14 @@ resource_autoimport_reverse_lookup(const uuid_t uuid, char* buffer, size_t capac
 
 			while (map && !stream_eos(map)) {
 				string_t line = stream_read_line_buffer(map, linebuffer, sizeof(linebuffer), '\n');
-				if (line.length < 120)
+				if (line.length < 95)
 					continue;
 				if (line.str[line.length - 1] == '\r')
 					--line.length;
 
 				siguuid = string_to_uuid(line.str + 17, 37);
 				if (uuid_equal(uuid, siguuid)) {
-					string_const_t linepath = string_substr(STRING_ARGS(line), 119, line.length);
+					string_const_t linepath = string_substr(STRING_ARGS(line), 95, line.length);
 					string_const_t mapdir = stream_path(map);
 					mapdir = path_directory_name(STRING_ARGS(mapdir));
 					result = path_concat(buffer, capacity, STRING_ARGS(mapdir), STRING_ARGS(linepath));
