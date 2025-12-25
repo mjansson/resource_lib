@@ -373,6 +373,11 @@ resource_compile_clear(void) {
 	array_clear(resource_compilers);
 }
 
+const string_const_t*
+resource_compile_path(void) {
+	return (const string_const_t*)resource_compile_tool_path;
+}
+
 void
 resource_compile_clear_path(void) {
 	string_array_deallocate_elements(resource_compile_tool_path);
@@ -419,6 +424,11 @@ resource_compile_unregister_path(const char* path, size_t length) {
 
 void
 resource_compile_clear(void) {
+}
+
+string_const_t*
+resource_compile_path(void) {
+	return nullptr;
 }
 
 void

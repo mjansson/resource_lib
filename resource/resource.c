@@ -201,6 +201,24 @@ resource_module_parse_config(const char* path, size_t path_size, const char* buf
 							}
 							arrtok = tokens[arrtok].sibling;
 						}
+					} else if (idhash == HASH_TOOL_PATH) {
+						size_t arrtok = tokens[restok].child;
+						while (arrtok) {
+							if (tokens[arrtok].type == JSON_STRING) {
+								string_const_t import_path = json_token_value(buffer, tokens + arrtok);
+								string_t fullpath;
+								if (!path_is_absolute(STRING_ARGS(import_path))) {
+									fullpath = path_concat(pathbuf, sizeof(pathbuf), STRING_ARGS(sourcedir),
+									                       STRING_ARGS(import_path));
+									fullpath = path_absolute(STRING_ARGS(fullpath), sizeof(pathbuf));
+								} else {
+									fullpath = string_copy(pathbuf, sizeof(pathbuf), STRING_ARGS(import_path));
+								}
+								resource_import_register_path(STRING_ARGS(fullpath));
+								resource_compile_register_path(STRING_ARGS(fullpath));
+							}
+							arrtok = tokens[arrtok].sibling;
+						}
 					}
 				}
 			}

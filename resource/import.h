@@ -44,6 +44,12 @@ resource_import_unregister(resource_import_fn importer);
 RESOURCE_API void
 resource_import_unregister_path(const char* path, size_t length);
 
+RESOURCE_API void
+resource_import_clear_path(void);
+
+RESOURCE_API const string_const_t*
+resource_import_path(void);
+
 RESOURCE_API resource_signature_t
 resource_import_lookup(const char* path, size_t length);
 

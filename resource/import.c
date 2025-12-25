@@ -215,6 +215,17 @@ resource_import_unregister_path(const char* path, size_t length) {
 	}
 }
 
+const string_const_t*
+resource_import_path(void) {
+	return (const string_const_t*)resource_import_path_tool;
+}
+
+void
+resource_import_clear_path(void) {
+	string_array_deallocate_elements(resource_import_path_tool);
+	array_clear(resource_import_path_tool);
+}
+
 static stream_t*
 resource_import_open_map(const char* cpath, size_t length, bool write) {
 	char buffer[BUILD_MAX_PATHLEN];
@@ -693,6 +704,15 @@ void
 resource_import_unregister_path(const char* path, size_t length) {
 	FOUNDATION_UNUSED(path);
 	FOUNDATION_UNUSED(length);
+}
+
+string_const_t*
+resource_import_path(void) {
+	return nullptr;
+}
+
+void
+resource_import_clear_path(void) {
 }
 
 uuid_t

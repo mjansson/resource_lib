@@ -49,3 +49,6 @@ resource_compile_clear(void);
 
 RESOURCE_API void
 resource_compile_clear_path(void);
+
+RESOURCE_API const string_const_t*
+resource_compile_path(void);
