@@ -122,6 +122,7 @@ DECLARE_TEST(source, set) {
 #endif
 	}
 
+#if RESOURCE_ENABLE_LOCAL_SOURCE
 	size_t allocated = 0;
 	size_t used = 0;
 	resource_change_block_t* block = &source.first;
@@ -135,7 +136,6 @@ DECLARE_TEST(source, set) {
 		block = block->next;
 	}
 
-#if RESOURCE_ENABLE_LOCAL_SOURCE
 	// log_infof(HASH_TEST, STRING_CONST("Used %" PRIsize "/%" PRIsize " (%.0" PRIREAL "%%)"),
 	//          used, allocated, REAL_C(100.0) * ((real)used / (real)allocated));
 	EXPECT_REALGT((real)used / (real)allocated, REAL_C(0.7));
@@ -418,7 +418,6 @@ DECLARE_TEST(source, blob) {
 	size_t iidx, isize;
 	string_const_t path;
 	string_t* files;
-	resource_change_t* change;
 
 	map = (hashmap_t*)&fixedmap;
 
@@ -483,9 +482,9 @@ DECLARE_TEST(source, blob) {
 
 	// Verify only one blob file exist, and that it's the correct one
 	resource_source_map(&source, platform, map);
-	change = hashmap_lookup(map, HASH_TEST);
 	files = fs_matching_files(STRING_ARGS(path), STRING_CONST("^.*\\.blob$"), true);
 #if RESOURCE_ENABLE_LOCAL_SOURCE
+	resource_change_t* change = hashmap_lookup(map, HASH_TEST);
 	EXPECT_TYPEEQ(change->platform, platform, uint64_t, PRIx64);
 	EXPECT_TICKEQ(change->timestamp, timestamp);
 	EXPECT_HASHEQ(change->hash, HASH_TEST);

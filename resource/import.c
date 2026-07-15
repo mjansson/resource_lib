@@ -706,7 +706,7 @@ resource_import_unregister_path(const char* path, size_t length) {
 	FOUNDATION_UNUSED(length);
 }
 
-string_const_t*
+const string_const_t*
 resource_import_path(void) {
 	return nullptr;
 }

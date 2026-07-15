@@ -426,7 +426,7 @@ void
 resource_compile_clear(void) {
 }
 
-string_const_t*
+const string_const_t*
 resource_compile_path(void) {
 	return nullptr;
 }
